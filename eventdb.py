@@ -1,14 +1,17 @@
 import mysql.connector
+import secure
 
-def createConnection():
+def createConnection(dbname):
     
-    cnx = mysql.connector.connect(user='lmitas',
-                                  password='maggies2cute',
-                                  host='127.0.0.1',
-                                  database='test_one')
+    cnx = mysql.connector.connect(user=secure.username(),
+                                  password=secure.password(),
+                                  host='127.0.0.1')
+    
+    cursor = cnx.cursor()
+    cursor.execute('CREATE DATABASE IF NOT EXISTS {}'.format(dbname))
+    cnx.database = dbname
     
     return cnx
-
 
 def insertTweets(listOfTweets,cnx):
     
@@ -76,7 +79,7 @@ def getExistingTweets(cursor,start = None,end = None):
             
     cursor.execute(sqlGetAllTweetIds)
     
-    output = []
+    output = list()
     
     for i in cursor:
         output.append(i[0])
@@ -90,7 +93,6 @@ def getTweet(cursor,tweetid):
                 "LEFT JOIN events "
                 "ON events.tweetid = tweetdetails.tweetid "
                 "WHERE tweetdetails.tweetid = '{}';".format(tweetid))
-    print(sqlTweet)
     
     cursor.execute(sqlTweet)
     
