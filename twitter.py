@@ -1,21 +1,7 @@
-import urllib.request
 import json
 import datetime
 import eventdb
 from pathlib import Path
-
-def retrieveFromTwitter(postId):
-    
-    tweetUrl = "https://twitter.com/milesbelli/status/" + str(postId)
-    tweetPage = urllib.request.urlopen(tweetUrl)
-    data = tweetPage.read()
-    text = data.decode("utf-8")
-    offset = text.find("\"metadata\">")
-    timeStamp = text[offset+22:offset+44]
-    timeStamp = timeStamp[0:timeStamp.find("<")]
-    
-    #This time is always going to be San Francisco time
-    return timeStamp
 
 def parseRawTwitter(rawFileText):
     openBracketPos = -1
@@ -31,15 +17,12 @@ def parseRawTwitter(rawFileText):
         else: closeBracketPos = rawFileText.find("}\n}, {", openBracketPos + 1) + 3
         
         singleTweetString = rawFileText[openBracketPos:closeBracketPos]
-        #print("STARTING A NEW TWEET\n" + singleTweetString)
         
         tweetJson = json.loads(singleTweetString)
         
         rawTweetText = str(tweetJson["text"])
         convertedTweetText = bytes(rawTweetText,"latin1",errors="ignore").decode("latin1")
-        tweetJson["text"] = convertedTweetText
-#         print(convertedTweetText)
-        
+        tweetJson["text"] = convertedTweetText        
         
         tweetTimeStamp = parseDateTime(tweetJson["created_at"])
         tweetJson["sqlDate"] = str(tweetTimeStamp.date())
