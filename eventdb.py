@@ -18,6 +18,8 @@ def insertTweets(listOfTweets,cnx):
     tweetsTotal = len(listOfTweets)
     valuesTweets = valuesEvents = ""
     
+    tweetmods = list()
+    
     # These next two values assume the list is ordered; if Twitter changes their archiving process, this could break
     lastTweet = listOfTweets[0]["id"]
     firstTweet = listOfTweets[tweetsTotal - 1]["id"]
@@ -43,6 +45,12 @@ def insertTweets(listOfTweets,cnx):
                                                          listOfTweets[i]["text"].replace("'","''"), #Escape character for apostrophes
                                                          listOfTweets[i]["user"]["id"]))
             
+            if "coordinates" in listOfTweets[i]["geo"]:
+                tweetmods.append("UPDATE tweetdetails SET latitude = {}, longitude = {} WHERE tweetid = {};".format(listOfTweets[i]["geo"]["coordinates"][0],
+                                                                                                          listOfTweets[i]["geo"]["coordinates"][1],
+                                                                                                          tweetId))
+            
+            valueToAppend = "('{}','{}','{}','{}')"
             
             valuesEvents += "".join(valueToAppend.format("1",                                       #Replace hardcoding here too
                                                          listOfTweets[i]["sqlDate"],
@@ -64,6 +72,9 @@ def insertTweets(listOfTweets,cnx):
                            "VALUES {}".format(valuesEvents))
         
         cursor.execute(sqlInsertEvents)
+        
+    for entry in tweetmods:
+        cursor.execute(entry)
     
     cnx.commit()
     cursor.close()
