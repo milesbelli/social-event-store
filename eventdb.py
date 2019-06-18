@@ -18,8 +18,6 @@ def insertTweets(listOfTweets,cnx):
     tweetsTotal = len(listOfTweets)
     valuesTweets = valuesEvents = ""
     
-    tweetmods = list()
-    
     # These next two values assume the list is ordered; if Twitter changes their archiving process, this could break
     lastTweet = listOfTweets[0]["id"]
     firstTweet = listOfTweets[tweetsTotal - 1]["id"]
@@ -38,17 +36,29 @@ def insertTweets(listOfTweets,cnx):
                 valuesEvents += ","
                 
             
-            valueToAppend = "('{}','{}','{}','{}')"
+            if "coordinates" in listOfTweets[i]["geo"]:
+                latitude = "'{}'".format(listOfTweets[i]["geo"]["coordinates"][0])
+                longitude = "'{}'".format(listOfTweets[i]["geo"]["coordinates"][1])
+            
+            else:
+                latitude = "NULL"
+                longitude = "NULL"
+                
+            replyid = listOfTweets[i].get("in_reply_to_status_id") or "NULL"
+            
+            
+            valueToAppend = "('{}','{}','{}','{}',{},{},{})"
+            
+            
             
             valuesTweets += "".join(valueToAppend.format(tweetId,
                                                          "1",                                       #This is hardcoded and will need to change
                                                          listOfTweets[i]["text"].replace("'","''"), #Escape character for apostrophes
-                                                         listOfTweets[i]["user"]["id"]))
+                                                         listOfTweets[i]["user"]["id"],
+                                                         latitude,
+                                                         longitude,
+                                                         replyid))
             
-            if "coordinates" in listOfTweets[i]["geo"]:
-                tweetmods.append("UPDATE tweetdetails SET latitude = {}, longitude = {} WHERE tweetid = {};".format(listOfTweets[i]["geo"]["coordinates"][0],
-                                                                                                          listOfTweets[i]["geo"]["coordinates"][1],
-                                                                                                          tweetId))
             
             valueToAppend = "('{}','{}','{}','{}')"
             
@@ -60,7 +70,7 @@ def insertTweets(listOfTweets,cnx):
     if len(valuesTweets) > 0:
     
         sqlInsertTweets = ("INSERT INTO tweetdetails"
-                           "(tweetid, userid, tweettext, twitteruserid)"
+                           "(tweetid, userid, tweettext, twitteruserid, latitude, longitude, replyid)"
                            "VALUES {}".format(valuesTweets))
         
         cursor.execute(sqlInsertTweets)
@@ -72,9 +82,6 @@ def insertTweets(listOfTweets,cnx):
                            "VALUES {}".format(valuesEvents))
         
         cursor.execute(sqlInsertEvents)
-        
-    for entry in tweetmods:
-        cursor.execute(entry)
     
     cnx.commit()
     cursor.close()
