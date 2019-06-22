@@ -15,7 +15,9 @@ Currently, a very rudimentary Twitter archive parser is included, along with a m
 
 The goal here will be to expand to as much metadata as possible.
 
-Currently the only way to import tweets are through an archive, and at that, only the .js files within the library. The CSV file that accompanies Twitter archives is too limited and incomplete. The .js files exist in the archive more or less exactly how the data is stored on Twitter's website, with some caveats.
+Currently the only way to import tweets are through an archive, and at that, only the .js files within the library. The CSV file that accompanies Twitter archives is too limited and incomplete. The .js files exist in the archive more or less exactly how the data is stored on Twitter's website, although some data for older tweets can be missing or incomplete.
+
+To import these files, they must all be located in the same directory and that directory must be specified when calling the `processDirectory` function. The `processDirectory` function will handle looping through all .js files and adding them to the MySQL database.
 
 ### What Doesn't
 
