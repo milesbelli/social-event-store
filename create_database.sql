@@ -2,6 +2,8 @@ CREATE USER IF NOT EXISTS 'lmitas'@'localhost' IDENTIFIED BY 'resetme';
 
 CREATE DATABASE IF NOT EXISTS social;
 
+GRANT ALL PRIVILEGES ON social.* TO 'lmitas'@'localhost';
+
 USE social;
 
 CREATE TABLE IF NOT EXISTS events (
