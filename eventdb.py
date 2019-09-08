@@ -35,8 +35,8 @@ def insertTweets(listOfTweets,cnx):
                 valuesTweets += ","
                 valuesEvents += ","
                 
-            latitude = "'{}'".format(listOfTweets[i]["geo"].get("coordinates",["NULL"])[0])
-            longitude = "'{}'".format(listOfTweets[i]["geo"].get("coordinates",["","NULL"])[1])
+            latitude = "{}".format(listOfTweets[i]["geo"].get("coordinates",["NULL"])[0])
+            longitude = "{}".format(listOfTweets[i]["geo"].get("coordinates",["","NULL"])[1])
                 
             replyid = listOfTweets[i].get("in_reply_to_status_id") or "NULL"
             
