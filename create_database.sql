@@ -22,4 +22,5 @@ twitteruserid INT(11),
 latitude DOUBLE(10,8),
 longitude DOUBLE(11,8),
 replyid BIGINT(20),
+client VARCHAR(255),
 PRIMARY KEY(tweetid));

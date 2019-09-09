@@ -29,6 +29,8 @@ def parseRawTwitter(rawFileText):
         tweetJson["sqlDate"] = str(tweetTimeStamp.date())
         tweetJson["sqlTime"] = str(tweetTimeStamp.time())
         
+        tweetJson['client_name'] = getClientName(tweetJson['source'])
+        
         listOfTweets.append(tweetJson)
         
     return listOfTweets
@@ -65,7 +67,7 @@ def numberMonth(monthStr):
     monthStr = monthStr.capitalize()
     
     if(monthStr[0:3] == "Jan"):
-        
+    
         return 1
     
     elif(monthStr[0:3] == "Feb"):
@@ -113,11 +115,18 @@ def numberMonth(monthStr):
         return 12
     
 
+def getClientName(client_string):
+    start_pos = client_string.find('>') + 1
+    end_pos = client_string.find('<',start_pos)
+    
+    return client_string[start_pos:end_pos]
+    
+
 def processDirectory(dirPath):
     
     targetDir = Path(dirPath)
     
-    cnx = eventdb.createConnection('test_one')
+    cnx = eventdb.createConnection('social')
     
     for targetFile in targetDir.iterdir():
         
@@ -132,7 +141,7 @@ def processDirectory(dirPath):
     
 def getOneTweet(tweetid):
     
-    cnx = eventdb.createConnection('test_one')
+    cnx = eventdb.createConnection('social')
     cursor = cnx.cursor()
     
     theTweet = eventdb.getTweet(cursor,tweetid)
@@ -146,6 +155,7 @@ def getOneTweet(tweetid):
     
     return output
 
-processDirectory("data")
+if __name__ == '__main__':
+    processDirectory("data")
 
-#print(getOneTweet('155316636524613633'))
+    #print(getOneTweet('155316636524613633'))
