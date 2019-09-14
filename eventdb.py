@@ -41,7 +41,7 @@ def insertTweets(listOfTweets,cnx):
             replyid = listOfTweets[i].get("in_reply_to_status_id") or "NULL"
             
             
-            valueToAppend = "('{}','{}','{}','{}',{},{},{})"
+            valueToAppend = "('{}','{}','{}','{}',{},{},{},'{}')"
             
             
             
@@ -51,7 +51,8 @@ def insertTweets(listOfTweets,cnx):
                                                          listOfTweets[i]["user"]["id"],
                                                          latitude,
                                                          longitude,
-                                                         replyid))
+                                                         replyid,
+                                                         listOfTweets[i]["client_name"]))
             
             
             valueToAppend = "('{}','{}','{}','{}')"
@@ -64,7 +65,7 @@ def insertTweets(listOfTweets,cnx):
     if len(valuesTweets) > 0:
     
         sqlInsertTweets = ("INSERT INTO tweetdetails"
-                           "(tweetid, userid, tweettext, twitteruserid, latitude, longitude, replyid)"
+                           "(tweetid, userid, tweettext, twitteruserid, latitude, longitude, replyid,client)"
                            "VALUES {}".format(valuesTweets))
         
         cursor.execute(sqlInsertTweets)

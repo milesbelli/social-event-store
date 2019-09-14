@@ -22,8 +22,7 @@ def parseRawTwitter(rawFileText):
         tweetJson = json.loads(singleTweetString)
         
         rawTweetText = str(tweetJson["text"])
-        convertedTweetText = bytes(rawTweetText,"latin1",errors="ignore").decode("latin1")
-        tweetJson["text"] = convertedTweetText
+        tweetJson["text"] = bytes(rawTweetText,"latin1",errors="ignore").decode("latin1")
         
         tweetTimeStamp = parseDateTime(tweetJson["created_at"])
         tweetJson["sqlDate"] = str(tweetTimeStamp.date())
@@ -116,10 +115,14 @@ def numberMonth(monthStr):
     
 
 def getClientName(client_string):
-    start_pos = client_string.find('>') + 1
-    end_pos = client_string.find('<',start_pos)
+    try:
+        start_pos = client_string.index('>') + 1
+        end_pos = client_string.index('<',start_pos)
     
-    return client_string[start_pos:end_pos]
+        return client_string[start_pos:end_pos]
+    
+    except:
+        return client_string
     
 
 def processDirectory(dirPath):
