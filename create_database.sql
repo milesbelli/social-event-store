@@ -24,3 +24,13 @@ longitude DOUBLE(11,8),
 replyid BIGINT(20),
 client VARCHAR(255),
 PRIMARY KEY(tweetid));
+
+CREATE TABLE IF NOT EXISTS tweetmedia (
+tweetid BIGINT(20) NOT NULL,
+mediaurl VARCHAR(100) NOT NULL,
+PRIMARY KEY(tweetid,mediaurl));
+
+CREATE TABLE IF NOT EXISTS tweethashtags (
+tweetid BIGINT(20) NOT NULL,
+hashtag VARCHAR(280) NOT NULL,
+PRIMARY KEY(tweetid,hashtag));
