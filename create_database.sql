@@ -32,5 +32,6 @@ PRIMARY KEY(tweetid,mediaurl));
 
 CREATE TABLE IF NOT EXISTS tweethashtags (
 tweetid BIGINT(20) NOT NULL,
+ixstart INT(3) NOT NULL,
 hashtag VARCHAR(280) NOT NULL,
-PRIMARY KEY(tweetid,hashtag));
+PRIMARY KEY(tweetid,ixstart));

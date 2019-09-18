@@ -16,7 +16,7 @@ def createConnection(dbname):
 def insertTweets(listOfTweets,cnx):
     
     tweetsTotal = len(listOfTweets)
-    valuesTweets = valuesEvents = ""
+    valuesTweets = valuesEvents = values_hashtags = ""
     
     # These next two values assume the list is ordered; if Twitter changes their archiving process, this could break
     lastTweet = listOfTweets[0]["id"]
@@ -43,8 +43,6 @@ def insertTweets(listOfTweets,cnx):
             
             valueToAppend = "('{}','{}','{}','{}',{},{},{},'{}')"
             
-            
-            
             valuesTweets += "".join(valueToAppend.format(tweetId,
                                                          "1",                                       #This is hardcoded and will need to change
                                                          listOfTweets[i]["text"].replace("'","''"), #Escape character for apostrophes
@@ -61,11 +59,22 @@ def insertTweets(listOfTweets,cnx):
                                                          listOfTweets[i]["sqlDate"],
                                                          listOfTweets[i]["sqlTime"],
                                                          tweetId))
+            
+            valueToAppend = "('{}','{}','{}')"
+            
+            for hashtag in listOfTweets[i]["entities"]["hashtags"]:
+                
+                if len(values_hashtags) > 0:
+                    values_hashtags += ","
+            
+                values_hashtags += "".join(valueToAppend.format(tweetId,
+                                                                hashtag["indices"][0],
+                                                                hashtag["text"]))
 
     if len(valuesTweets) > 0:
     
         sqlInsertTweets = ("INSERT INTO tweetdetails"
-                           "(tweetid, userid, tweettext, twitteruserid, latitude, longitude, replyid,client)"
+                           "(tweetid, userid, tweettext, twitteruserid, latitude, longitude, replyid, client)"
                            "VALUES {}".format(valuesTweets))
         
         cursor.execute(sqlInsertTweets)
@@ -77,6 +86,14 @@ def insertTweets(listOfTweets,cnx):
                            "VALUES {}".format(valuesEvents))
         
         cursor.execute(sqlInsertEvents)
+        
+    if len(values_hashtags) > 0:
+        
+        sql_insert_hashtags = ("INSERT INTO tweethashtags"
+                               "(tweetid, ixstart, hashtag)"
+                               "VALUES {}".format(values_hashtags))
+        
+        cursor.execute(sql_insert_hashtags)
     
     cnx.commit()
     cursor.close()
