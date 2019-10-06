@@ -1,7 +1,8 @@
 import mysql.connector
 import secure
 
-def createConnection(dbname):
+
+def create_connection(dbname):
     
     cnx = mysql.connector.connect(user=secure.username(),
                                   password=secure.password(),
@@ -13,7 +14,8 @@ def createConnection(dbname):
     
     return cnx
 
-def insertTweets(listOfTweets,cnx):
+
+def insert_tweets(listOfTweets,cnx):
     
     tweetsTotal = len(listOfTweets)
     valuesTweets = valuesEvents = values_hashtags = ""
@@ -24,7 +26,7 @@ def insertTweets(listOfTweets,cnx):
     
     cursor = cnx.cursor()
     
-    tweetsInDb = getExistingTweets(cursor,firstTweet,lastTweet)
+    tweetsInDb = get_existing_tweets(cursor,firstTweet,lastTweet)
     
     for i in range(tweetsTotal):
         
@@ -99,7 +101,7 @@ def insertTweets(listOfTweets,cnx):
     cursor.close()
     
     
-def getExistingTweets(cursor,start = None,end = None):
+def get_existing_tweets(cursor, start=None, end=None):
       
     sqlGetAllTweetIds = "SELECT tweetid FROM tweetdetails"
     
