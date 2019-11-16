@@ -41,18 +41,26 @@ def insert_tweets(listOfTweets,cnx):
             longitude = "{}".format(listOfTweets[i]["geo"].get("coordinates",["","NULL"])[1])
                 
             replyid = listOfTweets[i].get("in_reply_to_status_id") or "NULL"
+
+            retweet = listOfTweets[i].get("retweeted_status") or None
+            rt_text = retweet["text"] if retweet else None
+            rt_id = retweet["id_str"] if retweet else "NULL"
+
+            tweet_text = rt_text or listOfTweets[i]["text"]
+
             
             
-            valueToAppend = "('{}','{}','{}','{}',{},{},{},'{}')"
+            valueToAppend = "('{}','{}','{}','{}',{},{},{},'{}',{})"
             
             valuesTweets += "".join(valueToAppend.format(tweetId,
                                                          "1",                                       #This is hardcoded and will need to change
-                                                         listOfTweets[i]["text"].replace("'","''"), #Escape character for apostrophes
+                                                         tweet_text.replace("'","''"), #Escape character for apostrophes
                                                          listOfTweets[i]["user"]["id"],
                                                          latitude,
                                                          longitude,
                                                          replyid,
-                                                         listOfTweets[i]["client_name"]))
+                                                         listOfTweets[i]["client_name"],
+                                                         rt_id))
             
             
             valueToAppend = "('{}','{}','{}','{}')"
@@ -76,7 +84,7 @@ def insert_tweets(listOfTweets,cnx):
     if len(valuesTweets) > 0:
     
         sqlInsertTweets = ("INSERT INTO tweetdetails"
-                           "(tweetid, userid, tweettext, twitteruserid, latitude, longitude, replyid, client)"
+                           "(tweetid, userid, tweettext, twitteruserid, latitude, longitude, replyid, client, retweetid)"
                            "VALUES {}".format(valuesTweets))
         
         cursor.execute(sqlInsertTweets)
