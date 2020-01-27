@@ -1,8 +1,8 @@
-CREATE USER IF NOT EXISTS 'lmitas'@'localhost' IDENTIFIED BY 'resetme';
+CREATE USER IF NOT EXISTS 'socialuser'@'localhost' IDENTIFIED BY 'resetme';
 
 CREATE DATABASE IF NOT EXISTS social;
 
-GRANT ALL PRIVILEGES ON social.* TO 'lmitas'@'localhost';
+GRANT ALL PRIVILEGES ON social.* TO 'socialuser'@'localhost';
 
 USE social;
 
@@ -35,3 +35,9 @@ tweetid BIGINT(20) NOT NULL,
 ixstart INT(3) NOT NULL,
 hashtag VARCHAR(280) NOT NULL,
 PRIMARY KEY(tweetid,ixstart));
+
+CREATE TABLE IF NOT EXISTS tweetconflicts (
+tweetid BIGINT(20) NOT NULL,
+field VARCHAR(20) NOT NULL,
+metadata VARCHAR(280),
+PRIMARY KEY(tweetid, field, metadata));
