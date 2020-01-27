@@ -129,7 +129,7 @@ def processDirectory(dirPath):
     
     targetDir = Path(dirPath)
     
-    cnx = eventdb.createConnection('social')
+    cnx = eventdb.create_connection('social')
     
     for targetFile in targetDir.iterdir():
         
@@ -137,14 +137,14 @@ def processDirectory(dirPath):
             
             file = file.read()
             listOfTweets = parseRawTwitter(file)
-            eventdb.insertTweets(listOfTweets,cnx)
+            eventdb.insert_tweets(listOfTweets,cnx)
             
     
     eventdb.closeConnection(cnx)
     
 def getOneTweet(tweetid):
     
-    cnx = eventdb.createConnection('social')
+    cnx = eventdb.create_connection('social')
     cursor = cnx.cursor()
     
     theTweet = eventdb.getTweet(cursor,tweetid)

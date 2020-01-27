@@ -23,6 +23,7 @@ latitude DOUBLE(10,8),
 longitude DOUBLE(11,8),
 replyid BIGINT(20),
 client VARCHAR(255),
+retweetid BIGINT(20),
 PRIMARY KEY(tweetid));
 
 CREATE TABLE IF NOT EXISTS tweetmedia (
@@ -35,6 +36,15 @@ tweetid BIGINT(20) NOT NULL,
 ixstart INT(3) NOT NULL,
 hashtag VARCHAR(280) NOT NULL,
 PRIMARY KEY(tweetid,ixstart));
+
+CREATE TABLE IF NOT EXISTS retweetdetails (
+tweetid BIGINT(20) NOT NULL,
+userid INT(11) NOT NULL,
+usernm VARCHAR(255) NOT NULL,
+replyid BIGINT(20),
+client VARCHAR(255),
+tweetdate DATE,
+tweettime TIME)
 
 CREATE TABLE IF NOT EXISTS tweetconflicts (
 tweetid BIGINT(20) NOT NULL,

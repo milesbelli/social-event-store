@@ -1,7 +1,8 @@
 import mysql.connector
 import secure
 
-def createConnection(dbname):
+
+def create_connection(dbname):
     
     cnx = mysql.connector.connect(user=secure.username(),
                                   password=secure.password(),
@@ -13,7 +14,8 @@ def createConnection(dbname):
     
     return cnx
 
-def insertTweets(listOfTweets,cnx):
+
+def insert_tweets(listOfTweets,cnx):
     
     tweetsTotal = len(listOfTweets)
     valuesTweets = valuesEvents = values_hashtags = ""
@@ -24,7 +26,7 @@ def insertTweets(listOfTweets,cnx):
     
     cursor = cnx.cursor()
     
-    tweetsInDb = getExistingTweets(cursor,firstTweet,lastTweet)
+    tweetsInDb = get_existing_tweets(cursor,firstTweet,lastTweet)
     
     for i in range(tweetsTotal):
         
@@ -39,18 +41,26 @@ def insertTweets(listOfTweets,cnx):
             longitude = "{}".format(listOfTweets[i]["geo"].get("coordinates",["","NULL"])[1])
                 
             replyid = listOfTweets[i].get("in_reply_to_status_id") or "NULL"
+
+            retweet = listOfTweets[i].get("retweeted_status") or None
+            rt_text = retweet["text"] if retweet else None
+            rt_id = retweet["id_str"] if retweet else "NULL"
+
+            tweet_text = rt_text or listOfTweets[i]["text"]
+
             
             
-            valueToAppend = "('{}','{}','{}','{}',{},{},{},'{}')"
+            valueToAppend = "('{}','{}','{}','{}',{},{},{},'{}',{})"
             
             valuesTweets += "".join(valueToAppend.format(tweetId,
                                                          "1",                                       #This is hardcoded and will need to change
-                                                         listOfTweets[i]["text"].replace("'","''"), #Escape character for apostrophes
+                                                         tweet_text.replace("'","''"), #Escape character for apostrophes
                                                          listOfTweets[i]["user"]["id"],
                                                          latitude,
                                                          longitude,
                                                          replyid,
-                                                         listOfTweets[i]["client_name"]))
+                                                         listOfTweets[i]["client_name"],
+                                                         rt_id))
             
             
             valueToAppend = "('{}','{}','{}','{}')"
@@ -74,7 +84,7 @@ def insertTweets(listOfTweets,cnx):
     if len(valuesTweets) > 0:
     
         sqlInsertTweets = ("INSERT INTO tweetdetails"
-                           "(tweetid, userid, tweettext, twitteruserid, latitude, longitude, replyid, client)"
+                           "(tweetid, userid, tweettext, twitteruserid, latitude, longitude, replyid, client, retweetid)"
                            "VALUES {}".format(valuesTweets))
         
         cursor.execute(sqlInsertTweets)
@@ -99,7 +109,7 @@ def insertTweets(listOfTweets,cnx):
     cursor.close()
     
     
-def getExistingTweets(cursor,start = None,end = None):
+def get_existing_tweets(cursor, start=None, end=None):
       
     sqlGetAllTweetIds = "SELECT tweetid FROM tweetdetails"
     
