@@ -1,7 +1,21 @@
+import urllib.request
 import json
 import datetime
 import eventdb
 from pathlib import Path
+
+def retrieveFromTwitter(postId):
+
+    tweetUrl = "https://twitter.com/milesbelli/status/" + str(postId)
+    tweetPage = urllib.request.urlopen(tweetUrl)
+    data = tweetPage.read()
+    text = data.decode("utf-8")
+    offset = text.find("\"metadata\">")
+    timeStamp = text[offset+22:offset+44]
+    timeStamp = timeStamp[0:timeStamp.find("<")]
+
+    #This time is always going to be San Francisco time
+    return timeStamp
 
 def parseRawTwitter(rawFileText):
     
@@ -133,12 +147,12 @@ def processDirectory(dirPath):
     
     for targetFile in targetDir.iterdir():
         
-        with open(targetFile,"r",encoding="latin1",errors="replace") as file:
+        with open(targetFile, "r", encoding="latin1", errors="replace") as file:
             
             file = file.read()
             listOfTweets = parseRawTwitter(file)
             eventdb.insert_tweets(listOfTweets,cnx)
-            
+
     
     eventdb.closeConnection(cnx)
     

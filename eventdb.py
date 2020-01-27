@@ -51,7 +51,9 @@ def insert_tweets(listOfTweets,cnx):
             
             
             valueToAppend = "('{}','{}','{}','{}',{},{},{},'{}',{})"
-            
+
+            valueToAppend = "('{}','{}','{}','{}',{},{},{},'{}')"
+
             valuesTweets += "".join(valueToAppend.format(tweetId,
                                                          "1",                                       #This is hardcoded and will need to change
                                                          tweet_text.replace("'","''"), #Escape character for apostrophes
