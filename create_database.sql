@@ -44,7 +44,7 @@ usernm VARCHAR(255) NOT NULL,
 replyid BIGINT(20),
 client VARCHAR(255),
 tweetdate DATE,
-tweettime TIME)
+tweettime TIME);
 
 CREATE TABLE IF NOT EXISTS tweetconflicts (
 tweetid BIGINT(20) NOT NULL,
