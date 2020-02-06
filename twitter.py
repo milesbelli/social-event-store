@@ -17,36 +17,27 @@ def retrieveFromTwitter(postId):
     #This time is always going to be San Francisco time
     return timeStamp
 
-def parseRawTwitter(rawFileText):
-    
-    openBracketPos = closeBracketPos = -1
-    listOfTweets = list()
-    
-    while(rawFileText.find("{", closeBracketPos + 1) > -1):
-        
-        openBracketPos = rawFileText.find("{", closeBracketPos + 1)
-        maybeClosePos = rawFileText.find("}\n}, {", openBracketPos + 1)
-        
-        searchString = "}\n} ]" if maybeClosePos == -1 else "}\n}, {"
-        
-        closeBracketPos = rawFileText.find(searchString, openBracketPos + 1) + 3
-            
-        singleTweetString = rawFileText[openBracketPos:closeBracketPos]
-        
-        tweetJson = json.loads(singleTweetString)
-        
-        rawTweetText = str(tweetJson["text"])
-        tweetJson["text"] = bytes(rawTweetText,"latin1",errors="ignore").decode("latin1")
-        
-        tweetTimeStamp = parseDateTime(tweetJson["created_at"])
-        tweetJson["sqlDate"] = str(tweetTimeStamp.date())
-        tweetJson["sqlTime"] = str(tweetTimeStamp.time())
-        
-        tweetJson['client_name'] = getClientName(tweetJson['source'])
-        
-        listOfTweets.append(tweetJson)
-        
-    return listOfTweets
+
+def parse_js_text(text):
+
+    tweets_text = text[text.index('[ {'):]
+    list_of_tweets = json.loads(tweets_text)
+
+    for tweet_details in list_of_tweets:
+
+        tweet_timestamp = parseDateTime(tweet_details["created_at"])
+        tweet_details["sqlDate"] = str(tweet_timestamp.date())
+        tweet_details["sqlTime"] = str(tweet_timestamp.time())
+
+        tweet_details["client_name"] = getClientName(tweet_details["source"])
+
+        tweet_details["text"] = tweet_details.get("text") or tweet_details.get("full_text")
+
+        # TODO: Handle new format that doesn't keep user info inside archive (account.js has info)
+        tweet_details["user"] = tweet_details.get("user") or {"id": 0}
+
+    return list_of_tweets
+
 
 def parseDateTime (rawStamp):
     
@@ -147,10 +138,10 @@ def processDirectory(dirPath):
     
     for targetFile in targetDir.iterdir():
         
-        with open(targetFile, "r", encoding="latin1", errors="replace") as file:
+        with open(targetFile, "r", errors="replace") as file:
             
             file = file.read()
-            listOfTweets = parseRawTwitter(file)
+            listOfTweets = parse_js_text(file)
             eventdb.insert_tweets(listOfTweets,cnx)
 
     
@@ -173,6 +164,13 @@ def getOneTweet(tweetid):
     return output
 
 if __name__ == '__main__':
-    processDirectory("data")
+    processDirectory("data2")
 
     #print(getOneTweet('155316636524613633'))
+
+    # with open("data2/tweet.js", errors="replace") as file:
+    #     file = file.read()
+    #     list_of_tweets = parse_js_text(file)
+    #
+    #
+    # print(list_of_tweets[0])

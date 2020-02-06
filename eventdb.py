@@ -36,10 +36,12 @@ def insert_tweets(listOfTweets,cnx):
             if i > 0:
                 valuesTweets += ","
                 valuesEvents += ","
-                
-            latitude = "{}".format(listOfTweets[i]["geo"].get("coordinates",["NULL"])[0])
-            longitude = "{}".format(listOfTweets[i]["geo"].get("coordinates",["","NULL"])[1])
-                
+
+            geo_data = listOfTweets[i].get("geo") or {"geo": []}
+
+            latitude = "{}".format(geo_data.get("coordinates", ["NULL"])[0])
+            longitude = "{}".format(geo_data.get("coordinates", ["", "NULL"])[1])
+
             replyid = listOfTweets[i].get("in_reply_to_status_id") or "NULL"
 
             retweet = listOfTweets[i].get("retweeted_status") or None
@@ -52,8 +54,6 @@ def insert_tweets(listOfTweets,cnx):
             
             valueToAppend = "('{}','{}','{}','{}',{},{},{},'{}',{})"
 
-            valueToAppend = "('{}','{}','{}','{}',{},{},{},'{}')"
-
             valuesTweets += "".join(valueToAppend.format(tweetId,
                                                          "1",                                       #This is hardcoded and will need to change
                                                          tweet_text.replace("'","''"), #Escape character for apostrophes
@@ -63,7 +63,6 @@ def insert_tweets(listOfTweets,cnx):
                                                          replyid,
                                                          listOfTweets[i]["client_name"],
                                                          rt_id))
-            
             
             valueToAppend = "('{}','{}','{}','{}')"
             
