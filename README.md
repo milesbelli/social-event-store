@@ -1,24 +1,41 @@
 # social-event-store
 
-*What if all your personal data could be joined together in one single database?*
+The goal of this project is to bring data archives from disparate sources together in a single, unified database. Sorting through all your data should be a seamless, painless experience. While it is called Social Event Store, the concept applies equally well to any digital archive containing timestamped personal data.
 
-The goal of this project is relatively simple: create one database that contains the entirety of the user's online or otherwise digital presence. What you do with this after the database has been established is entirely up to you.
+## Sources
 
-### What Works
+### In Progress
 
-Currently, a very rudimentary Twitter archive parser is included, along with a module for importing it into an existing database. The following tweet-related fields are populated:
+* Twitter
 
-* Tweet text
-* User ID
-* Geodata (if exists)
-* Reply-to user ID (if exists)
+### Planned
 
-The goal here will be to expand to as much metadata as possible.
+* Fitbit
+* Instagram
+* Mastodon
+* Swarm/Foursquare
+* SMS/text messages
+* Peach???
+* Facebook if I have to
 
-Currently the only way to import tweets are through an archive, and at that, only the .js files within the library. The CSV file that accompanies Twitter archives is too limited and incomplete. The .js files exist in the archive more or less exactly how the data is stored on Twitter's website, although some data for older tweets can be missing or incomplete.
+## Roadmap
 
-To import these files, they must all be located in the same directory and that directory must be specified when calling the `processDirectory` function. The `processDirectory` function will handle looping through all .js files and adding them to the MySQL database.
+### Milestone 1 - Current
 
-### What Doesn't
+* Read Twitter archive formats
+* Import Twitter into database
 
-The project currently assumes the database and all tables have already been created. This is obviously a terrible thing to assume and one of the next steps will be to add some setup functions so that the database can be easily created.
+### Milestone 2
+
+* Support reimporting (continuous updating)
+* Export Twitter archive to *.ical file
+
+### Milestone 3
+
+* Simple web viewer interface built on Flask
+
+### Milestone 4
+
+* Read Fitbit archive format for sleep
+* Read Fitbit archive format for exercise
+* Import Fitbit sleep and exercise into database

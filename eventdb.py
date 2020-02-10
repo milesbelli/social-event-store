@@ -37,32 +37,17 @@ def insert_tweets(listOfTweets,cnx):
                 valuesTweets += ","
                 valuesEvents += ","
 
-            geo_data = listOfTweets[i].get("geo") or {"geo": []}
-
-            latitude = "{}".format(geo_data.get("coordinates", ["NULL"])[0])
-            longitude = "{}".format(geo_data.get("coordinates", ["", "NULL"])[1])
-
-            replyid = listOfTweets[i].get("in_reply_to_status_id") or "NULL"
-
-            retweet = listOfTweets[i].get("retweeted_status") or None
-            rt_text = retweet["text"] if retweet else None
-            rt_id = retweet["id_str"] if retweet else "NULL"
-
-            tweet_text = rt_text or listOfTweets[i]["text"]
-
-            
-            
             valueToAppend = "('{}','{}','{}','{}',{},{},{},'{}',{})"
 
             valuesTweets += "".join(valueToAppend.format(tweetId,
                                                          "1",                                       #This is hardcoded and will need to change
-                                                         tweet_text.replace("'","''"), #Escape character for apostrophes
+                                                         listOfTweets[i]["text"].replace("'","''"), #Escape character for apostrophes
                                                          listOfTweets[i]["user"]["id"],
-                                                         latitude,
-                                                         longitude,
-                                                         replyid,
+                                                         listOfTweets[i]["latitude"],
+                                                         listOfTweets[i]["longitude"],
+                                                         listOfTweets[i]["in_reply_to_status_id"],
                                                          listOfTweets[i]["client_name"],
-                                                         rt_id))
+                                                         listOfTweets[i]["rt_id"]))
             
             valueToAppend = "('{}','{}','{}','{}')"
             

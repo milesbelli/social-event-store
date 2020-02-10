@@ -23,6 +23,7 @@ def parse_js_text(text):
     tweets_text = text[text.index('[ {'):]
     list_of_tweets = json.loads(tweets_text)
 
+    # Format for database
     for tweet_details in list_of_tweets:
 
         tweet_timestamp = parseDateTime(tweet_details["created_at"])
@@ -36,13 +37,27 @@ def parse_js_text(text):
         # TODO: Handle new format that doesn't keep user info inside archive (account.js has info)
         tweet_details["user"] = tweet_details.get("user") or {"id": 0}
 
+        geo_data = tweet_details.get("geo") or {"geo": []}
+
+        tweet_details["latitude"] = "{}".format(geo_data.get("coordinates", ["NULL"])[0])
+        tweet_details["longitude"] = "{}".format(geo_data.get("coordinates", ["", "NULL"])[1])
+
+        tweet_details["in_reply_to_status_id"] = tweet_details.get("in_reply_to_status_id") or "NULL"
+
+        retweet = tweet_details.get("retweeted_status") or None
+        rt_text = retweet["text"] if retweet else None
+        tweet_details["rt_id"] = retweet["id_str"] if retweet else "NULL"
+
+        tweet_details["text"] = rt_text or tweet_details["text"]
+
     return list_of_tweets
 
 
 def parseDateTime (rawStamp):
     
     if rawStamp[0:4].isnumeric():
-        
+
+        # Recent format, not used in newest archive
         yr = int(rawStamp[0:4])
         mo = int(rawStamp[5:7])
         dy = int(rawStamp[8:10])
@@ -51,7 +66,8 @@ def parseDateTime (rawStamp):
         sc = int(rawStamp[17:19])
         
     elif rawStamp[0:3].isalpha():
-        
+
+        # New format === older format
         yr = int(rawStamp[26:30])
         mo = numberMonth(rawStamp[4:7])
         dy = int(rawStamp[8:10])
@@ -60,7 +76,8 @@ def parseDateTime (rawStamp):
         sc = int(rawStamp[17:19])
         
     elif rawStamp.find(" - ") >= 0:
-        
+
+        # Format for scraping from website (could break at any time)
         yr = int(rawStamp[len(rawStamp)-4:len(rawStamp)])
         
     return datetime.datetime(yr,mo,dy,hour = hr,minute = mn,second = sc)
