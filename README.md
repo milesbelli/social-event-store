@@ -42,7 +42,7 @@ The goal of this project is to bring data archives from disparate sources togeth
 
 *Future milestones TBA*
 
-### Setup
+## Setup
 
 *Requires Python 3 installed, and requires MySQL running with root access*
 
