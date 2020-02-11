@@ -15,73 +15,73 @@ def create_connection(dbname):
     return cnx
 
 
-def insert_tweets(listOfTweets,cnx):
+def insert_tweets(list_of_tweets, cnx):
     
-    tweetsTotal = len(listOfTweets)
-    valuesTweets = valuesEvents = values_hashtags = ""
+    tweets_total = len(list_of_tweets)
+    values_tweets = values_events = values_hashtags = ""
     
     # These next two values assume the list is ordered; if Twitter changes their archiving process, this could break
-    lastTweet = listOfTweets[0]["id"]
-    firstTweet = listOfTweets[tweetsTotal - 1]["id"]
+    last_tweet = list_of_tweets[0]["id"]
+    first_tweet = list_of_tweets[tweets_total - 1]["id"]
     
     cursor = cnx.cursor()
     
-    tweetsInDb = get_existing_tweets(cursor,firstTweet,lastTweet)
+    tweets_in_db = get_existing_tweets(cursor, first_tweet, last_tweet)
     
-    for i in range(tweetsTotal):
+    for i in range(tweets_total):
         
-        tweetId = listOfTweets[i]["id"]
+        tweet_id = list_of_tweets[i]["id"]
         
-        if tweetId not in tweetsInDb:
+        if tweet_id not in tweets_in_db:
             if i > 0:
-                valuesTweets += ","
-                valuesEvents += ","
+                values_tweets += ","
+                values_events += ","
 
-            valueToAppend = "('{}','{}','{}','{}',{},{},{},'{}',{})"
+            value_to_append = "('{}','{}','{}','{}',{},{},{},'{}',{})"
 
-            valuesTweets += "".join(valueToAppend.format(tweetId,
-                                                         "1",                                       #This is hardcoded and will need to change
-                                                         listOfTweets[i]["text"].replace("'","''"), #Escape character for apostrophes
-                                                         listOfTweets[i]["user"]["id"],
-                                                         listOfTweets[i]["latitude"],
-                                                         listOfTweets[i]["longitude"],
-                                                         listOfTweets[i]["in_reply_to_status_id"],
-                                                         listOfTweets[i]["client_name"],
-                                                         listOfTweets[i]["rt_id"]))
+            values_tweets += "".join(value_to_append.format(tweet_id,
+                                                            "1",                                       #This is hardcoded and will need to change
+                                                            list_of_tweets[i]["text"].replace("'","''"), #Escape character for apostrophes
+                                                            list_of_tweets[i]["user"]["id"],
+                                                            list_of_tweets[i]["latitude"],
+                                                            list_of_tweets[i]["longitude"],
+                                                            list_of_tweets[i]["in_reply_to_status_id"],
+                                                            list_of_tweets[i]["client_name"],
+                                                            list_of_tweets[i]["rt_id"]))
             
-            valueToAppend = "('{}','{}','{}','{}')"
+            value_to_append = "('{}','{}','{}','{}')"
             
-            valuesEvents += "".join(valueToAppend.format("1",                                       #Replace hardcoding here too
-                                                         listOfTweets[i]["sqlDate"],
-                                                         listOfTweets[i]["sqlTime"],
-                                                         tweetId))
+            values_events += "".join(value_to_append.format("1",                                       #Replace hardcoding here too
+                                                            list_of_tweets[i]["sqlDate"],
+                                                            list_of_tweets[i]["sqlTime"],
+                                                            tweet_id))
             
-            valueToAppend = "('{}','{}','{}')"
+            value_to_append = "('{}','{}','{}')"
             
-            for hashtag in listOfTweets[i]["entities"]["hashtags"]:
+            for hashtag in list_of_tweets[i]["entities"]["hashtags"]:
                 
                 if len(values_hashtags) > 0:
                     values_hashtags += ","
             
-                values_hashtags += "".join(valueToAppend.format(tweetId,
+                values_hashtags += "".join(value_to_append.format(tweet_id,
                                                                 hashtag["indices"][0],
                                                                 hashtag["text"]))
 
-    if len(valuesTweets) > 0:
+    if len(values_tweets) > 0:
     
-        sqlInsertTweets = ("INSERT INTO tweetdetails"
-                           "(tweetid, userid, tweettext, twitteruserid, latitude, longitude, replyid, client, retweetid)"
-                           "VALUES {}".format(valuesTweets))
+        sql_insert_tweets = ("INSERT INTO tweetdetails"
+                             "(tweetid, userid, tweettext, twitteruserid, latitude, longitude, replyid, client, retweetid)"
+                             "VALUES {}".format(values_tweets))
         
-        cursor.execute(sqlInsertTweets)
+        cursor.execute(sql_insert_tweets)
         
-    if len(valuesEvents) > 0:
+    if len(values_events) > 0:
     
-        sqlInsertEvents = ("INSERT INTO events"
-                           "(userid, eventdate, eventtime, tweetid)"
-                           "VALUES {}".format(valuesEvents))
+        sql_insert_events = ("INSERT INTO events"
+                             "(userid, eventdate, eventtime, tweetid)"
+                             "VALUES {}".format(values_events))
         
-        cursor.execute(sqlInsertEvents)
+        cursor.execute(sql_insert_events)
         
     if len(values_hashtags) > 0:
         
@@ -97,13 +97,12 @@ def insert_tweets(listOfTweets,cnx):
     
 def get_existing_tweets(cursor, start=None, end=None):
       
-    sqlGetAllTweetIds = "SELECT tweetid FROM tweetdetails"
+    sql_get_all_tweet_ids = "SELECT tweetid FROM tweetdetails"
     
     if start is not None and end is not None:
-        sqlGetAllTweetIds = sqlGetAllTweetIds + " WHERE tweetid BETWEEN '{}' AND '{}'".format(start,end)
-            
-            
-    cursor.execute(sqlGetAllTweetIds)
+        sql_get_all_tweet_ids = sql_get_all_tweet_ids + " WHERE tweetid BETWEEN '{}' AND '{}'".format(start,end)
+
+    cursor.execute(sql_get_all_tweet_ids)
     
     output = list()
     
@@ -112,18 +111,20 @@ def get_existing_tweets(cursor, start=None, end=None):
     
     return output
 
-def getTweet(cursor,tweetid):
+
+def get_tweet(cursor, tweet_id):
     
-    sqlTweet = ("SELECT events.eventdate, events.eventtime, tweetdetails.tweettext "
-                "FROM tweetdetails "
-                "LEFT JOIN events "
-                "ON events.tweetid = tweetdetails.tweetid "
-                "WHERE tweetdetails.tweetid = '{}';".format(tweetid))
+    sql_tweet = ("SELECT events.eventdate, events.eventtime, tweetdetails.tweettext "
+                 "FROM tweetdetails "
+                 "LEFT JOIN events "
+                 "ON events.tweet_id = tweetdetails.tweetid "
+                 "WHERE tweetdetails.tweetid = '{}';".format(tweet_id))
     
-    cursor.execute(sqlTweet)
+    cursor.execute(sql_tweet)
     
     return cursor
 
-def closeConnection(cnx):
+
+def close_connection(cnx):
 
     return cnx.close()
