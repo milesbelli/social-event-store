@@ -52,8 +52,8 @@ def insert_tweets(list_of_tweets, cnx):
             value_to_append = "('{}','{}','{}','{}')"
             
             values_events += "".join(value_to_append.format("1",                                       #Replace hardcoding here too
-                                                            list_of_tweets[i]["sqlDate"],
-                                                            list_of_tweets[i]["sqlTime"],
+                                                            list_of_tweets[i]["sql_date"],
+                                                            list_of_tweets[i]["sql_time"],
                                                             tweet_id))
             
             value_to_append = "('{}','{}','{}')"

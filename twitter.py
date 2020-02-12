@@ -19,7 +19,7 @@ def retrieve_from_twitter(post_id):
     return time_stamp
 
 
-def parse_js_text(text):
+def parse_js_text(text, acct=0):
 
     tweets_text = text[text.index('[ {'):]
     list_of_tweets = json.loads(tweets_text)
@@ -28,15 +28,15 @@ def parse_js_text(text):
     for tweet_details in list_of_tweets:
 
         tweet_timestamp = parse_date_time(tweet_details["created_at"])
-        tweet_details["sqlDate"] = str(tweet_timestamp.date())
-        tweet_details["sqlTime"] = str(tweet_timestamp.time())
+
+        tweet_details["sql_date"] = str(tweet_timestamp.date())
+        tweet_details["sql_time"] = str(tweet_timestamp.time())
 
         tweet_details["client_name"] = get_client_name(tweet_details["source"])
 
         tweet_details["text"] = tweet_details.get("text") or tweet_details.get("full_text")
 
-        # TODO: Handle new format that doesn't keep user info inside archive (account.js has info)
-        tweet_details["user"] = tweet_details.get("user") or {"id": 0}
+        tweet_details["user"] = tweet_details.get("user") or {"id": acct}
 
         geo_data = tweet_details.get("geo") or {"geo": []}
 
@@ -54,9 +54,14 @@ def parse_js_text(text):
     return list_of_tweets
 
 
-def parse_account(account_data):
-    pass
+def get_account_id(file_path):
+    with open(file_path) as acct:
 
+        acct = acct.read()
+        acct_text = acct[acct.index('[ {'):]
+        acct_json = json.loads(acct_text)
+
+        return acct_json[0]['account']['accountId']
 
 def parse_date_time (raw_stamp):
     
@@ -135,7 +140,7 @@ def get_client_name(client_string):
         return client_string
     
 
-def process_directory(dir_path):
+def process_directory(dir_path, acct=None):
     
     target_dir = Path(dir_path)
     
@@ -146,7 +151,7 @@ def process_directory(dir_path):
         with open(target_file, "r", errors="replace") as file:
             
             file = file.read()
-            list_of_tweets = parse_js_text(file)
+            list_of_tweets = parse_js_text(file, acct)
             eventdb.insert_tweets(list_of_tweets, cnx)
 
     eventdb.close_connection(cnx)
@@ -170,7 +175,8 @@ def get_one_tweet(tweetid):
 
 
 if __name__ == '__main__':
-    process_directory("data2")
+    account_id = get_account_id('acct/account.js')
+    process_directory("data2", account_id)
 
     #print(get_one_tweet('155316636524613633'))
 
