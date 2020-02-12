@@ -63,6 +63,7 @@ def get_account_id(file_path):
 
         return acct_json[0]['account']['accountId']
 
+
 def parse_date_time (raw_stamp):
     
     if raw_stamp[0:4].isnumeric():
