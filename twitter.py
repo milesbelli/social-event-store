@@ -5,9 +5,9 @@ import eventdb
 from pathlib import Path
 
 
-def retrieve_from_twitter(postId):
+def retrieve_from_twitter(post_id):
 
-    tweet_url = "https://twitter.com/milesbelli/status/" + str(postId)
+    tweet_url = "https://twitter.com/milesbelli/status/" + str(post_id)
     tweet_page = urllib.request.urlopen(tweet_url)
     data = tweet_page.read()
     text = data.decode("utf-8")
@@ -54,6 +54,10 @@ def parse_js_text(text):
     return list_of_tweets
 
 
+def parse_account(account_data):
+    pass
+
+
 def parse_date_time (raw_stamp):
     
     if raw_stamp[0:4].isnumeric():
@@ -75,11 +79,6 @@ def parse_date_time (raw_stamp):
         hr = int(raw_stamp[11:13])
         mn = int(raw_stamp[14:16])
         sc = int(raw_stamp[17:19])
-        
-    elif raw_stamp.find(" - ") >= 0:
-
-        # Format for scraping from website (could break at any time)
-        yr = int(raw_stamp[len(raw_stamp)-4:len(raw_stamp)])
         
     return datetime.datetime(yr, mo, dy, hour=hr, minute=mn, second=sc)
     
