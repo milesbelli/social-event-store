@@ -20,20 +20,16 @@ def insert_tweets(list_of_tweets, cnx):
     tweets_total = len(list_of_tweets)
     values_tweets = values_events = values_hashtags = ""
     
-    # These next two values assume the list is ordered; if Twitter changes their archiving process, this could break
-    last_tweet = list_of_tweets[0]["id"]
-    first_tweet = list_of_tweets[tweets_total - 1]["id"]
-    
     cursor = cnx.cursor()
     
-    tweets_in_db = get_existing_tweets(cursor, first_tweet, last_tweet)
+    tweets_in_db = get_existing_tweets(cursor)
     
     for i in range(tweets_total):
         
-        tweet_id = list_of_tweets[i]["id"]
+        tweet_id = str(list_of_tweets[i]["id"])
         
         if tweet_id not in tweets_in_db:
-            if i > 0:
+            if len(values_tweets) > 0:
                 values_tweets += ","
                 values_events += ","
 
@@ -66,6 +62,9 @@ def insert_tweets(list_of_tweets, cnx):
                 values_hashtags += "".join(value_to_append.format(tweet_id,
                                                                 hashtag["indices"][0],
                                                                 hashtag["text"]))
+        else:
+            # Tweet is in db, so add to duplicate list for checking
+            pass
 
     if len(values_tweets) > 0:
     
@@ -95,29 +94,26 @@ def insert_tweets(list_of_tweets, cnx):
     cursor.close()
     
     
-def get_existing_tweets(cursor, start=None, end=None):
+def get_existing_tweets(cursor):
       
-    sql_get_all_tweet_ids = "SELECT tweetid FROM tweetdetails"
-    
-    if start is not None and end is not None:
-        sql_get_all_tweet_ids = sql_get_all_tweet_ids + " WHERE tweetid BETWEEN '{}' AND '{}'".format(start,end)
+    sql_get_all_tweet_ids = "SELECT tweetid FROM tweetdetails;"
 
     cursor.execute(sql_get_all_tweet_ids)
     
     output = list()
     
     for i in cursor:
-        output.append(i[0])
+        output.append(str(i[0]))
     
     return output
 
 
 def get_tweet(cursor, tweet_id):
     
-    sql_tweet = ("SELECT events.eventdate, events.eventtime, tweetdetails.tweettext "
+    sql_tweet = ("SELECT eventdate, eventtime, tweetdetails.* "
                  "FROM tweetdetails "
                  "LEFT JOIN events "
-                 "ON events.tweet_id = tweetdetails.tweetid "
+                 "ON events.tweetid = tweetdetails.tweetid "
                  "WHERE tweetdetails.tweetid = '{}';".format(tweet_id))
     
     cursor.execute(sql_tweet)

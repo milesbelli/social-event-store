@@ -177,9 +177,13 @@ def get_one_tweet(tweetid):
 
 if __name__ == '__main__':
     account_id = get_account_id('acct/account.js')
-    process_directory("data2", account_id)
+    process_directory("data", account_id)
 
-    #print(get_one_tweet('155316636524613633'))
+    a_tweet = (get_one_tweet('155316636524613633'))
+
+    for tweet in a_tweet:
+        for column in tweet:
+            print(column)
 
     # with open("data2/tweet.js", errors="replace") as file:
     #     file = file.read()
