@@ -67,3 +67,4 @@ def password():
 ```
 8. Change username and password to be whatever was set in `create_database.sql`
 9. For Twitter, in `twitter.py` set the directory of tweet js files, call function `processDirectory()` with the directory path
+10. If uploading multiple archives into the db, start with the oldest and work forward.

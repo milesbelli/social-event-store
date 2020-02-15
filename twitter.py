@@ -177,7 +177,11 @@ def get_one_tweet(tweetid):
 
 if __name__ == '__main__':
     account_id = get_account_id('acct/account.js')
-    process_directory("data", account_id)
+    directory_list = ['data/2013', 'data/2014', 'data/2014.5', 'data/2015',
+                      'data/2016', 'data/2017', 'data/2018', 'data/2019']
+
+    for directory in directory_list:
+        process_directory(directory, account_id)
 
     a_tweet = (get_one_tweet('155316636524613633'))
 
