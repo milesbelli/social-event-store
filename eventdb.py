@@ -7,6 +7,7 @@ def create_connection(dbname):
     cnx = mysql.connector.connect(user=secure.username(),
                                   password=secure.password(),
                                   host='127.0.0.1')
+    cnx.set_charset_collation("utf8mb4")
     
     cursor = cnx.cursor()
     cursor.execute('CREATE DATABASE IF NOT EXISTS {}'.format(dbname))

@@ -144,6 +144,7 @@ def get_client_name(client_string):
 def process_directory(dir_path, acct=None):
     
     target_dir = Path(dir_path)
+    list_of_tweets = list()
     
     cnx = eventdb.create_connection('social')
     
@@ -152,8 +153,9 @@ def process_directory(dir_path, acct=None):
         with open(target_file, "r", errors="replace") as file:
             
             file = file.read()
-            list_of_tweets = parse_js_text(file, acct)
-            eventdb.insert_tweets(list_of_tweets, cnx)
+            list_of_tweets += parse_js_text(file, acct)
+
+    eventdb.insert_tweets(list_of_tweets, cnx)
 
     eventdb.close_connection(cnx)
 
@@ -177,7 +179,7 @@ def get_one_tweet(tweetid):
 
 if __name__ == '__main__':
     account_id = get_account_id('acct/account.js')
-    directory_list = ['data/2013', 'data/2014', 'data/2014.5', 'data/2015',
+    directory_list = ['data/2013', 'data/2014', 'data/2014.1', 'data/2015',
                       'data/2016', 'data/2017', 'data/2018', 'data/2019']
 
     for directory in directory_list:

@@ -1,6 +1,8 @@
 CREATE USER IF NOT EXISTS 'socialuser'@'localhost' IDENTIFIED BY 'resetme';
 
-CREATE DATABASE IF NOT EXISTS social;
+CREATE DATABASE IF NOT EXISTS social
+CHARACTER SET utf8mb4
+COLLATE utf8mb4_general_ci;
 
 GRANT ALL PRIVILEGES ON social.* TO 'socialuser'@'localhost';
 
