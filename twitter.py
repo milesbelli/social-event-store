@@ -5,9 +5,9 @@ import eventdb
 from pathlib import Path
 
 
-def retrieve_from_twitter(postId):
+def retrieve_from_twitter(post_id):
 
-    tweet_url = "https://twitter.com/milesbelli/status/" + str(postId)
+    tweet_url = "https://twitter.com/milesbelli/status/" + str(post_id)
     tweet_page = urllib.request.urlopen(tweet_url)
     data = tweet_page.read()
     text = data.decode("utf-8")
@@ -19,7 +19,7 @@ def retrieve_from_twitter(postId):
     return time_stamp
 
 
-def parse_js_text(text):
+def parse_js_text(text, acct=0):
 
     tweets_text = text[text.index('[ {'):]
     list_of_tweets = json.loads(tweets_text)
@@ -28,15 +28,15 @@ def parse_js_text(text):
     for tweet_details in list_of_tweets:
 
         tweet_timestamp = parse_date_time(tweet_details["created_at"])
-        tweet_details["sqlDate"] = str(tweet_timestamp.date())
-        tweet_details["sqlTime"] = str(tweet_timestamp.time())
+
+        tweet_details["sql_date"] = str(tweet_timestamp.date())
+        tweet_details["sql_time"] = str(tweet_timestamp.time())
 
         tweet_details["client_name"] = get_client_name(tweet_details["source"])
 
         tweet_details["text"] = tweet_details.get("text") or tweet_details.get("full_text")
 
-        # TODO: Handle new format that doesn't keep user info inside archive (account.js has info)
-        tweet_details["user"] = tweet_details.get("user") or {"id": 0}
+        tweet_details["user"] = tweet_details.get("user") or {"id": acct}
 
         geo_data = tweet_details.get("geo") or {"geo": []}
 
@@ -52,6 +52,16 @@ def parse_js_text(text):
         tweet_details["text"] = rt_text or tweet_details["text"]
 
     return list_of_tweets
+
+
+def get_account_id(file_path):
+    with open(file_path) as acct:
+
+        acct = acct.read()
+        acct_text = acct[acct.index('[ {'):]
+        acct_json = json.loads(acct_text)
+
+        return acct_json[0]['account']['accountId']
 
 
 def parse_date_time (raw_stamp):
@@ -75,11 +85,6 @@ def parse_date_time (raw_stamp):
         hr = int(raw_stamp[11:13])
         mn = int(raw_stamp[14:16])
         sc = int(raw_stamp[17:19])
-        
-    elif raw_stamp.find(" - ") >= 0:
-
-        # Format for scraping from website (could break at any time)
-        yr = int(raw_stamp[len(raw_stamp)-4:len(raw_stamp)])
         
     return datetime.datetime(yr, mo, dy, hour=hr, minute=mn, second=sc)
     
@@ -136,9 +141,10 @@ def get_client_name(client_string):
         return client_string
     
 
-def process_directory(dir_path):
+def process_directory(dir_path, acct=None):
     
     target_dir = Path(dir_path)
+    list_of_tweets = list()
     
     cnx = eventdb.create_connection('social')
     
@@ -147,8 +153,9 @@ def process_directory(dir_path):
         with open(target_file, "r", errors="replace") as file:
             
             file = file.read()
-            list_of_tweets = parse_js_text(file)
-            eventdb.insert_tweets(list_of_tweets, cnx)
+            list_of_tweets += parse_js_text(file, acct)
+
+    eventdb.insert_tweets(list_of_tweets, cnx)
 
     eventdb.close_connection(cnx)
 
@@ -171,9 +178,18 @@ def get_one_tweet(tweetid):
 
 
 if __name__ == '__main__':
-    process_directory("data2")
+    account_id = get_account_id('acct/account.js')
+    directory_list = ['data/2013', 'data/2014', 'data/2014.1', 'data/2015',
+                      'data/2016', 'data/2017', 'data/2018', 'data/2019']
 
-    #print(get_one_tweet('155316636524613633'))
+    for directory in directory_list:
+        process_directory(directory, account_id)
+
+    a_tweet = (get_one_tweet('155316636524613633'))
+
+    for tweet in a_tweet:
+        for column in tweet:
+            print(column)
 
     # with open("data2/tweet.js", errors="replace") as file:
     #     file = file.read()
