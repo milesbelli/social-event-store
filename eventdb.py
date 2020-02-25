@@ -122,6 +122,19 @@ def get_tweet(cursor, tweet_id):
     return cursor
 
 
+def get_date_range(cursor, start_date, end_date):
+
+    sql_query = ("SELECT eventdate, eventtime, events.tweetid, tweettext, client "
+                 "FROM tweetdetails "
+                 "LEFT JOIN events "
+                 "ON events.tweetid = tweetdetails.tweetid "
+                 "WHERE eventdate >= '{}' AND eventdate <='{}';".format(start_date, end_date))
+
+    cursor.execute(sql_query)
+
+    return cursor
+
+
 def close_connection(cnx):
 
     return cnx.close()

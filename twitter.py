@@ -49,7 +49,7 @@ def parse_js_text(text, acct=0):
         rt_text = retweet["text"] if retweet else None
         tweet_details["rt_id"] = retweet["id_str"] if retweet else "NULL"
 
-        tweet_details["text"] = rt_text or tweet_details["text"]
+        # tweet_details["text"] = rt_text or tweet_details["text"]
 
     return list_of_tweets
 
@@ -177,23 +177,82 @@ def get_one_tweet(tweetid):
     return output
 
 
+def get_tweets_for_date_range(start_date, end_date):
+    cnx = eventdb.create_connection("social")
+    cursor = cnx.cursor()
+
+    eventdb.get_date_range(cursor, start_date, end_date)
+    output = list()
+
+    for i in cursor:
+        output.append(i)
+
+    eventdb.close_connection(cnx)
+
+    return output
+
+
+def output_tweets_to_ical(list_of_tweets):
+
+    ical_string = ("BEGIN:VCALENDAR\nVERSION:2.0\n"
+                   "PRODID:-//Louis Mitas//social-event-store 1.0.0//EN\n")
+
+    time_now = str(datetime.datetime.now().time()).replace(":", "")[:6]
+    date_now = str(datetime.datetime.now().date()).replace("-", "")
+
+    for tweet in list_of_tweets:
+
+        # Ever wonder how to get a datetime object out of a date and a timedelta? Wonder no more!
+        start_time = datetime.datetime.combine(tweet[0], datetime.time()) + tweet[1]
+
+        end_time = start_time + datetime.timedelta(0, 900)
+
+        # TODO: Specs state no line should exceed 75 characters, so must add logic to wrap to newline
+        ical_string += ("BEGIN:VEVENT\n"
+                        "UID:{}{}@social-event-store\n"
+                        "DTSTAMP:{}T{}Z\n"
+                        "DTSTART:{}T{}Z\n"
+                        "DTEND:{}T{}Z\n"
+                        "SUMMARY:{}\n"
+                        "DESCRIPTION:{}\\n\\nhttps://twitter.com/i/status/{} | via {}\n"
+                        "END:VEVENT\n".format(tweet[2],
+                                              time_now,
+                                              date_now,
+                                              time_now,
+                                              str(tweet[0]).replace("-", ""),
+                                              str(start_time.time()).replace(":", ""),
+                                              str(end_time.date()).replace("-", ""),
+                                              str(end_time.time()).replace(":", ""),
+                                              tweet[3].replace("\n", " ").replace("\r", " "),
+                                              tweet[3].replace("\n", "\\n").replace("\r", "\\n"),
+                                              tweet[2],
+                                              tweet[4]
+                                              ))
+
+    ical_string += "END:VCALENDAR"
+
+    return ical_string
+
+
 if __name__ == '__main__':
-    account_id = get_account_id('acct/account.js')
-    directory_list = ['data/2013', 'data/2014', 'data/2014.1', 'data/2015',
-                      'data/2016', 'data/2017', 'data/2018', 'data/2019']
 
-    for directory in directory_list:
-        process_directory(directory, account_id)
+    # Inside acct directory place account.js if you have it
+    # account_id = get_account_id('acct/account.js')
 
-    a_tweet = (get_one_tweet('155316636524613633'))
-
-    for tweet in a_tweet:
-        for column in tweet:
-            print(column)
-
-    # with open("data2/tweet.js", errors="replace") as file:
-    #     file = file.read()
-    #     list_of_tweets = parse_js_text(file)
+    # If you have multiple directories you can make a list of all of them and
+    # then iterate through them.
+    # directory_list = ['data/2013', 'data/2014', 'data/2014.1', 'data/2015',
+    #                   'data/2016', 'data/2017', 'data/2018', 'data/2019']
     #
-    #
-    # print(list_of_tweets[0])
+    # for directory in directory_list:
+    #     process_directory(directory, account_id)
+
+    # Set date range of tweets that you want for iCal file
+    tweet_subset = get_tweets_for_date_range('2016-01-01', '2017-12-31')
+    ical_data = output_tweets_to_ical(tweet_subset)
+
+    # Create a file in the output directory for the iCal data
+    with open("output/tweets-2016-17.ics", "w") as ics_file:
+        ics_file.write(ical_data)
+
+    exit(0)
