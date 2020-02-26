@@ -49,8 +49,6 @@ def parse_js_text(text, acct=0):
         rt_text = retweet["text"] if retweet else None
         tweet_details["rt_id"] = retweet["id_str"] if retweet else "NULL"
 
-        # tweet_details["text"] = rt_text or tweet_details["text"]
-
     return list_of_tweets
 
 
