@@ -62,7 +62,7 @@ def get_account_id(file_path):
         return acct_json[0]['account']['accountId']
 
 
-def parse_date_time (raw_stamp):
+def parse_date_time(raw_stamp):
     
     if raw_stamp[0:4].isnumeric():
 
@@ -190,6 +190,18 @@ def get_tweets_for_date_range(start_date, end_date):
     return output
 
 
+def word_wrap(text_to_format):
+    cursor = 0
+    formatted_text = str()
+
+    while cursor < len(text_to_format):
+        curstart = cursor
+        cursor = cursor + 75 if cursor + 75 < len(text_to_format) else len(text_to_format)
+        formatted_text += (text_to_format[curstart:cursor] + "\n ")
+
+    return formatted_text[:-2]
+
+
 def output_tweets_to_ical(list_of_tweets):
 
     ical_string = ("BEGIN:VCALENDAR\nVERSION:2.0\n"
@@ -205,7 +217,6 @@ def output_tweets_to_ical(list_of_tweets):
 
         end_time = start_time + datetime.timedelta(0, 900)
 
-        # TODO: Specs state no line should exceed 75 characters, so must add logic to wrap to newline
         ical_string += ("BEGIN:VEVENT\n"
                         "UID:{}{}@social-event-store\n"
                         "DTSTAMP:{}T{}Z\n"
@@ -221,8 +232,8 @@ def output_tweets_to_ical(list_of_tweets):
                                               str(start_time.time()).replace(":", ""),
                                               str(end_time.date()).replace("-", ""),
                                               str(end_time.time()).replace(":", ""),
-                                              tweet[3].replace("\n", " ").replace("\r", " "),
-                                              tweet[3].replace("\n", "\\n").replace("\r", "\\n"),
+                                              word_wrap(tweet[3].replace("\n", " ").replace("\r", " ")),
+                                              word_wrap(tweet[3].replace("\n", "\\n").replace("\r", "\\n")),
                                               tweet[2],
                                               tweet[4]
                                               ))
@@ -246,11 +257,11 @@ if __name__ == '__main__':
     #     process_directory(directory, account_id)
 
     # Set date range of tweets that you want for iCal file
-    tweet_subset = get_tweets_for_date_range('2016-01-01', '2017-12-31')
+    tweet_subset = get_tweets_for_date_range('2018-01-01', '2019-12-31')
     ical_data = output_tweets_to_ical(tweet_subset)
 
     # Create a file in the output directory for the iCal data
-    with open("output/tweets-2016-17.ics", "w") as ics_file:
+    with open("output/tweets-2018-19.ics", "w") as ics_file:
         ics_file.write(ical_data)
 
     exit(0)
