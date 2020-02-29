@@ -246,22 +246,22 @@ def output_tweets_to_ical(list_of_tweets):
 if __name__ == '__main__':
 
     # Inside acct directory place account.js if you have it
-    # account_id = get_account_id('acct/account.js')
+    account_id = get_account_id('acct/account.js')
 
     # If you have multiple directories you can make a list of all of them and
     # then iterate through them.
-    # directory_list = ['data/2013', 'data/2014', 'data/2014.1', 'data/2015',
-    #                   'data/2016', 'data/2017', 'data/2018', 'data/2019']
+    directory_list = ['data/2013', 'data/2014', 'data/2014.1', 'data/2015',
+                      'data/2016', 'data/2017', 'data/2018', 'data/2019']
+
+    for directory in directory_list:
+        process_directory(directory, account_id)
+
+    # # Set date range of tweets that you want for iCal file
+    # tweet_subset = get_tweets_for_date_range('2018-01-01', '2019-12-31')
+    # ical_data = output_tweets_to_ical(tweet_subset)
     #
-    # for directory in directory_list:
-    #     process_directory(directory, account_id)
-
-    # Set date range of tweets that you want for iCal file
-    tweet_subset = get_tweets_for_date_range('2018-01-01', '2019-12-31')
-    ical_data = output_tweets_to_ical(tweet_subset)
-
-    # Create a file in the output directory for the iCal data
-    with open("output/tweets-2018-19.ics", "w") as ics_file:
-        ics_file.write(ical_data)
+    # # Create a file in the output directory for the iCal data
+    # with open("output/tweets-2018-19.ics", "w") as ics_file:
+    #     ics_file.write(ical_data)
 
     exit(0)

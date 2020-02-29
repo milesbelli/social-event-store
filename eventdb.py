@@ -19,12 +19,14 @@ def create_connection(dbname):
 def insert_tweets(list_of_tweets, cnx):
     
     tweets_total = len(list_of_tweets)
-    values_tweets = values_events = values_hashtags = ""
+    values_tweets = values_events = values_hashtags = values_duplicates = ""
     
     cursor = cnx.cursor()
     
     tweets_in_db = get_existing_tweets(cursor)
-    
+
+    duplicate_dict = dict()
+
     for i in range(tweets_total):
         
         tweet_id = str(list_of_tweets[i]["id"])
@@ -38,7 +40,7 @@ def insert_tweets(list_of_tweets, cnx):
 
             values_tweets += "".join(value_to_append.format(tweet_id,
                                                             "1",                                       #This is hardcoded and will need to change
-                                                            list_of_tweets[i]["text"].replace("'","''"), #Escape character for apostrophes
+                                                            list_of_tweets[i]["text"].replace("'", "''"), #Escape character for apostrophes
                                                             list_of_tweets[i]["user"]["id"],
                                                             list_of_tweets[i]["latitude"],
                                                             list_of_tweets[i]["longitude"],
@@ -65,7 +67,9 @@ def insert_tweets(list_of_tweets, cnx):
                                                                 hashtag["text"]))
         else:
             # Tweet is in db, so add to duplicate list for checking
-            pass
+            duplicate_dict[str(list_of_tweets[i]["id"])] = list_of_tweets[i]
+            values_duplicates = tweet_id if len(values_duplicates) == 0 else values_duplicates + ", " + tweet_id
+
 
     if len(values_tweets) > 0:
     
@@ -90,7 +94,21 @@ def insert_tweets(list_of_tweets, cnx):
                                "VALUES {}".format(values_hashtags))
         
         cursor.execute(sql_insert_hashtags)
-    
+
+    if len(values_duplicates) > 0:
+
+        sql_get_duplicate_data = ("SELECT events.tweetid, eventdate, eventtime, client FROM events "
+                                  "LEFT JOIN tweetdetails ON events.tweetid = tweetdetails.tweetid "
+                                  "WHERE events.tweetid IN ({})".format(values_duplicates))
+
+        cursor.execute(sql_get_duplicate_data)
+
+        output = list()
+
+        for i in cursor:
+            if duplicate_dict[str(i[0])]["client_name"] != i[3]:
+                print("{} != {}".format(i[3], duplicate_dict[str(i[0])]["client_name"]))
+
     cnx.commit()
     cursor.close()
     
