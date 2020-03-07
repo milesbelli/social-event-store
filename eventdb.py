@@ -103,11 +103,25 @@ def insert_tweets(list_of_tweets, cnx):
 
         cursor.execute(sql_get_duplicate_data)
 
-        output = list()
+        conflicting_duplicates_dict = dict()
 
         for i in cursor:
-            if duplicate_dict[str(i[0])]["client_name"] != i[3]:
-                print("{} != {}".format(i[3], duplicate_dict[str(i[0])]["client_name"]))
+            if (duplicate_dict[str(i[0])]["client_name"] != i[3] or
+                    duplicate_dict[str(i[0])]["eventdate"] != i[1] or
+                    duplicate_dict[str(i[0])]["eventtime"] != i[2]):
+                conflicting_duplicates_dict[str(i[0])] = duplicate_dict[str(i[0])]
+
+        # Optimize this with Pandas, potentially
+        sql_get_previous_duplicates = "SELECT * from tweetconflicts"
+
+        cursor.execute(sql_get_previous_duplicates)
+
+        unique_conflicts = str()
+
+        for i in cursor:
+            if conflicting_duplicates_dict.get(str(i[0]))[i[1]] != i[2]:
+                #this won't work
+                pass
 
     cnx.commit()
     cursor.close()
