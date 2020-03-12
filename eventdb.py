@@ -1,5 +1,6 @@
 import mysql.connector
 import secure
+import datetime
 
 
 def create_connection(dbname):
@@ -105,11 +106,22 @@ def insert_tweets(list_of_tweets, cnx):
 
         conflicting_duplicates_dict = dict()
 
+        duplicate_items = {"client_name": 3,
+                           "eventdate": 1,
+                           "eventtime": 2}
+
         for i in cursor:
-            if (duplicate_dict[str(i[0])]["client_name"] != i[3] or
-                    duplicate_dict[str(i[0])]["eventdate"] != i[1] or
-                    duplicate_dict[str(i[0])]["eventtime"] != i[2]):
-                conflicting_duplicates_dict[str(i[0])] = duplicate_dict[str(i[0])]
+            conflicting_duplicates_dict[str(i[0])] = dict()
+
+            if duplicate_dict[str(i[0])]["client_name"] != i[3]:
+                conflicting_duplicates_dict[str(i[0])].update({"client_name":
+                                                               duplicate_dict[str(i[0])]["client_name"]})
+            if duplicate_dict[str(i[0])]["sql_date"] != str(i[1]):
+                conflicting_duplicates_dict[str(i[0])].update({"eventdate":
+                                                               duplicate_dict[str(i[0])]["sql_date"]})
+            if duplicate_dict[str(i[0])]["sql_time"] != str((datetime.datetime(2000, 1, 1) + i[2]).time()):
+                conflicting_duplicates_dict[str(i[0])].update({"eventtime":
+                                                               duplicate_dict[str(i[0])]["sql_time"]})
 
         # Optimize this with Pandas, potentially
         sql_get_previous_duplicates = "SELECT * from tweetconflicts"
@@ -118,10 +130,24 @@ def insert_tweets(list_of_tweets, cnx):
 
         unique_conflicts = str()
 
+        # Prune all the duplicate duplicates out first
         for i in cursor:
-            if conflicting_duplicates_dict.get(str(i[0]))[i[1]] != i[2]:
-                #this won't work
-                pass
+            current_duplicate = conflicting_duplicates_dict.get(str(i[0])) or dict()
+            if current_duplicate.get(i[1]) == i[2]:
+                conflicting_duplicates_dict[str(i[0])].pop(i[1])
+
+        # Now that we know all duplicates left are unique, add them to the string
+
+        for duplicate_tweet in conflicting_duplicates_dict:
+            for duplicate_item in conflicting_duplicates_dict[duplicate_tweet]:
+                add_to_string = "('{}','{}','{}')".format(duplicate_tweet, duplicate_item,
+                                                    conflicting_duplicates_dict[duplicate_tweet][duplicate_item])
+                unique_conflicts = add_to_string if len(unique_conflicts) == 0 else unique_conflicts +\
+                                                                                    ", " + add_to_string
+        if len(unique_conflicts) > 0:
+
+            sql_insert_conflicts = "INSERT INTO tweetconflicts VALUES {}".format(unique_conflicts)
+            cursor.execute(sql_insert_conflicts)
 
     cnx.commit()
     cursor.close()
