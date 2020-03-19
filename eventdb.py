@@ -106,10 +106,6 @@ def insert_tweets(list_of_tweets, cnx):
 
         conflicting_duplicates_dict = dict()
 
-        duplicate_items = {"client_name": 3,
-                           "eventdate": 1,
-                           "eventtime": 2}
-
         for i in cursor:
             conflicting_duplicates_dict[str(i[0])] = dict()
 
@@ -182,7 +178,7 @@ def get_tweet(cursor, tweet_id):
 
 def get_date_range(cursor, start_date, end_date):
 
-    sql_query = ("SELECT eventdate, eventtime, events.tweetid, tweettext, client "
+    sql_query = ("SELECT eventdate, eventtime, events.tweetid, tweettext, client, latitude, longitude "
                  "FROM tweetdetails "
                  "LEFT JOIN events "
                  "ON events.tweetid = tweetdetails.tweetid "

@@ -90,42 +90,22 @@ def parse_date_time(raw_stamp):
 def number_month(month_str):
     
     month_str = month_str.capitalize()
-    
-    if month_str[0:3] == "Jan":
-        return 1
-    
-    elif month_str[0:3] == "Feb":
-        return 2
-    
-    elif month_str[0:3] == "Mar":
-        return 3
-    
-    elif month_str[0:3] == "Apr":
-        return 4
-    
-    elif month_str[0:3] == "May":
-        return 5
-    
-    elif month_str[0:3] == "Jun":
-        return 6
-    
-    elif month_str[0:3] == "Jul":
-        return 7
-    
-    elif month_str[0:3] == "Aug":
-        return 8
-    
-    elif month_str[0:3] == "Sep":
-        return 9
-    
-    elif month_str[0:3] == "Oct":
-        return 10
-    
-    elif month_str[0:3] == "Nov":
-        return 11
-    
-    elif month_str[0:3] == "Dec":
-        return 12
+
+    months = {"Jan": 1,
+              "Feb": 2,
+              "Mar": 3,
+              "Apr": 4,
+              "May": 5,
+              "Jun": 6,
+              "Jul": 7,
+              "Aug": 8,
+              "Sep": 9,
+              "Oct": 10,
+              "Nov": 11,
+              "Dec": 12
+    }
+
+    return months[month_str[0:3]]
     
 
 def get_client_name(client_string):
@@ -217,11 +197,14 @@ def output_tweets_to_ical(list_of_tweets):
 
         end_time = start_time + datetime.timedelta(0, 900)
 
+        geocoordinates = "GEO:{};{}\n".format(tweet[5],tweet[6]) if tweet[5] != None else str()
+
         ical_string += ("BEGIN:VEVENT\n"
                         "UID:{}{}@social-event-store\n"
                         "DTSTAMP:{}T{}Z\n"
                         "DTSTART:{}T{}Z\n"
                         "DTEND:{}T{}Z\n"
+                        "{}"
                         "SUMMARY:{}\n"
                         "DESCRIPTION:{}\\n\\nhttps://twitter.com/i/status/{} | via {}\n"
                         "END:VEVENT\n".format(tweet[2],
@@ -232,6 +215,7 @@ def output_tweets_to_ical(list_of_tweets):
                                               str(start_time.time()).replace(":", ""),
                                               str(end_time.date()).replace("-", ""),
                                               str(end_time.time()).replace(":", ""),
+                                              geocoordinates,
                                               word_wrap(tweet[3].replace("\n", " ").replace("\r", " ")),
                                               word_wrap(tweet[3].replace("\n", "\\n").replace("\r", "\\n")),
                                               tweet[2],
@@ -245,23 +229,23 @@ def output_tweets_to_ical(list_of_tweets):
 
 if __name__ == '__main__':
 
-    # Inside acct directory place account.js if you have it
-    account_id = get_account_id('acct/account.js')
-
-    # If you have multiple directories you can make a list of all of them and
-    # then iterate through them.
-    directory_list = ['data/2013', 'data/2014', 'data/2014.1', 'data/2015',
-                      'data/2016', 'data/2017', 'data/2018', 'data/2019']
-
-    for directory in directory_list:
-        process_directory(directory, account_id)
-
-    # # Set date range of tweets that you want for iCal file
-    # tweet_subset = get_tweets_for_date_range('2018-01-01', '2019-12-31')
-    # ical_data = output_tweets_to_ical(tweet_subset)
+    # # Inside acct directory place account.js if you have it
+    # account_id = get_account_id('acct/account.js')
     #
-    # # Create a file in the output directory for the iCal data
-    # with open("output/tweets-2018-19.ics", "w") as ics_file:
-    #     ics_file.write(ical_data)
+    # # If you have multiple directories you can make a list of all of them and
+    # # then iterate through them.
+    # directory_list = ['data/2013', 'data/2014', 'data/2014.1', 'data/2015',
+    #                   'data/2016', 'data/2017', 'data/2018', 'data/2019']
+    #
+    # for directory in directory_list:
+    #     process_directory(directory, account_id)
+
+    # Set date range of tweets that you want for iCal file
+    tweet_subset = get_tweets_for_date_range('2018-01-01', '2019-12-31')
+    ical_data = output_tweets_to_ical(tweet_subset)
+
+    # Create a file in the output directory for the iCal data
+    with open("output/tweets-2018-19.ics", "w") as ics_file:
+        ics_file.write(ical_data)
 
     exit(0)
