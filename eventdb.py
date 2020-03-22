@@ -8,7 +8,7 @@ def create_connection(dbname):
     cnx = mysql.connector.connect(user=secure.username(),
                                   password=secure.password(),
                                   host='127.0.0.1')
-    cnx.set_charset_collation("utf8mb4")
+    cnx.set_charset_collation("utf8mb4", "utf8mb4_general_ci")
     
     cursor = cnx.cursor()
     cursor.execute('CREATE DATABASE IF NOT EXISTS {}'.format(dbname))
@@ -49,11 +49,12 @@ def insert_tweets(list_of_tweets, cnx):
                                                             list_of_tweets[i]["client_name"],
                                                             list_of_tweets[i]["rt_id"]))
             
-            value_to_append = "('{}','{}','{}','{}')"
+            value_to_append = "('{}','{}','{}','{}','{}')"
             
             values_events += "".join(value_to_append.format("1",                                       #Replace hardcoding here too
                                                             list_of_tweets[i]["sql_date"],
                                                             list_of_tweets[i]["sql_time"],
+                                                            "twitter",
                                                             tweet_id))
             
             value_to_append = "('{}','{}','{}')"
@@ -83,7 +84,7 @@ def insert_tweets(list_of_tweets, cnx):
     if len(values_events) > 0:
     
         sql_insert_events = ("INSERT INTO events"
-                             "(userid, eventdate, eventtime, tweetid)"
+                             "(userid, eventdate, eventtime, eventtype, detailid)"
                              "VALUES {}".format(values_events))
         
         cursor.execute(sql_insert_events)
@@ -98,9 +99,9 @@ def insert_tweets(list_of_tweets, cnx):
 
     if len(values_duplicates) > 0:
 
-        sql_get_duplicate_data = ("SELECT events.tweetid, eventdate, eventtime, client FROM events "
-                                  "LEFT JOIN tweetdetails ON events.tweetid = tweetdetails.tweetid "
-                                  "WHERE events.tweetid IN ({})".format(values_duplicates))
+        sql_get_duplicate_data = ("SELECT events.detailid, eventdate, eventtime, client FROM events "
+                                  "LEFT JOIN tweetdetails ON events.detailid = tweetdetails.tweetid "
+                                  "WHERE events.detailid IN ({}) AND events.eventtype='twitter'".format(values_duplicates))
 
         cursor.execute(sql_get_duplicate_data)
 
@@ -168,8 +169,8 @@ def get_tweet(cursor, tweet_id):
     sql_tweet = ("SELECT eventdate, eventtime, tweetdetails.* "
                  "FROM tweetdetails "
                  "LEFT JOIN events "
-                 "ON events.tweetid = tweetdetails.tweetid "
-                 "WHERE tweetdetails.tweetid = '{}';".format(tweet_id))
+                 "ON detailid = tweetid "
+                 "WHERE tweetid = '{}' AND events.eventtype='twitter';".format(tweet_id))
     
     cursor.execute(sql_tweet)
     
@@ -178,11 +179,12 @@ def get_tweet(cursor, tweet_id):
 
 def get_date_range(cursor, start_date, end_date):
 
-    sql_query = ("SELECT eventdate, eventtime, events.tweetid, tweettext, client, latitude, longitude "
+    sql_query = ("SELECT eventdate, eventtime, detailid, tweettext, client, latitude, longitude "
                  "FROM tweetdetails "
                  "LEFT JOIN events "
-                 "ON events.tweetid = tweetdetails.tweetid "
-                 "WHERE eventdate >= '{}' AND eventdate <='{}';".format(start_date, end_date))
+                 "ON detailid = tweetid "
+                 "WHERE eventdate >= '{}' AND eventdate <='{}'"
+                 " AND events.eventtype='twitter';".format(start_date, end_date))
 
     cursor.execute(sql_query)
 

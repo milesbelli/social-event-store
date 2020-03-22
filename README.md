@@ -15,6 +15,8 @@ The goal of this project is to bring data archives from disparate sources togeth
 * Mastodon
 * Swarm/Foursquare
 * SMS/text messages
+* Last.fm scrobbles (via API)
+* Mint transactions
 * Peach???
 * Facebook if I have to
 

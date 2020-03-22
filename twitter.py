@@ -106,7 +106,7 @@ def number_month(month_str):
     }
 
     return months[month_str[0:3]]
-    
+
 
 def get_client_name(client_string):
     try:
@@ -244,14 +244,17 @@ if __name__ == '__main__':
     #                   'data/2016', 'data/2017', 'data/2018', 'data/2019']
     #
     # for directory in directory_list:
+    #     start_time=datetime.datetime.now()
+    #     print("processing {}".format(directory))
     #     process_directory(directory, account_id)
+    #     print("Finished in {}".format(datetime.datetime.now() - start_time))
 
-    # Set date range of tweets that you want for iCal file
-    tweet_subset = get_tweets_for_date_range('2018-01-01', '2019-12-31')
-    ical_data = output_tweets_to_ical(tweet_subset)
-
-    # Create a file in the output directory for the iCal data
-    with open("output/tweets-2018-19.ics", "w") as ics_file:
-        ics_file.write(ical_data)
+    # # Set date range of tweets that you want for iCal file
+    # tweet_subset = get_tweets_for_date_range('2018-01-01', '2019-12-31')
+    # ical_data = output_tweets_to_ical(tweet_subset)
+    #
+    # # Create a file in the output directory for the iCal data
+    # with open("output/tweets-2018-19.ics", "w") as ics_file:
+    #     ics_file.write(ical_data)
 
     exit(0)

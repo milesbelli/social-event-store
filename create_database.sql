@@ -13,7 +13,8 @@ eventid INT(11) NOT NULL AUTO_INCREMENT,
 userid INT(11) NOT NULL,
 eventdate DATE NOT NULL,
 eventtime TIME,
-tweetid BIGINT(20),
+eventtype VARCHAR(16) NOT NULL,
+detailid BIGINT(20),
 PRIMARY KEY(eventid));
 
 CREATE TABLE IF NOT EXISTS tweetdetails (
