@@ -15,17 +15,19 @@ The goal of this project is to bring data archives from disparate sources togeth
 * Mastodon
 * Swarm/Foursquare
 * SMS/text messages
+* Last.fm scrobbles (via API)
+* Mint transactions
 * Peach???
 * Facebook if I have to
 
 ## Roadmap
 
-### Milestone 1 - Current
+### Milestone 1
 
 * Read Twitter archive formats
 * Import Twitter into database
 
-### Milestone 2
+### Milestone 2 - Current
 
 * Support reimporting (continuous updating)
 * Export Twitter archive to *.ical file
