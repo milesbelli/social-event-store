@@ -1,0 +1,36 @@
+<html>
+<head>
+    <style>
+        table, th, td {
+            border: 1px solid black;
+        }
+        table {
+        width: 100%;
+        }
+    </style>
+</head>
+<body>
+<p>Pick a date to get tweets.</p>
+<form action="/day" method="post">
+    <label for="tweetday">Date:</label><br>
+    <input type="date" id="tweetday" name="tweetday" value="{{ default }}">
+    <input type="submit" value="Submit">
+</form>
+<table>
+    <tr>
+        <th>date</th>
+        <th>time</th>
+        <th>text</th>
+        <th>client</th>
+    </tr>
+    {% for row in events %}
+    <tr>
+        <td>{{ row[0] }}</td>
+        <td>{{ row[1] }}</td>
+        <td>{{ row[3] }}</td>
+        <td>{{ row[4] }}</td>
+    </tr>
+    {% endfor %}
+</table>
+</body>
+</html>

@@ -1,0 +1,30 @@
+<html>
+<head>
+    <style>
+        table, th, td {
+            border: 1px solid black;
+        }
+        table {
+        width: 100%;
+        }
+    </style>
+</head>
+<body>
+<table>
+    <tr>
+        <th>date</th>
+        <th>time</th>
+        <th>text</th>
+        <th>client</th>
+    </tr>
+    {% for row in events %}
+    <tr>
+        <td>{{ row[0] }}</td>
+        <td>{{ row[1] }}</td>
+        <td>{{ row[4] }}</td>
+        <td>{{ row[9] }}</td>
+    </tr>
+    {% endfor %}
+</table>
+</body>
+</html>

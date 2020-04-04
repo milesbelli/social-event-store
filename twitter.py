@@ -143,7 +143,7 @@ def get_one_tweet(tweetid):
     cnx = eventdb.create_connection('social')
     cursor = cnx.cursor()
     
-    the_tweet = eventdb.get_tweet(cursor, tweetid)
+    eventdb.get_tweet(cursor, tweetid)
     
     output = list()
     
@@ -231,6 +231,9 @@ def output_tweets_to_ical(list_of_tweets):
     ical_string += "END:VCALENDAR"
 
     return ical_string
+
+def local_datetime():
+    pass
 
 
 if __name__ == '__main__':
