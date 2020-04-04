@@ -185,7 +185,7 @@ def word_wrap(text_to_format):
                 if cursor < len(line) else formatted_text + line[curstart:cursor]
         formatted_text += "\n"
 
-    return formatted_text[:-2]
+    return formatted_text[:-1]
 
 
 def output_tweets_to_ical(list_of_tweets):
