@@ -190,6 +190,20 @@ def get_date_range(cursor, start_date, end_date):
 
     return cursor
 
+def get_datetime_range(cursor, start_datetime, end_datetime):
+
+    sql_query = ("SELECT eventdate, eventtime, detailid, tweettext, client, latitude, longitude "
+                 "FROM tweetdetails "
+                 "LEFT JOIN events "
+                 "ON detailid = tweetid "
+                 "WHERE CONCAT(eventdate,' ',eventtime) >= '{}' "
+                 "AND CONCAT(eventdate,' ',eventtime) <= '{}' "
+                 "ORDER BY eventdate ASC, eventtime ASC;".format(start_datetime, end_datetime))
+
+    cursor.execute(sql_query)
+
+    return cursor
+
 
 def close_connection(cnx):
 

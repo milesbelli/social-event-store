@@ -4,8 +4,12 @@ import datetime
 
 app = Flask(__name__)
 
-# To make this work:
+# To make this work in Unix:
 #   export FLASK_APP=web.py
+#   flask run
+
+# To make this work in Windows:
+#   set FLASK_APP=web.py
 #   flask run
 
 
@@ -15,19 +19,10 @@ def hello_world():
     return output
 
 
-@app.route("/day")
-def day_page():
-    return render_template("day.html", time="01:33:48", text="this is test")
-
-
 @app.route("/tweet/<tweetid>")
 def one_tweet(tweetid=None):
     tweet = twitter.get_one_tweet(tweetid)
-    # text = str(tweet[0][4])
-    # time = str(tweet[0][1])
-    # date = str(tweet[0][0])
-    # client = str(tweet[0][9])
-    # test_list = [date, time, text, client]
+
     return render_template("tweet.html", events=tweet)
 
 
@@ -41,5 +36,6 @@ def one_day():
         date = request.form['tweetday'] or datetime.datetime.today()
         print("Getting tweets for {}.".format(date))
         tweets = twitter.get_tweets_for_date_range(date, date)
+        tweets = twitter.tweets_in_local_time(tweets, True)
 
         return render_template("day.html", events=tweets, default=date)

@@ -22,6 +22,7 @@
         <th>time</th>
         <th>text</th>
         <th>client</th>
+        <th>link</th>
     </tr>
     {% for row in events %}
     <tr>
@@ -29,6 +30,7 @@
         <td>{{ row[1] }}</td>
         <td>{{ row[3] }}</td>
         <td>{{ row[4] }}</td>
+        <td><a href="https://www.twitter.com/i/status/{{ row[2] }}/">view</a></td>
     </tr>
     {% endfor %}
 </table>

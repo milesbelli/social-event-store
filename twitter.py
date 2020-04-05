@@ -3,6 +3,7 @@ import json
 import datetime
 import eventdb
 from pathlib import Path
+import pytz
 
 
 def retrieve_from_twitter(post_id):
@@ -159,7 +160,23 @@ def get_tweets_for_date_range(start_date, end_date):
     cnx = eventdb.create_connection("social")
     cursor = cnx.cursor()
 
-    eventdb.get_date_range(cursor, start_date, end_date)
+    # First convert the str dates to datetime dates
+    start_date = datetime.datetime.strptime(start_date, "%Y-%m-%d")
+    end_date = datetime.datetime.strptime(end_date, "%Y-%m-%d")
+
+    # Then add times to be datetime objects
+    start_date = datetime.datetime.combine(start_date, datetime.time(0, 0))
+    end_date = datetime.datetime.combine(end_date, datetime.time(23, 59, 59))
+
+    # Then go from Local to UTC
+    start_date = local_to_utc(start_date)
+    end_date = local_to_utc(end_date)
+
+    # Finally back to strings
+    start_date = start_date.strftime('%Y-%m-%d %H:%M:%S')
+    end_date = end_date.strftime('%Y-%m-%d %H:%M:%S')
+
+    eventdb.get_datetime_range(cursor, start_date, end_date)
     output = list()
 
     for i in cursor:
@@ -232,8 +249,45 @@ def output_tweets_to_ical(list_of_tweets):
 
     return ical_string
 
-def local_datetime():
-    pass
+def utc_to_local(source_dt):
+    # Use pytz module to convert a utc datetime to local datetime
+
+    utc = pytz.timezone("utc")
+    local = pytz.timezone("us/eastern")
+
+    utc_dt = utc.localize(source_dt)
+    return utc_dt.astimezone(local)
+
+
+def local_to_utc(source_dt):
+    # Use pytz module to convert a local datetime to utc datetime
+
+    local = pytz.timezone("us/eastern")
+    utc = pytz.timezone("utc")
+
+    local_dt = local.localize(source_dt)
+    return local_dt.astimezone(utc)
+
+
+def tweets_in_local_time(tweets, am_pm_time=False):
+
+    output_tweets = list()
+
+    for tweet in tweets:
+        tweet_dtime = datetime.datetime.combine(tweet[0], datetime.time()) + tweet[1]
+        tweet_dtime = utc_to_local(tweet_dtime)
+
+        tweet_out = list()
+        tweet_out.append(tweet_dtime.date())
+        time = tweet_dtime.strftime('%I:%M:%S %p') if am_pm_time else tweet_dtime.time()
+        tweet_out.append(time)
+
+        for i in range(2, len(tweet)):
+            tweet_out.append(tweet[i])
+
+        output_tweets.append(tweet_out)
+
+    return output_tweets
 
 
 if __name__ == '__main__':
@@ -257,7 +311,7 @@ if __name__ == '__main__':
     # ical_data = output_tweets_to_ical(tweet_subset)
     #
     # # Create a file in the output directory for the iCal data
-    # with open("output/tweets-2018-19.ics", "w") as ics_file:
+    # with open("output/tweets-2018-19.ics", "w", encoding="utf8") as ics_file:
     #     ics_file.write(ical_data)
 
     exit(0)
