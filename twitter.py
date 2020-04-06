@@ -290,6 +290,21 @@ def tweets_in_local_time(tweets, am_pm_time=False):
     return output_tweets
 
 
+def search_for_term(search_term):
+    cnx = eventdb.create_connection("social")
+    cursor = cnx.cursor()
+
+    eventdb.get_search_term(cursor, search_term)
+    output = list()
+
+    for i in cursor:
+        output.append(i)
+
+    eventdb.close_connection(cnx)
+
+    return output
+
+
 if __name__ == '__main__':
 
     # # Inside acct directory place account.js if you have it

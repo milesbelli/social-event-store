@@ -1,0 +1,38 @@
+<html>
+<head>
+    <style>
+        table, th, td {
+            border: 1px solid black;
+        }
+        table {
+        width: 100%;
+        }
+    </style>
+</head>
+<body>
+<p>Search for a term to get tweets.</p>
+<form action="/search" method="post">
+    <label for="keyword">Search:</label><br>
+    <input type="text" id="keyword" name="search" value="{{ default }}">
+    <input type="submit" value="Submit">
+</form>
+<table>
+    <tr>
+        <th>date</th>
+        <th>time</th>
+        <th>text</th>
+        <th>client</th>
+        <th>link</th>
+    </tr>
+    {% for row in events %}
+    <tr>
+        <td><a href="/day/{{ row[0] }}">{{ row[0] }}</a></td>
+        <td>{{ row[1] }}</td>
+        <td>{{ row[3] }}</td>
+        <td>{{ row[4] }}</td>
+        <td><a href="https://www.twitter.com/i/status/{{ row[2] }}/">view</a></td>
+    </tr>
+    {% endfor %}
+</table>
+</body>
+</html>
