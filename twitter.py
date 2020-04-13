@@ -156,10 +156,7 @@ def get_one_tweet(tweetid):
     return output
 
 
-def get_tweets_for_date_range(start_date, end_date):
-    cnx = eventdb.create_connection("social")
-    cursor = cnx.cursor()
-
+def localize_date_range(start_date, end_date):
     # First convert the str dates to datetime dates
     start_date = datetime.datetime.strptime(start_date, "%Y-%m-%d")
     end_date = datetime.datetime.strptime(end_date, "%Y-%m-%d")
@@ -176,7 +173,33 @@ def get_tweets_for_date_range(start_date, end_date):
     start_date = start_date.strftime('%Y-%m-%d %H:%M:%S')
     end_date = end_date.strftime('%Y-%m-%d %H:%M:%S')
 
+    return start_date, end_date
+
+
+def get_tweets_for_date_range(start_date, end_date):
+    cnx = eventdb.create_connection("social")
+    cursor = cnx.cursor()
+
+    start_date, end_date = localize_date_range(start_date, end_date)
+
     eventdb.get_datetime_range(cursor, start_date, end_date)
+    output = list()
+
+    for i in cursor:
+        output.append(i)
+
+    eventdb.close_connection(cnx)
+
+    return output
+
+
+def get_count_for_date_range(start_date, end_date):
+    cnx = eventdb.create_connection("social")
+    cursor = cnx.cursor()
+
+    start_date, end_date = localize_date_range(start_date, end_date)
+
+    eventdb.get_count_for_range(cursor, start_date, end_date)
     output = list()
 
     for i in cursor:
@@ -305,6 +328,75 @@ def search_for_term(search_term):
     return output
 
 
+def calendar_grid(date_in_month):
+    first_of_month = datetime.date(date_in_month.year, date_in_month.month, 1)
+    month_grid = list()
+    i = 0
+    j = first_of_month.weekday()
+
+    cal_month = first_of_month
+    curr_month = cal_month.month
+
+    while len(month_grid) < 6:
+        week_list = list()
+        while len(week_list) < 7:
+            curr_day = dict()
+            curr_day["day"] = str(cal_month.day) if cal_month.month == curr_month \
+                and cal_month.weekday() == len(week_list) \
+                else str()
+            curr_day["count"] = get_count_for_date_range(str(cal_month), str(cal_month))[0][0] if \
+                curr_day["day"] else -1
+            week_list.append(curr_day)
+            cal_month = cal_month + datetime.timedelta(1, 0) if curr_day["day"] else cal_month
+        month_grid.append(week_list)
+
+        monthly_max = 0
+        monthly_min = month_grid[0][0]["count"]
+
+    for week in month_grid:
+        for day in week:
+            monthly_max = day["count"] if day["count"] > monthly_max else monthly_max
+            monthly_min = day["count"] if -1 < day["count"] < monthly_min else monthly_min
+    print(monthly_min)
+    print(monthly_max)
+
+    heat_map_colors = dict()
+
+    for i in range(0, monthly_max + 1):
+        pos = 510 / (monthly_max + 1) * i
+        plus_red = int(pos) if pos < 256 else 255
+        minus_green = int(pos - 255) if pos > 255 else 0
+
+        hex_color = "#{}{}00".format(to_hex(plus_red),
+                                     to_hex(255-minus_green))
+
+        heat_map_colors[i] = hex_color
+
+    print(heat_map_colors)
+
+    for week in month_grid:
+        for day in week:
+            day["color"] = heat_map_colors[day["count"]] if day["count"] > -1 else "#ffffff"
+
+    return month_grid
+
+
+def to_hex(integer):
+    above_dec = {10: 'a',
+                 11: 'b',
+                 12: 'c',
+                 13: 'd',
+                 14: 'e',
+                 15: 'f'}
+
+    first_digit = int(integer / 16)
+    first_digit = above_dec[first_digit] if first_digit > 9 else first_digit
+
+    second_digit = integer % 16
+    second_digit = above_dec[second_digit] if second_digit > 9 else second_digit
+
+    return "{}{}".format(first_digit, second_digit)
+
 if __name__ == '__main__':
 
     # # Inside acct directory place account.js if you have it
@@ -328,5 +420,10 @@ if __name__ == '__main__':
     # # Create a file in the output directory for the iCal data
     # with open("output/tweets-2018-19.ics", "w", encoding="utf8") as ics_file:
     #     ics_file.write(ical_data)
+
+    grid = calendar_grid(datetime.date(2010, 11, 6))
+
+    for row in grid:
+        print(row)
 
     exit(0)

@@ -206,6 +206,20 @@ def get_datetime_range(cursor, start_datetime, end_datetime):
     return cursor
 
 
+def get_count_for_range(cursor, start_datetime, end_datetime):
+
+    sql_query = ("SELECT COUNT(*) "
+                 "FROM tweetdetails "
+                 "LEFT JOIN events "
+                 "ON detailid = tweetid "
+                 "WHERE CONCAT(eventdate,' ',eventtime) >= '{}' "
+                 "AND CONCAT(eventdate,' ',eventtime) <= '{}';".format(start_datetime, end_datetime))
+
+    cursor.execute(sql_query)
+
+    return cursor
+
+
 def get_search_term(cursor, search_term):
 
     sql_query = ("SELECT eventdate, eventtime, detailid, tweettext, client, latitude, longitude "

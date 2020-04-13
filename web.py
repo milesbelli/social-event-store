@@ -63,3 +63,14 @@ def search():
         tweets = twitter.tweets_in_local_time(tweets, True)
 
         return render_template("search.html", events=tweets, default=search_term)
+
+
+@app.route("/calendar/<date>")
+def calendar(date):
+    date_format = datetime.datetime.strptime(date, "%Y-%m-%d").date()
+    print(date_format)
+    print(date[:8])
+
+    calendar = twitter.calendar_grid(date_format)
+
+    return render_template("calendar.html", calendar=calendar, month=date[:8])

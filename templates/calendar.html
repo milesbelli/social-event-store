@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Calendar</title>
+</head>
+<body>
+<table>
+    <tr>
+        <th>Mon</th>
+        <th>Tue</th>
+        <th>Wed</th>
+        <th>Thu</th>
+        <th>Fri</th>
+        <th>Sat</th>
+        <th>Sun</th>
+    </tr>
+    {% for week in calendar %}
+    <tr>
+        {% for day in week %}
+        <td style="background-color:{{ day['color'] }}">
+            <a href="/day/{{ month }}{{ day['day'] }}">{{ day["day"] }}</a>
+        </td>
+        {% endfor %}
+    </tr>
+    {% endfor %}
+</table>
+</body>
+</html>
