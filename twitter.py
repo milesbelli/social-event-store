@@ -362,7 +362,7 @@ def calendar_grid(date_in_month):
 
     heat_map_colors = dict()
 
-    for i in range(0, monthly_max + 1):
+    for i in range(1, monthly_max + 1):
         pos = 510 / (monthly_max + 1) * i
         plus_red = int(pos) if pos < 256 else 255
         minus_green = int(pos - 255) if pos > 255 else 0
@@ -376,7 +376,7 @@ def calendar_grid(date_in_month):
 
     for week in month_grid:
         for day in week:
-            day["color"] = heat_map_colors[day["count"]] if day["count"] > -1 else "#ffffff"
+            day["color"] = heat_map_colors[day["count"]] if day["count"] > 0 else "#ffffff"
 
     return month_grid
 
@@ -397,21 +397,22 @@ def to_hex(integer):
 
     return "{}{}".format(first_digit, second_digit)
 
+
 if __name__ == '__main__':
 
-    # # Inside acct directory place account.js if you have it
-    # account_id = get_account_id('acct/account.js')
-    #
-    # # If you have multiple directories you can make a list of all of them and
-    # # then iterate through them.
-    # directory_list = ['data/2013', 'data/2014', 'data/2014.1', 'data/2015',
-    #                   'data/2016', 'data/2017', 'data/2018', 'data/2019']
-    #
-    # for directory in directory_list:
-    #     start_time=datetime.datetime.now()
-    #     print("processing {}".format(directory))
-    #     process_directory(directory, account_id)
-    #     print("Finished in {}".format(datetime.datetime.now() - start_time))
+    # Inside acct directory place account.js if you have it
+    account_id = get_account_id('acct/account.js')
+
+    # If you have multiple directories you can make a list of all of them and
+    # then iterate through them.
+    directory_list = ['data/2013', 'data/2014', 'data/2014.1', 'data/2015',
+                      'data/2016', 'data/2017', 'data/2018', 'data/2019']
+
+    for directory in directory_list:
+        start_time=datetime.datetime.now()
+        print("processing {}".format(directory))
+        process_directory(directory, account_id)
+        print("Finished in {}".format(datetime.datetime.now() - start_time))
 
     # # Set date range of tweets that you want for iCal file
     # tweet_subset = get_tweets_for_date_range('2018-01-01', '2019-12-31')
@@ -421,9 +422,9 @@ if __name__ == '__main__':
     # with open("output/tweets-2018-19.ics", "w", encoding="utf8") as ics_file:
     #     ics_file.write(ical_data)
 
-    grid = calendar_grid(datetime.date(2010, 11, 6))
-
-    for row in grid:
-        print(row)
+    # grid = calendar_grid(datetime.date(2010, 11, 6))
+    #
+    # for row in grid:
+    #     print(row)
 
     exit(0)
