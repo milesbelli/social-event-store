@@ -93,4 +93,4 @@ def calendar(date):
 
     cal_header = "{} {}".format(months[date_format.month], date_format.strftime("%Y"))
 
-    return render_template("calendar.html", calendar=output_calendar, nav=navigation, header=cal_header)
+    return render_template("calendar.html", calendar=output_calendar, nav=navigation, header=cal_header, date=date)

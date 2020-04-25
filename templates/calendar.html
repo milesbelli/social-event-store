@@ -30,7 +30,11 @@
     {% for week in calendar %}
     <tr>
         {% for day in week %}
+        {% if day['full_date'] == date %}
+        <td style="background-color:{{ day['color'] }}; border: 1px solid black">
+        {% else %}
         <td style="background-color:{{ day['color'] }}">
+        {% endif %}
             <a href="/day/{{ day['full_date'] }}">{{ day["day"] }}</a>
         </td>
         {% endfor %}
