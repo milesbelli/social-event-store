@@ -337,6 +337,7 @@ def calendar_grid(date_in_month):
     cal_month = first_of_month
     curr_month = cal_month.month
 
+    start_time = datetime.datetime.now()
     while len(month_grid) < 6:
         week_list = list()
         while len(week_list) < 7:
@@ -346,19 +347,24 @@ def calendar_grid(date_in_month):
                 else str()
             curr_day["count"] = get_count_for_date_range(str(cal_month), str(cal_month))[0][0] if \
                 curr_day["day"] else -1
+            curr_day["full_date"] = cal_month.strftime('%Y-%m-%d')
             week_list.append(curr_day)
             cal_month = cal_month + datetime.timedelta(1, 0) if curr_day["day"] else cal_month
         month_grid.append(week_list)
 
-        monthly_max = 0
-        monthly_min = month_grid[0][0]["count"]
+    print("Calculated {}-{} in {}".format(cal_month.year,
+                                          str(cal_month.month),
+                                          datetime.datetime.now() - start_time))
+    monthly_max = 0
+    # monthly_min = month_grid[0][0]["count"]
+
 
     for week in month_grid:
         for day in week:
             monthly_max = day["count"] if day["count"] > monthly_max else monthly_max
-            monthly_min = day["count"] if -1 < day["count"] < monthly_min else monthly_min
-    print(monthly_min)
-    print(monthly_max)
+            # monthly_min = day["count"] if -1 < day["count"] < monthly_min else monthly_min
+    # print(monthly_min)
+    # print(monthly_max)
 
     heat_map_colors = dict()
 
@@ -372,7 +378,7 @@ def calendar_grid(date_in_month):
 
         heat_map_colors[i] = hex_color
 
-    print(heat_map_colors)
+    # print(heat_map_colors)
 
     for week in month_grid:
         for day in week:
@@ -409,7 +415,7 @@ if __name__ == '__main__':
                       'data/2016', 'data/2017', 'data/2018', 'data/2019']
 
     for directory in directory_list:
-        start_time=datetime.datetime.now()
+        start_time = datetime.datetime.now()
         print("processing {}".format(directory))
         process_directory(directory, account_id)
         print("Finished in {}".format(datetime.datetime.now() - start_time))

@@ -16,7 +16,8 @@ app = Flask(__name__)
 @app.route("/")
 def hello_world():
     output = str(twitter.get_one_tweet(983216871)[0][4])
-    return output
+    today = datetime.date.today().strftime("%Y-%m-%d")
+    return render_template("top.html", today=today)
 
 
 @app.route("/tweet/<tweetid>")
@@ -62,15 +63,34 @@ def search():
         tweets = twitter.search_for_term(search_term)
         tweets = twitter.tweets_in_local_time(tweets, True)
 
-        return render_template("search.html", events=tweets, default=search_term)
+        return render_template("search.html", events=tweets, default=search_term, count=len(tweets))
 
 
 @app.route("/calendar/<date>")
 def calendar(date):
     date_format = datetime.datetime.strptime(date, "%Y-%m-%d").date()
-    print(date_format)
-    print(date[:8])
 
-    calendar = twitter.calendar_grid(date_format)
+    output_calendar = twitter.calendar_grid(date_format)
 
-    return render_template("calendar.html", calendar=calendar, month=date[:8])
+    next_dt = datetime.datetime.strptime(output_calendar[-1][-1]["full_date"], "%Y-%m-%d") + datetime.timedelta(1,0)
+    prev_dt = datetime.datetime.strptime(output_calendar[0][0]["full_date"], "%Y-%m-%d") - datetime.timedelta(1,0)
+
+    navigation = {"previous": prev_dt.strftime("%Y-%m-%d"),
+                  "next": next_dt.strftime("%Y-%m-%d")}
+
+    months = {1: "January",
+              2: "February",
+              3: "March",
+              4: "April",
+              5: "May",
+              6: "June",
+              7: "July",
+              8: "August",
+              9: "September",
+              10: "October",
+              11: "November",
+              12: "December"}
+
+    cal_header = "{} {}".format(months[date_format.month], date_format.strftime("%Y"))
+
+    return render_template("calendar.html", calendar=output_calendar, nav=navigation, header=cal_header)

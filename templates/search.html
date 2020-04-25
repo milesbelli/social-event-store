@@ -5,17 +5,24 @@
             border: 1px solid black;
         }
         table {
-        width: 100%;
+            width: 100%;
+        }
+        iframe {
+            width: 100%;
+            height: 40px;
+            border: none;
         }
     </style>
 </head>
 <body>
+<iframe src="/"></iframe>
 <p>Search for a term to get tweets.</p>
 <form action="/search" method="post">
     <label for="keyword">Search:</label><br>
     <input type="text" id="keyword" name="search" value="{{ default }}">
     <input type="submit" value="Submit">
 </form>
+<p>Search returned {{ count }} result(s)</p>
 <table>
     <tr>
         <th>date</th>

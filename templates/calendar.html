@@ -3,9 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <title>Calendar</title>
+    <style>
+        iframe {
+            width: 100%;
+            height: 40px;
+            border: none;
+        }
+    </style>
 </head>
 <body>
-<table style="font-family: verdana, arial, sans-serif; font-size: 30px">
+<iframe src="/"></iframe>
+<a href="/calendar/{{ nav['previous'] }}">Previous</a> <a href="/calendar/{{ nav['next'] }}">Next</a>
+<table style="font-family: verdana, arial, sans-serif; font-size: 20px">
+    <tr>
+        <th style="background-color:lightgray" colspan="7">{{ header }}</th>
+    </tr>
     <tr>
         <th>Mon</th>
         <th>Tue</th>
@@ -19,7 +31,7 @@
     <tr>
         {% for day in week %}
         <td style="background-color:{{ day['color'] }}">
-            <a href="/day/{{ month }}{{ day['day'] }}">{{ day["day"] }}</a>
+            <a href="/day/{{ day['full_date'] }}">{{ day["day"] }}</a>
         </td>
         {% endfor %}
     </tr>
