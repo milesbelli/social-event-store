@@ -234,6 +234,14 @@ def get_search_term(cursor, search_term):
     return cursor
 
 
+def get_years_with_data(cursor):
+
+    sql_query = "SELECT left(eventdate,4) FROM events GROUP BY left(eventdate,4);"
+    cursor.execute(sql_query)
+
+    return cursor
+
+
 def close_connection(cnx):
 
     return cnx.close()

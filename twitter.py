@@ -4,6 +4,7 @@ import datetime
 import eventdb
 from pathlib import Path
 import pytz
+import zipfile
 
 
 def retrieve_from_twitter(post_id):
@@ -25,9 +26,16 @@ def parse_js_text(text, acct=0):
     tweets_text = text[text.index('[ {'):]
     list_of_tweets = json.loads(tweets_text)
 
+    # Twitter has once again changed how tweet.js is structured, so first check if we have to "unwrap" the tweet
+    for i in range(0, len(list_of_tweets)):
+        list_of_tweets[i] = list_of_tweets[i].get("tweet") or list_of_tweets[i]
+
     # Format for database
     for tweet_details in list_of_tweets:
 
+        tweet_details = tweet_details.get("tweet") or tweet_details
+
+        # Get all the metadata we're looking for
         tweet_timestamp = parse_date_time(tweet_details["created_at"])
 
         tweet_details["sql_date"] = str(tweet_timestamp.date())
@@ -126,13 +134,19 @@ def process_directory(dir_path, acct=None):
     list_of_tweets = list()
     
     cnx = eventdb.create_connection('social')
+
+    if not acct:
+        acct = get_account_id(f"{dir_path}/acct/account.js") if Path(f"{dir_path}/acct/account.js").exists() else None
     
     for target_file in target_dir.iterdir():
-        
-        with open(target_file, "r", errors="replace") as file:
-            
-            file = file.read()
-            list_of_tweets += parse_js_text(file, acct)
+
+        if target_file.is_file():
+            with open(target_file, "r", errors="replace") as file:
+
+                file = file.read()
+                list_of_tweets += parse_js_text(file, acct)
+
+    print(list_of_tweets[0])
 
     eventdb.insert_tweets(list_of_tweets, cnx)
 
@@ -328,15 +342,21 @@ def search_for_term(search_term):
     return output
 
 
-def calendar_grid(date_in_month):
+def calendar_grid(date_in_month, **kwargs):
+    # Find the first day of the month
     first_of_month = datetime.date(date_in_month.year, date_in_month.month, 1)
     month_grid = list()
-    i = 0
-    j = first_of_month.weekday()
 
+    # If we pass in the tweets object, we can use that instead of DB calls
+    tweets = kwargs.get("tweets") or []
+
+    # Track what month we're on and where we started
     cal_month = first_of_month
     curr_month = cal_month.month
 
+    # Calender is a list of lists of dicts that contain all the info we need
+    # Items in every dict are "day", "count", "full_date", and "color"
+    # It is actually arranged like a calendar (each row is a week) to aid rendering the template
     start_time = datetime.datetime.now()
     while len(month_grid) < 6:
         week_list = list()
@@ -345,29 +365,31 @@ def calendar_grid(date_in_month):
             curr_day["day"] = str(cal_month.day) if cal_month.month == curr_month \
                 and cal_month.weekday() == len(week_list) \
                 else str()
-            curr_day["count"] = get_count_for_date_range(str(cal_month), str(cal_month))[0][0] if \
+            # either get from DB or use existing count from tweets
+            curr_day["count"] = (tweets[cal_month.day - 1]["count"] if tweets else
+                                 get_count_for_date_range(str(cal_month), str(cal_month))[0][0]) if \
                 curr_day["day"] else -1
-            curr_day["full_date"] = cal_month.strftime('%Y-%m-%d')
+            curr_day["full_date"] = cal_month.strftime('%Y-%m-%d') if curr_day["day"] else str()
             week_list.append(curr_day)
             cal_month = cal_month + datetime.timedelta(1, 0) if curr_day["day"] else cal_month
         month_grid.append(week_list)
 
+    # Performance log message
     print("Calculated {}-{} in {}".format(cal_month.year,
                                           str(cal_month.month),
                                           datetime.datetime.now() - start_time))
+
+    # Monthly max will determine the high end of the color gradient
+    # TODO: Move this inside the calendar setup logic for efficiency's sake
     monthly_max = 0
-    # monthly_min = month_grid[0][0]["count"]
-
-
     for week in month_grid:
         for day in week:
             monthly_max = day["count"] if day["count"] > monthly_max else monthly_max
-            # monthly_min = day["count"] if -1 < day["count"] < monthly_min else monthly_min
-    # print(monthly_min)
-    # print(monthly_max)
 
+    # Creating colors on a gradient based on count. Technically this should be able to handle
+    # a range of infinite size in any given month, but the colors will start to be absolutely
+    # indistinguishable above 510 tweets. The practical number will be much lower.
     heat_map_colors = dict()
-
     for i in range(1, monthly_max + 1):
         pos = 510 / (monthly_max + 1) * i
         plus_red = int(pos) if pos < 256 else 255
@@ -378,8 +400,8 @@ def calendar_grid(date_in_month):
 
         heat_map_colors[i] = hex_color
 
-    # print(heat_map_colors)
-
+    # Because we made a dict that already has a color assigned for each possible count,
+    # it's beyond easy to slot the appropriate color into each calendar day.
     for week in month_grid:
         for day in week:
             day["color"] = heat_map_colors[day["count"]] if day["count"] > 0 else "#ffffff"
@@ -387,6 +409,10 @@ def calendar_grid(date_in_month):
     return month_grid
 
 
+# Surely there are better implementations of dec-to-hex converters out there, but by god I
+# won't use them. This is a quick and dirty two-digit converter which is all I need. I'm
+# not proud of it, but it gets the job done. I'm going to call it "purpose-built" because it
+# sounds fancier that way.
 def to_hex(integer):
     above_dec = {10: 'a',
                  11: 'b',
@@ -404,21 +430,103 @@ def to_hex(integer):
     return "{}{}".format(first_digit, second_digit)
 
 
+def get_one_month_of_events(year, month):
+
+    day_of_month = datetime.date(year, month, 1)
+    list_of_days = list()
+
+    while day_of_month.month == month:
+        str_date = day_of_month.strftime("%Y-%m-%d")
+        today = dict()
+        today["date_human"] = day_of_month.strftime("%A, %B %d %Y")
+        today["date_full"] = str_date
+        today["date_day"] = str(day_of_month.day)
+        today["events"] = tweets_in_local_time(get_tweets_for_date_range(str_date, str_date), True)
+        today["count"] = len(today["events"])
+
+        list_of_days.append(today)
+        day_of_month = day_of_month + datetime.timedelta(1, 0)
+
+    return list_of_days
+
+
+def build_date_pickers():
+
+    cnx = eventdb.create_connection("social")
+    cursor = cnx.cursor()
+
+    eventdb.get_years_with_data(cursor)
+    years = list()
+
+    for i in cursor:
+        years.append(i[0])
+
+    eventdb.close_connection(cnx)
+
+    months = list()
+
+    for i in range(1, 13):
+        month_detail = dict()
+        month_detail["name"] = datetime.date(1, i, 1).strftime("%B")
+        month_detail["value"] = i
+        months.append(month_detail)
+
+    date_picker = dict()
+
+    date_picker["years"] = years
+    date_picker["months"] = months
+
+    return date_picker
+
+
+def unpack_and_store_files(zipfile_path, parent_directory):
+    # Returns the temporary directory for the files that were extracted
+
+    if zipfile.is_zipfile(zipfile_path):
+
+        directory_stamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S%f")
+        output_path = f"{parent_directory}/{directory_stamp}"
+
+        Path.mkdir(Path(output_path))
+
+        with zipfile.ZipFile(zipfile_path) as zipfile_to_process:
+            for entry in zipfile_to_process.namelist():
+
+                if ("data/js/tweets" in entry and ".js" in entry) or ("tweet.js" in entry):
+                    js_file_to_save = zipfile_to_process.read(entry)
+                    output_file = open(f"{output_path}/{entry.split('/')[-1]}", "wb")
+                    output_file.write(js_file_to_save)
+                    output_file.close()
+
+                elif "account.js" in entry:
+                    account_js = zipfile_to_process.read(entry)
+                    Path.mkdir(Path(f"{output_path}/acct"))
+                    output_acct = open(f"{output_path}/acct/account.js", "wb")
+                    output_acct.write(account_js)
+                    output_acct.close()
+
+            # zipfile_to_process.close()
+
+        # Path.unlink(Path(zipfile_path))
+
+        return output_path
+
+
 if __name__ == '__main__':
 
-    # Inside acct directory place account.js if you have it
-    account_id = get_account_id('acct/account.js')
-
-    # If you have multiple directories you can make a list of all of them and
-    # then iterate through them.
-    directory_list = ['data/2013', 'data/2014', 'data/2014.1', 'data/2015',
-                      'data/2016', 'data/2017', 'data/2018', 'data/2019']
-
-    for directory in directory_list:
-        start_time = datetime.datetime.now()
-        print("processing {}".format(directory))
-        process_directory(directory, account_id)
-        print("Finished in {}".format(datetime.datetime.now() - start_time))
+    # # Inside acct directory place account.js if you have it
+    # account_id = get_account_id('acct/account.js')
+    #
+    # # If you have multiple directories you can make a list of all of them and
+    # # then iterate through them.
+    # directory_list = ['data/2013', 'data/2014', 'data/2014.1', 'data/2015',
+    #                   'data/2016', 'data/2017', 'data/2018', 'data/2019']
+    #
+    # for directory in directory_list:
+    #     start_time = datetime.datetime.now()
+    #     print("processing {}".format(directory))
+    #     process_directory(directory, account_id)
+    #     print("Finished in {}".format(datetime.datetime.now() - start_time))
 
     # # Set date range of tweets that you want for iCal file
     # tweet_subset = get_tweets_for_date_range('2018-01-01', '2019-12-31')
@@ -432,5 +540,13 @@ if __name__ == '__main__':
     #
     # for row in grid:
     #     print(row)
+
+    # one_month = get_one_month_of_events(2008, 11)
+    # print(one_month)
+
+    # print(build_date_pickers())
+
+    temporary_path = unpack_and_store_files("data/17079629_ee3bcdc890285fc6c215527dca530f05fdd937ae.zip", "output")
+    print(temporary_path)
 
     exit(0)

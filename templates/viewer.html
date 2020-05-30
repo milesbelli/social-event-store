@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Archive View</title>
+</head>
+<body>
+<iframe class="main" src="/"></iframe>
+<form id="get-date" action="/viewer" method="get">
+    <select id="month" name="month" form="get-date">
+        {% for month in pickers["months"] %}
+        <option value="{{ month['value'] }}">{{ month["name"] }}</option>
+        {% endfor %}
+    </select>
+    <select id="year" name="year" form="get-date">
+        {% for year in pickers["years"] %}
+        <option value="{{ year }}">{{ year }}</option>
+        {% endfor %}
+    </select>
+    <input type="submit" value="Go">
+</form>
+<table style="font-size: 20px">
+    <tr style="background-color:lightgray">
+        <th><a href="/viewer/{{ nav['previous'] }}">&lt;</a></th>
+        <th colspan="5">{{ header }}</th>
+        <th><a href="/viewer/{{ nav['next'] }}">&gt;</a></th>
+
+    </tr>
+    <tr>
+        <th>Mon</th>
+        <th>Tue</th>
+        <th>Wed</th>
+        <th>Thu</th>
+        <th>Fri</th>
+        <th>Sat</th>
+        <th>Sun</th>
+    </tr>
+    {% for week in calendar %}
+    <tr>
+        {% for day in week %}
+        {% if day['full_date'] == date %}
+        <td style="background-color:{{ day['color'] }}; border: 1px solid black">
+        {% else %}
+        <td style="background-color:{{ day['color'] }}">
+        {% endif %}
+            <a href="#{{ day['day'] }}">{{ day["day"] }}</a>
+        </td>
+        {% endfor %}
+    </tr>
+    {% endfor %}
+</table>
+{% for day in month %}
+{% if day["count"] != 0 %}
+<h2 id="{{ day['date_day'] }}">{{ day["date_human"] }}</h2>
+<p>{{ day["count"] }} event{% if day["count"] > 1 %}s{% endif %} <a href="#">Top</a></p>
+<table class="main">
+    <tr>
+        <th class="main">time</th>
+        <th class="main">text</th>
+        <th class="main">client</th>
+        <th class="main">link</th>
+    </tr>
+    {% for row in day["events"] %}
+    <tr>
+        <td class="main">{{ row[1] }}</td>
+        <td class="main">{{ row[3] }}</td>
+        <td class="main">{{ row[4] }}</td>
+        <td class="main"><a target="_blank" rel="noopener noreferrer" href="https://www.twitter.com/i/status/{{ row[2] }}/">view</a></td>
+    </tr>
+    {% endfor %}
+</table>
+{% endif %}
+{% endfor %}
+</body>
+</html>

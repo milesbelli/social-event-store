@@ -1,23 +1,10 @@
 <html>
 <head>
-    <style>
-        table, th, td {
-            border: 1px solid black;
-            font-family: verdana, arial, sans-serif;
-            font-size: 12 px;
-        }
-        table {
-            width: 100%;
-        }
-        iframe {
-            width: 100%;
-            height: 40px;
-            border: none;
-        }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>
-<iframe src="/"></iframe>
+<iframe class="main" src="/"></iframe>
 <p>Pick a date to get tweets.</p>
 <form action="/day" method="post">
     <label for="tweetday">Date:</label><br>
@@ -25,21 +12,21 @@
     <input type="submit" value="Submit">
 </form>
 <p><a href="/calendar/{{ default }}">Calendar</a></p>
-<table>
+<table class="main">
     <tr>
-        <th>date</th>
-        <th>time</th>
-        <th>text</th>
-        <th>client</th>
-        <th>link</th>
+        <th class="main">date</th>
+        <th class="main">time</th>
+        <th class="main">text</th>
+        <th class="main">client</th>
+        <th class="main">link</th>
     </tr>
     {% for row in events %}
     <tr>
-        <td>{{ row[0] }}</td>
-        <td>{{ row[1] }}</td>
-        <td>{{ row[3] }}</td>
-        <td>{{ row[4] }}</td>
-        <td><a target="_blank" rel="noopener noreferrer" href="https://www.twitter.com/i/status/{{ row[2] }}/">view</a></td>
+        <td class="main">{{ row[0] }}</td>
+        <td class="main">{{ row[1] }}</td>
+        <td class="main">{{ row[3] }}</td>
+        <td class="main">{{ row[4] }}</td>
+        <td class="main"><a target="_blank" rel="noopener noreferrer" href="https://www.twitter.com/i/status/{{ row[2] }}/">view</a></td>
     </tr>
     {% endfor %}
 </table>
