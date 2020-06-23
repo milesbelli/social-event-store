@@ -7,8 +7,9 @@
     <title>Upload An Archive File</title>
 </head>
 <body>
+<iframe class="main" src="/"></iframe>
 <h1>Upload a File</h1>
-<p>Select a source for your zip and upload it</p>
+<p>Select a zipped archive to add to the database.</p>
     <form id="upload_data" action="/upload" method="POST" enctype="multipart/form-data">
         <select id="source" name="source" form="upload_data">
             <option value="twitter">Twitter</option>
@@ -16,6 +17,6 @@
         <input type="file" name="zipfile"/>
         <input type="submit" value="Upload">
     </form>
-<p>{{ status_message }}</p>c
+<p>{{ status_message }}</p>
 </body>
 </html>

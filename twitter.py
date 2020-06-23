@@ -5,6 +5,8 @@ import eventdb
 from pathlib import Path
 import pytz
 import zipfile
+from multiprocessing import Process
+import time
 
 
 def retrieve_from_twitter(post_id):
@@ -146,11 +148,16 @@ def process_directory(dir_path, acct=None):
                 file = file.read()
                 list_of_tweets += parse_js_text(file, acct)
 
-    print(list_of_tweets[0])
-
     eventdb.insert_tweets(list_of_tweets, cnx)
-
     eventdb.close_connection(cnx)
+
+    cleanup(dir_path)
+
+
+def process_from_file(file_path):
+
+    process_dir = unpack_and_store_files(file_path, "output")
+    process_directory(process_dir)
 
     
 def get_one_tweet(tweetid):
@@ -375,8 +382,8 @@ def calendar_grid(date_in_month, **kwargs):
         month_grid.append(week_list)
 
     # Performance log message
-    print("Calculated {}-{} in {}".format(cal_month.year,
-                                          str(cal_month.month),
+    print("Calculated {}-{} in {}".format(date_in_month.year,
+                                          str(date_in_month.month),
                                           datetime.datetime.now() - start_time))
 
     # Monthly max will determine the high end of the color gradient
@@ -505,11 +512,49 @@ def unpack_and_store_files(zipfile_path, parent_directory):
                     output_acct.write(account_js)
                     output_acct.close()
 
-            # zipfile_to_process.close()
-
-        # Path.unlink(Path(zipfile_path))
+        cleanup(zipfile_path)
 
         return output_path
+
+
+def cleanup(to_delete):
+    # This probably would not have been needed on Unix. Windows locks
+    # files in such a way that they cannot be flagged for deleting at a
+    # later time, so the workaround is to keep trying in a daemon until
+    # the file lock is released.
+
+    print(f"Received request to delete {to_delete}...")
+
+    max_attempts = 12
+    attempts = 0
+    deleted = False
+
+    def delete_dir(dir_path):
+        for file in dir_path.iterdir():
+            if file.is_file():
+                file.unlink()
+                print(f"Deleted {file}")
+            elif Path(file).is_dir():
+                delete_dir(Path(file))
+        dir_path.rmdir()
+        print(f"Deleted {dir_path}")
+
+    while attempts < max_attempts and not deleted:
+        try:
+            target_path = Path(to_delete)
+            if target_path.is_dir():
+                delete_dir(target_path)
+            else:
+                target_path.unlink()
+                print(f"Deleted {target_path}")
+
+            deleted = True
+
+        except OSError:
+            print(f"Could not delete {to_delete}, file is busy.")
+
+        attempts += 1
+        time.sleep(5)
 
 
 if __name__ == '__main__':
@@ -546,7 +591,9 @@ if __name__ == '__main__':
 
     # print(build_date_pickers())
 
-    temporary_path = unpack_and_store_files("data/17079629_ee3bcdc890285fc6c215527dca530f05fdd937ae.zip", "output")
-    print(temporary_path)
+    # temporary_path = unpack_and_store_files("data/17079629_ee3bcdc890285fc6c215527dca530f05fdd937ae.zip", "output")
+    # print(temporary_path)
+
+    cleanup('output/20200610223504349588')
 
     exit(0)

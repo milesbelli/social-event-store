@@ -1,8 +1,16 @@
 body {
     font-family: verdana, arial, sans-serif;
+    color: white;
+    background-color: #333333;
+}
+a {
+    color: #00ffff;
+}
+a.calendar {
+    color: black;
 }
 table.main, th.main, td.main {
-    border: 1px solid black;
+    border: 1px solid white;
     font-size: 12 px;
 }
 table.main {
@@ -12,4 +20,8 @@ iframe.main {
     width: 100%;
     height: 40px;
     border: none;
+}
+
+.event {
+    padding: 5%;
 }

@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
     <title>navbar</title>
     <style>
         table {
@@ -13,9 +14,10 @@
 <body>
 <table>
     <tr>
-        <td><a href="/calendar/{{ today }}" target="_parent">Calendar</a></td>
+        <td><a href="/viewer" target="_parent">Viewer</a></td>
         <td><a href="/day" target="_parent">Day</a></td>
         <td><a href="/search" target="_parent">Search</a></td>
+        <td><a href="/upload" target="_parent">Upload</a></td>
     </tr>
 </table>
 </body>

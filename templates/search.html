@@ -22,7 +22,7 @@
     </tr>
     {% for row in events %}
     <tr>
-        <td class="main"><a href="/day/{{ row[0] }}">{{ row[0] }}</a></td>
+        <td class="main"><a href="/viewer/{{ row[0].year }}/{{ row[0].month }}#{{row[0].day }}">{{ row[0] }}</a></td>
         <td class="main">{{ row[1] }}</td>
         <td class="main">{{ row[3] }}</td>
         <td class="main">{{ row[4] }}</td>

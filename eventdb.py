@@ -227,7 +227,7 @@ def get_search_term(cursor, search_term):
                  "LEFT JOIN events "
                  "ON detailid = tweetid "
                  "WHERE tweettext LIKE '%{}%' "
-                 "ORDER BY eventdate ASC, eventtime ASC;".format(search_term))
+                 "ORDER BY eventdate ASC, eventtime ASC;".format(search_term.replace("'", "''")))
 
     cursor.execute(sql_query)
 

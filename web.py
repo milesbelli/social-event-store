@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect
 import twitter
 import datetime
+from multiprocessing import Process
 
 app = Flask(__name__)
 
@@ -16,10 +17,8 @@ app = Flask(__name__)
 
 
 @app.route("/")
-def hello_world():
-    output = str(twitter.get_one_tweet(983216871)[0][4])
-    today = datetime.date.today().strftime("%Y-%m-%d")
-    return render_template("top.html", today=today)
+def main():
+    return render_template("top.html")
 
 
 @app.route("/tweet/<tweetid>")
@@ -103,7 +102,8 @@ def viewer(year, month):
     navigation = {"previous": prev_dt.strftime("%Y/%m"),
                   "next": next_dt.strftime("%Y/%m")}
 
-    cal_header = first_of_month.strftime("%B %Y")
+    cal_header = {"month": first_of_month.strftime("%B"),
+                  "year": first_of_month.strftime("%Y")}
 
     pickers = twitter.build_date_pickers()
 
@@ -113,8 +113,8 @@ def viewer(year, month):
 
 @app.route("/viewer")
 def viewer_select():
-    month = request.args.get("month", type=int)
-    year = request.args.get("year", type=int)
+    month = request.args.get("month", type=int) or datetime.datetime.now().month
+    year = request.args.get("year", type=int) or datetime.datetime.now().year
 
     return redirect(f"/viewer/{year}/{month}")
 
@@ -131,9 +131,10 @@ def upload_data():
         destination_file = open(file_path, "wb")
         destination_file.write(file.read())
         if request.form["source"] == "twitter":
-            process_dir = twitter.unpack_and_store_files(file_path, "output")
-            twitter.process_directory(process_dir)
-        return render_template("upload.html", status_message=f"processed file {file.filename}")
+            file_proc_bkg = Process(target=twitter.process_from_file, args=(file_path,), daemon=True)
+            file_proc_bkg.start()
+
+        return render_template("upload.html", status_message=f"The file {file.filename} has been successfully uploaded.")
 
 
 # Running this should launch the server, but it doesn't seem to work in Unix
