@@ -11,12 +11,18 @@
 <form id="get-date" action="/viewer" method="get">
     <select id="month" name="month" form="get-date">
         {% for month in pickers["months"] %}
-        <option value="{{ month['value'] }}" {% if month["name"] == header["month"] %} selected {% endif %}>{{ month["name"] }}</option>
+        <option value="{{ month['value'] }}"
+                {% if month["name"] == header["month"] %} selected {% endif %}>
+        {{ month["name"] }}
+        </option>
         {% endfor %}
     </select>
     <select id="year" name="year" form="get-date">
         {% for year in pickers["years"] %}
-        <option value="{{ year }}" {% if year == header["year"] %} selected {% endif %}>{{ year }}</option>
+        <option value="{{ year }}"
+                {% if year == header["year"] %} selected {% endif %}>
+        {{ year }}
+        </option>
         {% endfor %}
     </select>
     <input type="submit" value="Go">
