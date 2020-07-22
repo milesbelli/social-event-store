@@ -12,7 +12,7 @@
     </style>
 </head>
 <body>
-<table>
+<table style="float: left">
     <tr>
         <td><a href="/viewer" target="_parent">Viewer</a></td>
         <td><a href="/day" target="_parent">Day</a></td>
@@ -20,5 +20,10 @@
         <td><a href="/upload" target="_parent">Upload</a></td>
     </tr>
 </table>
+            <form style="float: right" action="/search" method="post" target="_parent">
+                <label for="keyword">Search:</label>
+                <input type="text" id="keyword" name="search" value="{{ default }}">
+                <input type="submit" value="Submit">
+            </form>
 </body>
 </html>
