@@ -5,14 +5,42 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Archive View</title>
-    <script>
-        function show_hide_map(map_id){
+    <script type="text/javascript">
+        function show_hide_map(map_id) {
             if(document.getElementById(map_id).style.display=="none"){
                 document.getElementById(map_id).style.display="block";
             }
-            else{
+            else {
                 document.getElementById(map_id).style.display="none";
             }
+        }
+    </script>
+    <script type='text/javascript' src='http://www.bing.com/api/maps/mapcontrol?callback=GetMap&key=AkHjJGDqUeq04-lIEphg6sWsiAjtfIyb3MgcVLNR9gpLhWFICvl78R-HHV4Y2Dna' async defer></script>
+    <script type="text/javascript">
+        function get_map(map_id, latitude, longitude) {
+            console.log("#"+map_id)
+            console.log(latitude+", "+longitude);
+
+            if(document.getElementById(map_id).style.display=="none") {
+                document.getElementById(map_id).style.display="block";
+
+                var map = new Microsoft.Maps.Map("#"+map_id, {
+                center: new Microsoft.Maps.Location(latitude, longitude),
+                zoom: 14
+                });
+
+                var center = map.getCenter();
+
+                var pin = new Microsoft.Maps.Pushpin(center);
+
+                map.entities.push(pin);
+
+            }
+
+            else {
+                document.getElementById(map_id).style.display="none";
+            }
+
         }
     </script>
 </head>
@@ -76,13 +104,11 @@
 <div class="event">
     <div class="text">{{ row[3] }}</div>
     {% if row[5] and row[6] %}
-    <div class="coordinates"><button onclick="show_hide_map('{{ row[2] }}_map')">Map</button></div>
-    <div id="{{ row[2] }}_map" style="display: none">
-     <iframe width="325" height="280" frameborder="0" src="https://www.bing.com/maps/embed?h=280&w=325&cp={{ row[5] }}~{{ row[6] }}&lvl=14&typ=d&sty=r&src=SHELL&FORM=MBEDV8&pushpins={{ row[5] }}~{{ row[6] }}" scrolling="no">
-     </iframe>
+    <div class="coordinates"><button onclick="get_map('{{ row[2] }}_map', {{ row[5] }}, {{ row[6] }})">Map</button></div>
+    <div class="bing_map" id="{{ row[2] }}_map" style="display:none">
     </div>
     {% endif %}
-    <div class="client">from {{ row[4] }}</div>
+    <div class="client">via {{ row[4] }}</div>
     <div class="view_link"><a target="_blank" rel="noopener noreferrer" href="https://www.twitter.com/i/status/{{ row[2] }}/">View on Twitter</a></div>
 </div>
     {% endfor %}

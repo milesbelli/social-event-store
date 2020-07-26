@@ -49,6 +49,7 @@ iframe.main {
     float: left;
     margin-top: 4px;
     font-size: 14px;
+    font-style: italic
 }
 
 .view_link {
@@ -57,5 +58,13 @@ iframe.main {
 }
 
 .coordinates {
+    margin-top: 4px;
+    margin-bottom: 4px;
     font-size: 14px;
+}
+
+.bing_map {
+    position:relative;
+    width:600px;
+    height:400px;
 }
