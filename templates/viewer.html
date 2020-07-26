@@ -61,22 +61,21 @@
 {% if day["count"] != 0 %}
 <h2 id="{{ day['date_day'] }}">{{ day["date_human"] }}</h2>
 <p>{{ day["count"] }} event{% if day["count"] > 1 %}s{% endif %} <a href="#">Top</a></p>
-<table class="main">
-    <tr>
-        <th class="main">time</th>
-        <th class="main">text</th>
-        <th class="main">client</th>
-        <th class="main">link</th>
-    </tr>
     {% for row in day["events"] %}
-    <tr>
-        <td class="main">{{ row[1] }}</td>
-        <td class="main">{{ row[3] }}</td>
-        <td class="main">{{ row[4] }}</td>
-        <td class="main"><a target="_blank" rel="noopener noreferrer" href="https://www.twitter.com/i/status/{{ row[2] }}/">view</a></td>
-    </tr>
+<div class="time">{{ row[1] }}</div>
+<div class="event">
+    <div class="text">{{ row[3] }}</div>
+    {% if row[5] and row[6] %}
+    <div class="coordinates"><a>{{ row[5] }}, {{ row[6] }}</a></div>
+    <div>
+     <iframe width="325" height="280" frameborder="0" src="https://www.bing.com/maps/embed?h=280&w=325&cp={{ row[5] }}~{{ row[6] }}&lvl=14&typ=d&sty=r&src=SHELL&FORM=MBEDV8&pushpins={{ row[5] }}~{{ row[6] }}" scrolling="no">
+     </iframe>
+    </div>
+    {% endif %}
+    <div class="client">from {{ row[4] }}</div>
+    <div class="view_link"><a target="_blank" rel="noopener noreferrer" href="https://www.twitter.com/i/status/{{ row[2] }}/">View on Twitter</a></div>
+</div>
     {% endfor %}
-</table>
 {% endif %}
 {% endfor %}
 </body>

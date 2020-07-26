@@ -16,6 +16,7 @@ table.main, th.main, td.main {
 table.main {
     width: 100%;
 }
+
 iframe.main {
     width: 100%;
     height: 48px;
@@ -23,5 +24,38 @@ iframe.main {
 }
 
 .event {
-    padding: 5%;
+    overflow: hidden;
+    margin-left: 2%;
+    margin-right: 2%;
+    #margin-bottom: 2%;
+    padding: 8px;
+    background-color: #333A43;
+    border-radius: 4px;
+}
+
+.time {
+    padding-left: 8px;
+    margin-left: 2%;
+    margin-top: 1%;
+    margin-bottom: 4px;
+    #font-style: italic;
+    font-size: 14px;
+}
+
+.text {
+}
+
+.client {
+    float: left;
+    margin-top: 4px;
+    font-size: 14px;
+}
+
+.view_link {
+    float: right;
+    font-size: 14px;
+}
+
+.coordinates {
+    font-size: 14px;
 }
