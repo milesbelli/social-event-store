@@ -201,7 +201,10 @@ def get_datetime_range(cursor, start_datetime, end_datetime):
                  "AND CONCAT(eventdate,' ',eventtime) <= '{}' "
                  "ORDER BY eventdate ASC, eventtime ASC;".format(start_datetime, end_datetime))
 
+    query_start_time = datetime.datetime.now()
     cursor.execute(sql_query)
+
+    print(f'Returned query:\n{sql_query}\n in {datetime.datetime.now() - query_start_time}')
 
     return cursor
 

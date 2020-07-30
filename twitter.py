@@ -439,7 +439,10 @@ def to_hex(integer):
 
 def get_one_month_of_events(year, month):
 
+    start_time = datetime.datetime.now()
+
     day_of_month = datetime.date(year, month, 1)
+    first_day = day_of_month.strftime("%Y-%m-%d")
     list_of_days = list()
 
     while day_of_month.month == month:
@@ -448,11 +451,25 @@ def get_one_month_of_events(year, month):
         today["date_human"] = day_of_month.strftime("%A, %B %d %Y")
         today["date_full"] = str_date
         today["date_day"] = str(day_of_month.day)
-        today["events"] = tweets_in_local_time(get_tweets_for_date_range(str_date, str_date), True)
+        today["events"] = []
         today["count"] = len(today["events"])
+        last_day = str_date
 
         list_of_days.append(today)
         day_of_month = day_of_month + datetime.timedelta(1, 0)
+
+    tweets = tweets_in_local_time(get_tweets_for_date_range(first_day, last_day), True)
+    tweets_by_date = dict()
+    for tweet in tweets:
+        if not tweets_by_date.get(tweet[0].strftime("%Y-%m-%d")):
+            tweets_by_date[tweet[0].strftime("%Y-%m-%d")] = []
+        tweets_by_date[tweet[0].strftime("%Y-%m-%d")].append(tweet)
+
+    for day in list_of_days:
+        day["events"] = tweets_by_date.get(day["date_full"]) or day["events"]
+        day["count"] = len(day["events"])
+
+    print(f"Got month of tweets parsed in {datetime.datetime.now() - start_time}")
 
     return list_of_days
 

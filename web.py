@@ -93,7 +93,7 @@ def viewer(year, month):
     first_of_month = datetime.date(int(year), int(month), 1)
 
     month_of_events = twitter.get_one_month_of_events(int(year), int(month))
-    output_calendar = twitter.calendar_grid(first_of_month)
+    output_calendar = twitter.calendar_grid(first_of_month, tweets=month_of_events)
 
     next_dt = datetime.date(first_of_month.year, first_of_month.month, 28) + datetime.timedelta(7, 0)
     next_dt = datetime.date(next_dt.year, next_dt.month, 1)
