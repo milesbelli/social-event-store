@@ -102,7 +102,11 @@
     {% for row in day["events"] %}
 <div class="time">{{ row[1] }}</div>
 <div class="event">
-    <div class="text">{{ row[3] }}</div>
+    <div class="text">
+        {% for textline in row[3].split('\n') %}
+        {{ textline }}<br>
+        {% endfor %}
+    </div>
     {% if row[5] and row[6] %}
     <div class="coordinates"><button onclick="get_map('{{ row[2] }}_map', {{ row[5] }}, {{ row[6] }})">Map</button></div>
     <div class="bing_map" id="{{ row[2] }}_map" style="display:none">
