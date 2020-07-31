@@ -46,6 +46,7 @@ def parse_js_text(text, acct=0):
         tweet_details["client_name"] = get_client_name(tweet_details["source"])
 
         tweet_details["text"] = tweet_details.get("text") or tweet_details.get("full_text")
+        tweet_details["text"] = fix_symbols(tweet_details["text"])
 
         tweet_details["user"] = tweet_details.get("user") or {"id": acct}
 
@@ -572,6 +573,20 @@ def cleanup(to_delete):
 
         attempts += 1
         time.sleep(5)
+
+
+def fix_symbols(message):
+
+    symbols = {"&gt;": ">",
+               "&lt;": "<",
+               "&quot;": "\"",
+               "&#039;": "'",
+               "&amp;": "&"}
+
+    for symbol in symbols:
+        message = message.replace(symbol, symbols[symbol])
+
+    return message;
 
 
 if __name__ == '__main__':

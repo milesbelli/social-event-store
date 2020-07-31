@@ -2,6 +2,46 @@
 <head>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search</title>
+    <script type="text/javascript">
+        function show_hide_map(map_id) {
+            if(document.getElementById(map_id).style.display=="none"){
+                document.getElementById(map_id).style.display="block";
+            }
+            else {
+                document.getElementById(map_id).style.display="none";
+            }
+        }
+    </script>
+    <script type='text/javascript' src='http://www.bing.com/api/maps/mapcontrol?callback=GetMap&key=AkHjJGDqUeq04-lIEphg6sWsiAjtfIyb3MgcVLNR9gpLhWFICvl78R-HHV4Y2Dna' async defer></script>
+    <script type="text/javascript">
+        function get_map(map_id, latitude, longitude) {
+            console.log("#"+map_id)
+            console.log(latitude+", "+longitude);
+
+            if(document.getElementById(map_id).style.display=="none") {
+                document.getElementById(map_id).style.display="block";
+
+                var map = new Microsoft.Maps.Map("#"+map_id, {
+                center: new Microsoft.Maps.Location(latitude, longitude),
+                zoom: 14
+                });
+
+                var center = map.getCenter();
+
+                var pin = new Microsoft.Maps.Pushpin(center);
+
+                map.entities.push(pin);
+
+            }
+
+            else {
+                document.getElementById(map_id).style.display="none";
+            }
+
+        }
+    </script>
+
 </head>
 <body>
 <iframe class="main" src="/"></iframe>
@@ -12,30 +52,27 @@
     <input type="submit" value="Submit">
 </form>
 <p>Search returned {{ count }} result(s)</p>
-<table class="main">
-    <tr>
-        <th class="main">date</th>
-        <th class="main">time</th>
-        <th class="main">text</th>
-        <th class="main">client</th>
-        <th class="main">link</th>
-    </tr>
     {% for row in events %}
-    <tr>
-        <td class="main">
-            <a href="/viewer/{{ row[0].year }}/{{ row[0].month }}#{{row[0].day }}">
-            {{ row[0] }}
-            </a>
-        </td>
-        <td class="main">{{ row[1] }}</td>
-        <td class="main">{{ row[3] }}</td>
-        <td class="main">{{ row[4] }}</td>
-        <td class="main">
-            <a target="_blank" rel="noopener noreferrer" href="https://www.twitter.com/i/status/{{ row[2] }}/">
-                view</a>
-        </td>
-    </tr>
+<div class="time">
+    {{ row[0].strftime("%A, %B %d %Y") }} -
+    <a href="/viewer/{{ row[0].year }}/{{ row[0].month }}#{{row[0].day }}">
+        {{ row[1] }}
+    </a>
+</div>
+<div class="event">
+    <div class="text">
+        {% for textline in row[3].split('\n') %}
+        {{ textline }}<br>
+        {% endfor %}
+    </div>
+    {% if row[5] and row[6] %}
+    <div class="coordinates"><button onclick="get_map('{{ row[2] }}_map', {{ row[5] }}, {{ row[6] }})">Map</button></div>
+    <div class="bing_map" id="{{ row[2] }}_map" style="display:none">
+    </div>
+    {% endif %}
+    <div class="client">via {{ row[4] }}</div>
+    <div class="view_link"><a target="_blank" rel="noopener noreferrer" href="https://www.twitter.com/i/status/{{ row[2] }}/">View on Twitter</a></div>
+</div>
     {% endfor %}
-</table>
 </body>
 </html>
