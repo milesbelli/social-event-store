@@ -18,6 +18,11 @@ app = Flask(__name__)
 
 @app.route("/")
 def main():
+    return render_template("main.html")
+
+
+@app.route("/top")
+def top():
     return render_template("top.html")
 
 
