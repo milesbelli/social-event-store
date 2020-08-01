@@ -412,7 +412,7 @@ def calendar_grid(date_in_month, **kwargs):
     # it's beyond easy to slot the appropriate color into each calendar day.
     for week in month_grid:
         for day in week:
-            day["color"] = heat_map_colors[day["count"]] if day["count"] > 0 else "#ffffff"
+            day["color"] = heat_map_colors[day["count"]] if day["count"] > 0 else "#555555"
 
     return month_grid
 
