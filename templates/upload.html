@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload An Archive File</title>
+</head>
+<body>
+<iframe class="main" src="/top"></iframe>
+<h1>Upload a File</h1>
+<p>Select a zipped archive to add to the database.</p>
+    <form id="upload_data" action="/upload" method="POST" enctype="multipart/form-data">
+        <select id="source" name="source" form="upload_data">
+            <option value="twitter">Twitter</option>
+        </select>
+        <input type="file" name="zipfile"/>
+        <input type="submit" value="Upload">
+    </form>
+<p>{{ status_message }}</p>
+</body>
+</html>

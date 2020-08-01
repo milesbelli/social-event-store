@@ -54,3 +54,11 @@ tweetid BIGINT(20) NOT NULL,
 field VARCHAR(20) NOT NULL,
 metadata VARCHAR(280),
 PRIMARY KEY(tweetid, field, metadata));
+
+CREATE TABLE IF NOT EXISTS tweeturls (
+tweetid BIGINT(20) NOT NULL,
+shorturl VARCHAR(280),
+displayurl VARCHAR(280),
+ixstart INT(3),
+ixstop INT(3),
+PRIMARY KEY(tweetid, ixstart));

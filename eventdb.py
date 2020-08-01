@@ -191,6 +191,60 @@ def get_date_range(cursor, start_date, end_date):
     return cursor
 
 
+def get_datetime_range(cursor, start_datetime, end_datetime):
+
+    sql_query = ("SELECT eventdate, eventtime, detailid, tweettext, client, latitude, longitude "
+                 "FROM tweetdetails "
+                 "LEFT JOIN events "
+                 "ON detailid = tweetid "
+                 "WHERE CONCAT(eventdate,' ',eventtime) >= '{}' "
+                 "AND CONCAT(eventdate,' ',eventtime) <= '{}' "
+                 "ORDER BY eventdate ASC, eventtime ASC;".format(start_datetime, end_datetime))
+
+    query_start_time = datetime.datetime.now()
+    cursor.execute(sql_query)
+
+    print(f'Returned query:\n{sql_query}\n in {datetime.datetime.now() - query_start_time}')
+
+    return cursor
+
+
+def get_count_for_range(cursor, start_datetime, end_datetime):
+
+    sql_query = ("SELECT COUNT(*) "
+                 "FROM tweetdetails "
+                 "LEFT JOIN events "
+                 "ON detailid = tweetid "
+                 "WHERE CONCAT(eventdate,' ',eventtime) >= '{}' "
+                 "AND CONCAT(eventdate,' ',eventtime) <= '{}';".format(start_datetime, end_datetime))
+
+    cursor.execute(sql_query)
+
+    return cursor
+
+
+def get_search_term(cursor, search_term):
+
+    sql_query = ("SELECT eventdate, eventtime, detailid, tweettext, client, latitude, longitude "
+                 "FROM tweetdetails "
+                 "LEFT JOIN events "
+                 "ON detailid = tweetid "
+                 "WHERE tweettext LIKE '%{}%' "
+                 "ORDER BY eventdate ASC, eventtime ASC;".format(search_term.replace("'", "''")))
+
+    cursor.execute(sql_query)
+
+    return cursor
+
+
+def get_years_with_data(cursor):
+
+    sql_query = "SELECT left(eventdate,4) FROM events GROUP BY left(eventdate,4);"
+    cursor.execute(sql_query)
+
+    return cursor
+
+
 def close_connection(cnx):
 
     return cnx.close()

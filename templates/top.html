@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <title>navbar</title>
+    <style>
+        table {
+            font-family: verdana, sans-serif;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+<table style="float: left">
+    <tr>
+        <td><a href="/viewer" target="_parent">Viewer</a></td>
+        <td><a href="/search" target="_parent">Search</a></td>
+        <td><a href="/upload" target="_parent">Upload</a></td>
+    </tr>
+</table>
+            <form style="float: right" action="/search" method="post" target="_parent">
+                <label for="keyword">Search:</label>
+                <input type="text" id="keyword" name="search" value="{{ default }}">
+                <input type="submit" value="Submit">
+            </form>
+</body>
+</html>

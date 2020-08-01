@@ -1,0 +1,34 @@
+<html>
+<head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+<iframe class="main" src="/top"></iframe>
+<p>Pick a date to get tweets.</p>
+<form action="/day" method="post">
+    <label for="tweetday">Date:</label><br>
+    <input type="date" id="tweetday" name="tweetday" value="{{ default }}">
+    <input type="submit" value="Submit">
+</form>
+<p><a href="/calendar/{{ default }}">Calendar</a></p>
+<table class="main">
+    <tr>
+        <th class="main">date</th>
+        <th class="main">time</th>
+        <th class="main">text</th>
+        <th class="main">client</th>
+        <th class="main">link</th>
+    </tr>
+    {% for row in events %}
+    <tr>
+        <td class="main">{{ row[0] }}</td>
+        <td class="main">{{ row[1] }}</td>
+        <td class="main">{{ row[3] }}</td>
+        <td class="main">{{ row[4] }}</td>
+        <td class="main"><a target="_blank" rel="noopener noreferrer" href="https://www.twitter.com/i/status/{{ row[2] }}/">view</a></td>
+    </tr>
+    {% endfor %}
+</table>
+</body>
+</html>

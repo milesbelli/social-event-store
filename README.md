@@ -16,6 +16,7 @@ The goal of this project is to bring data archives from disparate sources togeth
 * Swarm/Foursquare
 * SMS/text messages
 * Last.fm scrobbles (via API)
+* Steam achievements (via API)
 * Mint transactions
 * Peach???
 * Facebook if I have to
@@ -27,12 +28,12 @@ The goal of this project is to bring data archives from disparate sources togeth
 * Read Twitter archive formats
 * Import Twitter into database
 
-### Milestone 2 - Current
+### Milestone 2
 
 * Support reimporting (continuous updating)
 * Export Twitter archive to *.ical file
 
-### Milestone 3
+### Milestone 3 - Current
 
 * Simple web viewer interface built on Flask
 

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendar</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+
+</head>
+<body>
+<iframe class="main" src="/"></iframe>
+<a href="/calendar/{{ nav['previous'] }}">Previous</a> <a href="/calendar/{{ nav['next'] }}">Next</a>
+<table style="font-size: 20px">
+    <tr>
+        <th style="background-color:lightgray" colspan="7">{{ header }}</th>
+    </tr>
+    <tr>
+        <th>Mon</th>
+        <th>Tue</th>
+        <th>Wed</th>
+        <th>Thu</th>
+        <th>Fri</th>
+        <th>Sat</th>
+        <th>Sun</th>
+    </tr>
+    {% for week in calendar %}
+    <tr>
+        {% for day in week %}
+        {% if day['full_date'] == date %}
+        <td style="background-color:{{ day['color'] }}; border: 1px solid black">
+        {% else %}
+        <td style="background-color:{{ day['color'] }}">
+        {% endif %}
+            <a href="/day/{{ day['full_date'] }}">{{ day["day"] }}</a>
+        </td>
+        {% endfor %}
+    </tr>
+    {% endfor %}
+</table>
+</body>
+</html>

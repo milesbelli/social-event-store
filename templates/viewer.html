@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Archive View</title>
+    <script type="text/javascript">
+        function show_hide_map(map_id) {
+            if(document.getElementById(map_id).style.display=="none"){
+                document.getElementById(map_id).style.display="block";
+            }
+            else {
+                document.getElementById(map_id).style.display="none";
+            }
+        }
+    </script>
+    <script type='text/javascript' src='http://www.bing.com/api/maps/mapcontrol?callback=GetMap&key=AkHjJGDqUeq04-lIEphg6sWsiAjtfIyb3MgcVLNR9gpLhWFICvl78R-HHV4Y2Dna' async defer></script>
+    <script type="text/javascript">
+        function get_map(map_id, latitude, longitude) {
+            console.log("#"+map_id)
+            console.log(latitude+", "+longitude);
+
+            if(document.getElementById(map_id).style.display=="none") {
+                document.getElementById(map_id).style.display="block";
+
+                var map = new Microsoft.Maps.Map("#"+map_id, {
+                center: new Microsoft.Maps.Location(latitude, longitude),
+                zoom: 14
+                });
+
+                var center = map.getCenter();
+
+                var pin = new Microsoft.Maps.Pushpin(center);
+
+                map.entities.push(pin);
+
+            }
+
+            else {
+                document.getElementById(map_id).style.display="none";
+            }
+
+        }
+    </script>
+</head>
+<body>
+<iframe class="main" src="/top"></iframe>
+<form id="get-date" action="/viewer" method="get">
+    <select id="month" name="month" form="get-date">
+        {% for month in pickers["months"] %}
+        <option value="{{ month['value'] }}"
+                {% if month["name"] == header["month"] %} selected {% endif %}>
+        {{ month["name"] }}
+        </option>
+        {% endfor %}
+    </select>
+    <select id="year" name="year" form="get-date">
+        {% for year in pickers["years"] %}
+        <option value="{{ year }}"
+                {% if year == header["year"] %} selected {% endif %}>
+        {{ year }}
+        </option>
+        {% endfor %}
+    </select>
+    <input type="submit" value="Go">
+</form>
+<table style="font-size: 20px">
+    <tr style="background-color: #555555">
+        <th><a href="/viewer/{{ nav['previous'] }}">&lt;</a></th>
+        <th colspan="5">{{ header["month"] }} {{ header["year"] }}</th>
+        <th><a href="/viewer/{{ nav['next'] }}">&gt;</a></th>
+
+    </tr>
+    <tr>
+        <th>Mon</th>
+        <th>Tue</th>
+        <th>Wed</th>
+        <th>Thu</th>
+        <th>Fri</th>
+        <th>Sat</th>
+        <th>Sun</th>
+    </tr>
+    {% for week in calendar %}
+    <tr>
+        {% for day in week %}
+        {% if day['full_date'] == date %}
+        <td style="background-color:{{ day['color'] }}; border: 1px solid black">
+        {% else %}
+        <td style="background-color:{{ day['color'] }}">
+        {% endif %}
+            <a class="calendar" href="#{{ day['day'] }}">{{ day["day"] }}</a>
+        </td>
+        {% endfor %}
+    </tr>
+    {% endfor %}
+</table>
+{% for day in month %}
+{% if day["count"] != 0 %}
+<h2 id="{{ day['date_day'] }}">{{ day["date_human"] }}</h2>
+<p>{{ day["count"] }} event{% if day["count"] > 1 %}s{% endif %} <a href="#">Top</a></p>
+    {% for row in day["events"] %}
+<div class="time">{{ row[1] }}</div>
+<div class="event">
+    <div class="text">
+        {% for textline in row[3].split('\n') %}
+        {{ textline }}<br>
+        {% endfor %}
+    </div>
+    {% if row[5] and row[6] %}
+    <div class="coordinates"><button onclick="get_map('{{ row[2] }}_map', {{ row[5] }}, {{ row[6] }})">Map</button></div>
+    <div class="bing_map" id="{{ row[2] }}_map" style="display:none">
+    </div>
+    {% endif %}
+    <div class="client">via {{ row[4] }}</div>
+    <div class="view_link"><a target="_blank" rel="noopener noreferrer" href="https://www.twitter.com/i/status/{{ row[2] }}/">View on Twitter</a></div>
+</div>
+    {% endfor %}
+{% endif %}
+{% endfor %}
+</body>
+</html>
