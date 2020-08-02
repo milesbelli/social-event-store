@@ -7,6 +7,7 @@ import pytz
 import zipfile
 from multiprocessing import Process
 import time
+import requests
 
 
 def retrieve_from_twitter(post_id):
