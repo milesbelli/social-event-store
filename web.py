@@ -18,12 +18,15 @@ app = Flask(__name__)
 
 @app.route("/")
 def main():
-    return render_template("main.html")
+    warning = "Database appears to be stopped. Start it before continuing." if not twitter.database_running() \
+        else ""
+    return render_template("main.html", warn=warning)
 
 
 @app.route("/top")
 def top():
-    return render_template("top.html")
+    disable = request.args.get("disable", type=bool)    # This should be implied false
+    return render_template("top.html", disable=disable)
 
 
 @app.route("/tweet/<tweetid>")

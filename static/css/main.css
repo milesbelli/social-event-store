@@ -71,9 +71,14 @@ iframe.main {
 }
 
 button {
-background-color: #333333;
-//border: 1px solid #00ffff;
-border: none;
-color: #00ffff;
-padding: 4px;
+    background-color: #333333;
+    //border: 1px solid #00ffff;
+    border: none;
+    color: #00ffff;
+    padding: 4px;
+}
+
+.warning {
+    color: red;
+    font-size: 24px;
 }

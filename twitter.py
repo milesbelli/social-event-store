@@ -590,6 +590,19 @@ def fix_symbols(message):
     return message;
 
 
+def database_running():
+
+    try:
+        cnx = eventdb.create_connection('social')
+        cursor = cnx.cursor()
+        eventdb.close_connection(cnx)
+
+        return True
+
+    except:
+        return False
+
+
 if __name__ == '__main__':
 
     # # Inside acct directory place account.js if you have it
