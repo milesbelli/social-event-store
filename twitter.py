@@ -594,7 +594,6 @@ def database_running():
 
     try:
         cnx = eventdb.create_connection('social')
-        cursor = cnx.cursor()
         eventdb.close_connection(cnx)
 
         return True
