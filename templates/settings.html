@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <title>User Settings</title>
+</head>
+<body>
+
+<iframe class="main" src="/top"></iframe>
+<p>Set user preferences.</p>
+<form id="save-settings" action="/settings" method="post">
+    <table id="settings-table">
+        <tr>
+            <td>
+                Time zone
+            </td>
+            <td>
+            <select id="timezone" name="timezone" form="save-settings">
+                {% for tz in timezones %}
+                    <option value="{{ tz }}">{{ tz }}</option>
+                {% endfor %}
+            </select>
+            </td>
+        </tr>
+    </table>
+    <p><input type="submit" value="Save"></p>
+</form>
+</body>
+</html>

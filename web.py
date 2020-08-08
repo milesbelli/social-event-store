@@ -145,6 +145,17 @@ def upload_data():
         return render_template("upload.html", status_message=f"The file {file.filename} has been successfully uploaded.")
 
 
+@app.route("/settings", methods=["GET", "POST"])
+def user_settings():
+
+    if request.method == "GET":
+        return render_template("settings.html", timezones=["us/eastern"])
+
+    elif request.method == "POST":
+        print(f"Timezone is {request.form['timezone']}, saved successfully")
+        return render_template("settings.html", timezones=["us/eastern"])
+
+
 # Running this should launch the server, but it doesn't seem to work in Unix
 if __name__ == "__main__":
     app.run(host="0.0.0.0")

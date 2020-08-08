@@ -62,3 +62,9 @@ displayurl VARCHAR(280),
 ixstart INT(3),
 ixstop INT(3),
 PRIMARY KEY(tweetid, ixstart));
+
+CREATE TABLE IF NOT EXISTS user_preference (
+userid INT(11) NOT NULL,
+preference_key VARCHAR(64) NOT NULL,
+preference_value VARCHAR(128) NOT NULL,
+PRIMARY KEY(userid, preference_key));
