@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect
 import twitter
 import datetime
+import pytz
 from multiprocessing import Process
 
 app = Flask(__name__)
@@ -149,11 +150,11 @@ def upload_data():
 def user_settings():
 
     if request.method == "GET":
-        return render_template("settings.html", timezones=["us/eastern"])
+        return render_template("settings.html", timezones=pytz.all_timezones)
 
     elif request.method == "POST":
         print(f"Timezone is {request.form['timezone']}, saved successfully")
-        return render_template("settings.html", timezones=["us/eastern"])
+        return render_template("settings.html", timezones=pytz.all_timezones)
 
 
 # Running this should launch the server, but it doesn't seem to work in Unix

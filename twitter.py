@@ -587,7 +587,7 @@ def fix_symbols(message):
     for symbol in symbols:
         message = message.replace(symbol, symbols[symbol])
 
-    return message;
+    return message
 
 
 def database_running():
@@ -619,11 +619,11 @@ if __name__ == '__main__':
     #     print("Finished in {}".format(datetime.datetime.now() - start_time))
 
     # # Set date range of tweets that you want for iCal file
-    # tweet_subset = get_tweets_for_date_range('2018-01-01', '2019-12-31')
+    # tweet_subset = get_tweets_for_date_range('2017-01-01', '2019-12-31')
     # ical_data = output_tweets_to_ical(tweet_subset)
     #
     # # Create a file in the output directory for the iCal data
-    # with open("output/tweets-2018-19.ics", "w", encoding="utf8") as ics_file:
+    # with open("output/tweets-2017-19.ics", "w", encoding="utf8") as ics_file:
     #     ics_file.write(ical_data)
 
     # grid = calendar_grid(datetime.date(2010, 11, 6))
@@ -639,6 +639,6 @@ if __name__ == '__main__':
     # temporary_path = unpack_and_store_files("data/17079629_ee3bcdc890285fc6c215527dca530f05fdd937ae.zip", "output")
     # print(temporary_path)
 
-    cleanup('output/20200610223504349588')
+    # cleanup('output/20200610223504349588')
 
     exit(0)
