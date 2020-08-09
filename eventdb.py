@@ -272,8 +272,6 @@ def set_user_preferences(user_id, **kwargs):
                  f" WHEN preference_key = 'timezone' THEN '{kwargs.get('timezone')}'" +
                  f" ELSE NULL END;")
 
-    print(f"Executing:\n{sql_query}")
-
     cursor.execute(sql_query)
 
     cnx.commit()

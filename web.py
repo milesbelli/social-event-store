@@ -156,8 +156,9 @@ def user_settings():
     elif request.method == "POST":
         user_prefs.update(timezone=request.form['timezone'])
         print(f"Timezone is {request.form['timezone']}, saved successfully")
+        save_message = "Changes saved successfully"
 
-        return render_template("settings.html", timezones=pytz.all_timezones, user_prefs=user_prefs)
+        return render_template("settings.html", timezones=pytz.all_timezones, user_prefs=user_prefs, msg=save_message)
 
 
 # Running this should launch the server, but it doesn't seem to work in Unix
