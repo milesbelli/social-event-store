@@ -19,7 +19,7 @@
             <td>
             <select id="timezone" name="timezone" form="save-settings">
                 {% for tz in timezones %}
-                    <option value="{{ tz }}">{{ tz }}</option>
+                    <option value="{{ tz }}" {% if user_prefs.timezone == tz %} selected {% endif %}>{{ tz }}</option>
                 {% endfor %}
             </select>
             </td>
