@@ -245,6 +245,41 @@ def get_years_with_data(cursor):
     return cursor
 
 
+def get_user_preferences(user_id):
+
+    cnx = create_connection("social")
+    cursor = cnx.cursor()
+
+    sql_query = f"SELECT preference_key, preference_value FROM user_preference WHERE userid = {user_id};"
+    cursor.execute(sql_query)
+
+    preferences = dict()
+
+    for i in cursor:
+        preferences[i[0]] = i[1]
+
+    close_connection(cnx)
+
+    return preferences
+
+
+def set_user_preferences(user_id, **kwargs):
+    cnx = create_connection("social")
+    cursor = cnx.cursor()
+
+    sql_query = (f"INSERT INTO user_preference VALUES ('{user_id}', 'timezone', '{kwargs.get('timezone')}')" +
+                 " ON DUPLICATE KEY UPDATE preference_value=CASE" +
+                 f" WHEN preference_key = 'timezone' THEN '{kwargs.get('timezone')}'" +
+                 f" ELSE NULL END;")
+
+    print(f"Executing:\n{sql_query}")
+
+    cursor.execute(sql_query)
+
+    cnx.commit()
+    close_connection(cnx)
+
+
 def close_connection(cnx):
 
     return cnx.close()

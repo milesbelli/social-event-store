@@ -148,13 +148,16 @@ def upload_data():
 
 @app.route("/settings", methods=["GET", "POST"])
 def user_settings():
+    user_prefs = twitter.UserPreferences(1)
 
     if request.method == "GET":
-        return render_template("settings.html", timezones=pytz.all_timezones)
+        return render_template("settings.html", timezones=pytz.all_timezones, user_prefs=user_prefs)
 
     elif request.method == "POST":
+        user_prefs.update(timezone=request.form['timezone'])
         print(f"Timezone is {request.form['timezone']}, saved successfully")
-        return render_template("settings.html", timezones=pytz.all_timezones)
+
+        return render_template("settings.html", timezones=pytz.all_timezones, user_prefs=user_prefs)
 
 
 # Running this should launch the server, but it doesn't seem to work in Unix

@@ -602,6 +602,17 @@ def database_running():
         return False
 
 
+class UserPreferences:
+    def __init__(self, user_id):
+        self.user_id = user_id
+        db_prefs = eventdb.get_user_preferences(self.user_id)
+        self.timezone = db_prefs.get('timezone') or 'UTC'
+
+    def update(self, **kwargs):
+        self.timezone = kwargs.get('timezone') or self.timezone
+        eventdb.set_user_preferences(1, timezone=self.timezone)
+
+
 if __name__ == '__main__':
 
     # # Inside acct directory place account.js if you have it
