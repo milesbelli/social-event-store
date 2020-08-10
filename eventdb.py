@@ -253,6 +253,8 @@ def get_user_preferences(user_id):
     sql_query = f"SELECT preference_key, preference_value FROM user_preference WHERE userid = {user_id};"
     cursor.execute(sql_query)
 
+    print(sql_query)
+
     preferences = dict()
 
     for i in cursor:

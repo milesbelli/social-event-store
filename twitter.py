@@ -179,7 +179,7 @@ def get_one_tweet(tweetid):
     return output
 
 
-def localize_date_range(start_date, end_date):
+def localize_date_range(start_date, end_date, **kwargs):
     # First convert the str dates to datetime dates
     start_date = datetime.datetime.strptime(start_date, "%Y-%m-%d")
     end_date = datetime.datetime.strptime(end_date, "%Y-%m-%d")
@@ -189,8 +189,9 @@ def localize_date_range(start_date, end_date):
     end_date = datetime.datetime.combine(end_date, datetime.time(23, 59, 59))
 
     # Then go from Local to UTC
-    start_date = local_to_utc(start_date)
-    end_date = local_to_utc(end_date)
+    timezone = kwargs.get('timezone') or 'UTC'
+    start_date = local_to_utc(start_date, timezone=timezone)
+    end_date = local_to_utc(end_date, timezone=timezone)
 
     # Finally back to strings
     start_date = start_date.strftime('%Y-%m-%d %H:%M:%S')
@@ -199,11 +200,11 @@ def localize_date_range(start_date, end_date):
     return start_date, end_date
 
 
-def get_tweets_for_date_range(start_date, end_date):
+def get_tweets_for_date_range(start_date, end_date, user_prefs):
     cnx = eventdb.create_connection("social")
     cursor = cnx.cursor()
 
-    start_date, end_date = localize_date_range(start_date, end_date)
+    start_date, end_date = localize_date_range(start_date, end_date, timezone=user_prefs.timezone)
 
     eventdb.get_datetime_range(cursor, start_date, end_date)
     output = list()
@@ -295,33 +296,37 @@ def output_tweets_to_ical(list_of_tweets):
 
     return ical_string
 
-def utc_to_local(source_dt):
+def utc_to_local(source_dt, **kwargs):
     # Use pytz module to convert a utc datetime to local datetime
 
+    timezone = kwargs.get("timezone")
+
     utc = pytz.timezone("utc")
-    local = pytz.timezone("us/eastern")
+    local = pytz.timezone(timezone)
 
     utc_dt = utc.localize(source_dt)
     return utc_dt.astimezone(local)
 
 
-def local_to_utc(source_dt):
+def local_to_utc(source_dt, **kwargs):
     # Use pytz module to convert a local datetime to utc datetime
 
-    local = pytz.timezone("us/eastern")
+    timezone = kwargs.get("timezone") or 'UTC'
+
+    local = pytz.timezone(timezone)
     utc = pytz.timezone("utc")
 
     local_dt = local.localize(source_dt)
     return local_dt.astimezone(utc)
 
 
-def tweets_in_local_time(tweets, am_pm_time=False):
+def tweets_in_local_time(tweets, user_prefs, am_pm_time=False):
 
     output_tweets = list()
 
     for tweet in tweets:
         tweet_dtime = datetime.datetime.combine(tweet[0], datetime.time()) + tweet[1]
-        tweet_dtime = utc_to_local(tweet_dtime)
+        tweet_dtime = utc_to_local(tweet_dtime, timezone=user_prefs.timezone)
 
         tweet_out = list()
         tweet_out.append(tweet_dtime.date())
@@ -441,6 +446,8 @@ def to_hex(integer):
 
 def get_one_month_of_events(year, month):
 
+    user_prefs = UserPreferences(1)
+
     start_time = datetime.datetime.now()
 
     day_of_month = datetime.date(year, month, 1)
@@ -460,7 +467,8 @@ def get_one_month_of_events(year, month):
         list_of_days.append(today)
         day_of_month = day_of_month + datetime.timedelta(1, 0)
 
-    tweets = tweets_in_local_time(get_tweets_for_date_range(first_day, last_day), True)
+    tweets = tweets_in_local_time(get_tweets_for_date_range(first_day, last_day, user_prefs),
+                                  user_prefs, True)
     tweets_by_date = dict()
     for tweet in tweets:
         if not tweets_by_date.get(tweet[0].strftime("%Y-%m-%d")):
