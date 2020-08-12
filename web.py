@@ -44,19 +44,21 @@ def one_day():
         return render_template("day.html")
 
     elif request.method == "POST":
+        user_prefs = twitter.UserPreferences(1)
         date = request.form['tweetday'] or datetime.datetime.today().strftime("%Y-%m-%d")
         print("Getting tweets for {}.".format(date))
         tweets = twitter.get_tweets_for_date_range(date, date)
-        tweets = twitter.tweets_in_local_time(tweets, True)
+        tweets = twitter.tweets_in_local_time(tweets, user_prefs, True)
 
         return render_template("day.html", events=tweets, default=date)
 
 
 @app.route("/day/<date>", methods=["GET"])
 def one_day_from_url(date):
+    user_pref = twitter.UserPreferences(1)
     print("Getting tweets for {}.".format(date))
     tweets = twitter.get_tweets_for_date_range(date, date)
-    tweets = twitter.tweets_in_local_time(tweets, True)
+    tweets = twitter.tweets_in_local_time(tweets, user_pref, True)
 
     return render_template("day.html", events=tweets, default=date)
 
@@ -68,10 +70,11 @@ def search():
         return render_template("search.html")
 
     elif request.method == "POST":
+        user_prefs = twitter.UserPreferences(1)
         search_term = request.form["search"]
         print("Searching for tweets containing '{}'".format(search_term))
         tweets = twitter.search_for_term(search_term)
-        tweets = twitter.tweets_in_local_time(tweets, True)
+        tweets = twitter.tweets_in_local_time(tweets, user_prefs, True)
 
         return render_template("search.html", events=tweets, default=search_term, count=len(tweets))
 

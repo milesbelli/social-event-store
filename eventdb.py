@@ -224,13 +224,15 @@ def get_count_for_range(cursor, start_datetime, end_datetime):
 
 
 def get_search_term(cursor, search_term):
+    search_term = search_term.replace("'", "''")
+    search_term = search_term.replace("\\", "\\\\")
 
     sql_query = ("SELECT eventdate, eventtime, detailid, tweettext, client, latitude, longitude "
                  "FROM tweetdetails "
                  "LEFT JOIN events "
                  "ON detailid = tweetid "
-                 "WHERE tweettext LIKE '%{}%' "
-                 "ORDER BY eventdate ASC, eventtime ASC;".format(search_term.replace("'", "''")))
+                 f"WHERE tweettext LIKE '%{search_term}%' "
+                 "ORDER BY eventdate ASC, eventtime ASC;")
 
     cursor.execute(sql_query)
 
