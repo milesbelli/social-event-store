@@ -342,16 +342,8 @@ def tweets_in_local_time(tweets, user_prefs, am_pm_time=False):
 
 
 def search_for_term(search_term):
-    cnx = eventdb.create_connection("social")
-    cursor = cnx.cursor()
 
-    eventdb.get_search_term(cursor, search_term)
-    output = list()
-
-    for i in cursor:
-        output.append(i)
-
-    eventdb.close_connection(cnx)
+    output = eventdb.get_search_term(search_term)
 
     return output
 
@@ -486,16 +478,7 @@ def get_one_month_of_events(year, month):
 
 def build_date_pickers():
 
-    cnx = eventdb.create_connection("social")
-    cursor = cnx.cursor()
-
-    eventdb.get_years_with_data(cursor)
-    years = list()
-
-    for i in cursor:
-        years.append(i[0])
-
-    eventdb.close_connection(cnx)
+    years = eventdb.get_years_with_data()
 
     months = list()
 

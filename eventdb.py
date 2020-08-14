@@ -40,8 +40,8 @@ def insert_tweets(list_of_tweets, cnx):
             value_to_append = "('{}','{}','{}','{}',{},{},{},'{}',{})"
 
             values_tweets += "".join(value_to_append.format(tweet_id,
-                                                            "1",                                       #This is hardcoded and will need to change
-                                                            list_of_tweets[i]["text"].replace("'", "''"), #Escape character for apostrophes
+                                                            "1",                                       # This is hardcoded and will need to change
+                                                            list_of_tweets[i]["text"].replace("'", "''"),  # Escape character for apostrophes
                                                             list_of_tweets[i]["user"]["id"],
                                                             list_of_tweets[i]["latitude"],
                                                             list_of_tweets[i]["longitude"],
@@ -223,7 +223,11 @@ def get_count_for_range(cursor, start_datetime, end_datetime):
     return cursor
 
 
-def get_search_term(cursor, search_term):
+def get_search_term(search_term):
+
+    cnx = create_connection("social")
+    cursor = cnx.cursor()
+
     search_term = search_term.replace("'", "''")
     search_term = search_term.replace("\\", "\\\\")
 
@@ -236,15 +240,32 @@ def get_search_term(cursor, search_term):
 
     cursor.execute(sql_query)
 
-    return cursor
+    output = list()
+
+    for i in cursor:
+        output.append(i)
+
+    close_connection(cnx)
+
+    return output
 
 
-def get_years_with_data(cursor):
+def get_years_with_data():
+
+    cnx = create_connection("social")
+    cursor = cnx.cursor()
 
     sql_query = "SELECT left(eventdate,4) FROM events GROUP BY left(eventdate,4) ORDER BY left(eventdate,4);"
     cursor.execute(sql_query)
 
-    return cursor
+    years = list()
+
+    for i in cursor:
+        years.append(i[0])
+
+    close_connection(cnx)
+
+    return years
 
 
 def get_user_preferences(user_id):
