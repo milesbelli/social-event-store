@@ -163,19 +163,9 @@ def process_from_file(file_path):
 
     
 def get_one_tweet(tweetid):
-    
-    cnx = eventdb.create_connection('social')
-    cursor = cnx.cursor()
-    
-    eventdb.get_tweet(cursor, tweetid)
-    
-    output = list()
-    
-    for i in cursor:
-        output.append(i)
-    
-    eventdb.close_connection(cnx)
-    
+
+    output = eventdb.get_tweet(tweetid)
+
     return output
 
 
@@ -201,35 +191,19 @@ def localize_date_range(start_date, end_date, **kwargs):
 
 
 def get_tweets_for_date_range(start_date, end_date, user_prefs):
-    cnx = eventdb.create_connection("social")
-    cursor = cnx.cursor()
 
     start_date, end_date = localize_date_range(start_date, end_date, timezone=user_prefs.timezone)
 
-    eventdb.get_datetime_range(cursor, start_date, end_date)
-    output = list()
-
-    for i in cursor:
-        output.append(i)
-
-    eventdb.close_connection(cnx)
+    output = eventdb.get_datetime_range(start_date, end_date)
 
     return output
 
 
 def get_count_for_date_range(start_date, end_date):
-    cnx = eventdb.create_connection("social")
-    cursor = cnx.cursor()
 
     start_date, end_date = localize_date_range(start_date, end_date)
 
-    eventdb.get_count_for_range(cursor, start_date, end_date)
-    output = list()
-
-    for i in cursor:
-        output.append(i)
-
-    eventdb.close_connection(cnx)
+    output = eventdb.get_count_for_range(start_date, end_date)
 
     return output
 

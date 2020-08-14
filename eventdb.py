@@ -164,8 +164,11 @@ def get_existing_tweets(cursor):
     return output
 
 
-def get_tweet(cursor, tweet_id):
-    
+def get_tweet(tweet_id):
+
+    cnx = create_connection('social')
+    cursor = cnx.cursor()
+
     sql_tweet = ("SELECT eventdate, eventtime, tweetdetails.* "
                  "FROM tweetdetails "
                  "LEFT JOIN events "
@@ -173,8 +176,15 @@ def get_tweet(cursor, tweet_id):
                  "WHERE tweetid = '{}' AND events.eventtype='twitter';".format(tweet_id))
     
     cursor.execute(sql_tweet)
-    
-    return cursor
+
+    output = list()
+
+    for i in cursor:
+        output.append(i)
+
+    close_connection(cnx)
+
+    return output
 
 
 def get_date_range(cursor, start_date, end_date):
@@ -191,7 +201,10 @@ def get_date_range(cursor, start_date, end_date):
     return cursor
 
 
-def get_datetime_range(cursor, start_datetime, end_datetime):
+def get_datetime_range(start_datetime, end_datetime):
+
+    cnx = create_connection("social")
+    cursor = cnx.cursor()
 
     sql_query = ("SELECT eventdate, eventtime, detailid, tweettext, client, latitude, longitude "
                  "FROM tweetdetails "
@@ -206,10 +219,20 @@ def get_datetime_range(cursor, start_datetime, end_datetime):
 
     print(f'Returned query:\n{sql_query}\n in {datetime.datetime.now() - query_start_time}')
 
-    return cursor
+    output = list()
+
+    for i in cursor:
+        output.append(i)
+
+    close_connection(cnx)
+
+    return output
 
 
-def get_count_for_range(cursor, start_datetime, end_datetime):
+def get_count_for_range(start_datetime, end_datetime):
+
+    cnx = create_connection("social")
+    cursor = cnx.cursor()
 
     sql_query = ("SELECT COUNT(*) "
                  "FROM tweetdetails "
@@ -220,7 +243,14 @@ def get_count_for_range(cursor, start_datetime, end_datetime):
 
     cursor.execute(sql_query)
 
-    return cursor
+    output = list()
+
+    for i in cursor:
+        output.append(i)
+
+    close_connection(cnx)
+
+    return output
 
 
 def get_search_term(search_term):
