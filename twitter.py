@@ -7,6 +7,7 @@ import pytz
 import zipfile
 from multiprocessing import Process
 import time
+import requests
 
 
 def retrieve_from_twitter(post_id):
@@ -162,23 +163,13 @@ def process_from_file(file_path):
 
     
 def get_one_tweet(tweetid):
-    
-    cnx = eventdb.create_connection('social')
-    cursor = cnx.cursor()
-    
-    eventdb.get_tweet(cursor, tweetid)
-    
-    output = list()
-    
-    for i in cursor:
-        output.append(i)
-    
-    eventdb.close_connection(cnx)
-    
+
+    output = eventdb.get_tweet(tweetid)
+
     return output
 
 
-def localize_date_range(start_date, end_date):
+def localize_date_range(start_date, end_date, **kwargs):
     # First convert the str dates to datetime dates
     start_date = datetime.datetime.strptime(start_date, "%Y-%m-%d")
     end_date = datetime.datetime.strptime(end_date, "%Y-%m-%d")
@@ -188,8 +179,9 @@ def localize_date_range(start_date, end_date):
     end_date = datetime.datetime.combine(end_date, datetime.time(23, 59, 59))
 
     # Then go from Local to UTC
-    start_date = local_to_utc(start_date)
-    end_date = local_to_utc(end_date)
+    timezone = kwargs.get('timezone') or 'UTC'
+    start_date = local_to_utc(start_date, timezone=timezone)
+    end_date = local_to_utc(end_date, timezone=timezone)
 
     # Finally back to strings
     start_date = start_date.strftime('%Y-%m-%d %H:%M:%S')
@@ -198,36 +190,20 @@ def localize_date_range(start_date, end_date):
     return start_date, end_date
 
 
-def get_tweets_for_date_range(start_date, end_date):
-    cnx = eventdb.create_connection("social")
-    cursor = cnx.cursor()
+def get_tweets_for_date_range(start_date, end_date, user_prefs):
 
-    start_date, end_date = localize_date_range(start_date, end_date)
+    start_date, end_date = localize_date_range(start_date, end_date, timezone=user_prefs.timezone)
 
-    eventdb.get_datetime_range(cursor, start_date, end_date)
-    output = list()
-
-    for i in cursor:
-        output.append(i)
-
-    eventdb.close_connection(cnx)
+    output = eventdb.get_datetime_range(start_date, end_date)
 
     return output
 
 
 def get_count_for_date_range(start_date, end_date):
-    cnx = eventdb.create_connection("social")
-    cursor = cnx.cursor()
 
     start_date, end_date = localize_date_range(start_date, end_date)
 
-    eventdb.get_count_for_range(cursor, start_date, end_date)
-    output = list()
-
-    for i in cursor:
-        output.append(i)
-
-    eventdb.close_connection(cnx)
+    output = eventdb.get_count_for_range(start_date, end_date)
 
     return output
 
@@ -294,33 +270,37 @@ def output_tweets_to_ical(list_of_tweets):
 
     return ical_string
 
-def utc_to_local(source_dt):
+def utc_to_local(source_dt, **kwargs):
     # Use pytz module to convert a utc datetime to local datetime
 
+    timezone = kwargs.get("timezone")
+
     utc = pytz.timezone("utc")
-    local = pytz.timezone("us/eastern")
+    local = pytz.timezone(timezone)
 
     utc_dt = utc.localize(source_dt)
     return utc_dt.astimezone(local)
 
 
-def local_to_utc(source_dt):
+def local_to_utc(source_dt, **kwargs):
     # Use pytz module to convert a local datetime to utc datetime
 
-    local = pytz.timezone("us/eastern")
+    timezone = kwargs.get("timezone") or 'UTC'
+
+    local = pytz.timezone(timezone)
     utc = pytz.timezone("utc")
 
     local_dt = local.localize(source_dt)
     return local_dt.astimezone(utc)
 
 
-def tweets_in_local_time(tweets, am_pm_time=False):
+def tweets_in_local_time(tweets, user_prefs, am_pm_time=False):
 
     output_tweets = list()
 
     for tweet in tweets:
         tweet_dtime = datetime.datetime.combine(tweet[0], datetime.time()) + tweet[1]
-        tweet_dtime = utc_to_local(tweet_dtime)
+        tweet_dtime = utc_to_local(tweet_dtime, timezone=user_prefs.timezone)
 
         tweet_out = list()
         tweet_out.append(tweet_dtime.date())
@@ -336,16 +316,8 @@ def tweets_in_local_time(tweets, am_pm_time=False):
 
 
 def search_for_term(search_term):
-    cnx = eventdb.create_connection("social")
-    cursor = cnx.cursor()
 
-    eventdb.get_search_term(cursor, search_term)
-    output = list()
-
-    for i in cursor:
-        output.append(i)
-
-    eventdb.close_connection(cnx)
+    output = eventdb.get_search_term(search_term)
 
     return output
 
@@ -440,6 +412,8 @@ def to_hex(integer):
 
 def get_one_month_of_events(year, month):
 
+    user_prefs = UserPreferences(1)
+
     start_time = datetime.datetime.now()
 
     day_of_month = datetime.date(year, month, 1)
@@ -459,7 +433,8 @@ def get_one_month_of_events(year, month):
         list_of_days.append(today)
         day_of_month = day_of_month + datetime.timedelta(1, 0)
 
-    tweets = tweets_in_local_time(get_tweets_for_date_range(first_day, last_day), True)
+    tweets = tweets_in_local_time(get_tweets_for_date_range(first_day, last_day, user_prefs),
+                                  user_prefs, True)
     tweets_by_date = dict()
     for tweet in tweets:
         if not tweets_by_date.get(tweet[0].strftime("%Y-%m-%d")):
@@ -477,16 +452,7 @@ def get_one_month_of_events(year, month):
 
 def build_date_pickers():
 
-    cnx = eventdb.create_connection("social")
-    cursor = cnx.cursor()
-
-    eventdb.get_years_with_data(cursor)
-    years = list()
-
-    for i in cursor:
-        years.append(i[0])
-
-    eventdb.close_connection(cnx)
+    years = eventdb.get_years_with_data()
 
     months = list()
 
@@ -586,7 +552,30 @@ def fix_symbols(message):
     for symbol in symbols:
         message = message.replace(symbol, symbols[symbol])
 
-    return message;
+    return message
+
+
+def database_running():
+
+    try:
+        cnx = eventdb.create_connection('social')
+        eventdb.close_connection(cnx)
+
+        return True
+
+    except:
+        return False
+
+
+class UserPreferences:
+    def __init__(self, user_id):
+        self.user_id = user_id
+        db_prefs = eventdb.get_user_preferences(self.user_id)
+        self.timezone = db_prefs.get('timezone') or 'UTC'
+
+    def update(self, **kwargs):
+        self.timezone = kwargs.get('timezone') or self.timezone
+        eventdb.set_user_preferences(1, timezone=self.timezone)
 
 
 if __name__ == '__main__':
@@ -606,11 +595,11 @@ if __name__ == '__main__':
     #     print("Finished in {}".format(datetime.datetime.now() - start_time))
 
     # # Set date range of tweets that you want for iCal file
-    # tweet_subset = get_tweets_for_date_range('2018-01-01', '2019-12-31')
+    # tweet_subset = get_tweets_for_date_range('2017-01-01', '2019-12-31')
     # ical_data = output_tweets_to_ical(tweet_subset)
     #
     # # Create a file in the output directory for the iCal data
-    # with open("output/tweets-2018-19.ics", "w", encoding="utf8") as ics_file:
+    # with open("output/tweets-2017-19.ics", "w", encoding="utf8") as ics_file:
     #     ics_file.write(ical_data)
 
     # grid = calendar_grid(datetime.date(2010, 11, 6))
@@ -626,6 +615,6 @@ if __name__ == '__main__':
     # temporary_path = unpack_and_store_files("data/17079629_ee3bcdc890285fc6c215527dca530f05fdd937ae.zip", "output")
     # print(temporary_path)
 
-    cleanup('output/20200610223504349588')
+    # cleanup('output/20200610223504349588')
 
     exit(0)

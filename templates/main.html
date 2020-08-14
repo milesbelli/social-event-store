@@ -7,8 +7,9 @@
     <title>Social Event Archive Viewer</title>
 </head>
 <body>
-<iframe class="main" src="/top"></iframe>
+<iframe class="main" src="/top{% if warn %}?disable=True{% endif %}"></iframe>
 <h1>Social Event Store</h1>
 <p>Select from the options above.</p>
+<p class="warning">{{ warn }}</p>
 </body>
 </html>

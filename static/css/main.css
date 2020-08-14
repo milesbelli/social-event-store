@@ -5,6 +5,7 @@ body {
 }
 a {
     color: #00ffff;
+    text-decoration: none;
 }
 a.calendar {
     color: black;
@@ -67,4 +68,17 @@ iframe.main {
     position:relative;
     width:600px;
     height:400px;
+}
+
+button {
+    background-color: #333333;
+    //border: 1px solid #00ffff;
+    border: none;
+    color: #00ffff;
+    padding: 4px;
+}
+
+.warning {
+    color: red;
+    font-size: 24px;
 }

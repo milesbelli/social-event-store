@@ -40,8 +40,8 @@ def insert_tweets(list_of_tweets, cnx):
             value_to_append = "('{}','{}','{}','{}',{},{},{},'{}',{})"
 
             values_tweets += "".join(value_to_append.format(tweet_id,
-                                                            "1",                                       #This is hardcoded and will need to change
-                                                            list_of_tweets[i]["text"].replace("'", "''"), #Escape character for apostrophes
+                                                            "1",                                       # This is hardcoded and will need to change
+                                                            list_of_tweets[i]["text"].replace("'", "''"),  # Escape character for apostrophes
                                                             list_of_tweets[i]["user"]["id"],
                                                             list_of_tweets[i]["latitude"],
                                                             list_of_tweets[i]["longitude"],
@@ -164,8 +164,11 @@ def get_existing_tweets(cursor):
     return output
 
 
-def get_tweet(cursor, tweet_id):
-    
+def get_tweet(tweet_id):
+
+    cnx = create_connection('social')
+    cursor = cnx.cursor()
+
     sql_tweet = ("SELECT eventdate, eventtime, tweetdetails.* "
                  "FROM tweetdetails "
                  "LEFT JOIN events "
@@ -173,8 +176,15 @@ def get_tweet(cursor, tweet_id):
                  "WHERE tweetid = '{}' AND events.eventtype='twitter';".format(tweet_id))
     
     cursor.execute(sql_tweet)
-    
-    return cursor
+
+    output = list()
+
+    for i in cursor:
+        output.append(i)
+
+    close_connection(cnx)
+
+    return output
 
 
 def get_date_range(cursor, start_date, end_date):
@@ -191,7 +201,10 @@ def get_date_range(cursor, start_date, end_date):
     return cursor
 
 
-def get_datetime_range(cursor, start_datetime, end_datetime):
+def get_datetime_range(start_datetime, end_datetime):
+
+    cnx = create_connection("social")
+    cursor = cnx.cursor()
 
     sql_query = ("SELECT eventdate, eventtime, detailid, tweettext, client, latitude, longitude "
                  "FROM tweetdetails "
@@ -206,10 +219,20 @@ def get_datetime_range(cursor, start_datetime, end_datetime):
 
     print(f'Returned query:\n{sql_query}\n in {datetime.datetime.now() - query_start_time}')
 
-    return cursor
+    output = list()
+
+    for i in cursor:
+        output.append(i)
+
+    close_connection(cnx)
+
+    return output
 
 
-def get_count_for_range(cursor, start_datetime, end_datetime):
+def get_count_for_range(start_datetime, end_datetime):
+
+    cnx = create_connection("social")
+    cursor = cnx.cursor()
 
     sql_query = ("SELECT COUNT(*) "
                  "FROM tweetdetails "
@@ -220,29 +243,96 @@ def get_count_for_range(cursor, start_datetime, end_datetime):
 
     cursor.execute(sql_query)
 
-    return cursor
+    output = list()
+
+    for i in cursor:
+        output.append(i)
+
+    close_connection(cnx)
+
+    return output
 
 
-def get_search_term(cursor, search_term):
+def get_search_term(search_term):
+
+    cnx = create_connection("social")
+    cursor = cnx.cursor()
+
+    search_term = search_term.replace("'", "''")
+    search_term = search_term.replace("\\", "\\\\")
+    search_term = search_term.replace("%", "\\%")
+    search_term = search_term.replace("_", "\\_")
 
     sql_query = ("SELECT eventdate, eventtime, detailid, tweettext, client, latitude, longitude "
                  "FROM tweetdetails "
                  "LEFT JOIN events "
                  "ON detailid = tweetid "
-                 "WHERE tweettext LIKE '%{}%' "
-                 "ORDER BY eventdate ASC, eventtime ASC;".format(search_term.replace("'", "''")))
+                 f"WHERE tweettext LIKE '%{search_term}%' "
+                 "ORDER BY eventdate ASC, eventtime ASC;")
 
     cursor.execute(sql_query)
 
-    return cursor
+    output = list()
+
+    for i in cursor:
+        output.append(i)
+
+    close_connection(cnx)
+
+    return output
 
 
-def get_years_with_data(cursor):
+def get_years_with_data():
 
-    sql_query = "SELECT left(eventdate,4) FROM events GROUP BY left(eventdate,4);"
+    cnx = create_connection("social")
+    cursor = cnx.cursor()
+
+    sql_query = "SELECT left(eventdate,4) FROM events GROUP BY left(eventdate,4) ORDER BY left(eventdate,4);"
     cursor.execute(sql_query)
 
-    return cursor
+    years = list()
+
+    for i in cursor:
+        years.append(i[0])
+
+    close_connection(cnx)
+
+    return years
+
+
+def get_user_preferences(user_id):
+
+    cnx = create_connection("social")
+    cursor = cnx.cursor()
+
+    sql_query = f"SELECT preference_key, preference_value FROM user_preference WHERE userid = {user_id};"
+    cursor.execute(sql_query)
+
+    print(sql_query)
+
+    preferences = dict()
+
+    for i in cursor:
+        preferences[i[0]] = i[1]
+
+    close_connection(cnx)
+
+    return preferences
+
+
+def set_user_preferences(user_id, **kwargs):
+    cnx = create_connection("social")
+    cursor = cnx.cursor()
+
+    sql_query = (f"INSERT INTO user_preference VALUES ('{user_id}', 'timezone', '{kwargs.get('timezone')}')" +
+                 " ON DUPLICATE KEY UPDATE preference_value=CASE" +
+                 f" WHEN preference_key = 'timezone' THEN '{kwargs.get('timezone')}'" +
+                 f" ELSE NULL END;")
+
+    cursor.execute(sql_query)
+
+    cnx.commit()
+    close_connection(cnx)
 
 
 def close_connection(cnx):

@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect
 import twitter
 import datetime
+import pytz
 from multiprocessing import Process
 
 app = Flask(__name__)
@@ -18,12 +19,15 @@ app = Flask(__name__)
 
 @app.route("/")
 def main():
-    return render_template("main.html")
+    warning = "Database appears to be stopped. Start it before continuing." if not twitter.database_running() \
+        else ""
+    return render_template("main.html", warn=warning)
 
 
 @app.route("/top")
 def top():
-    return render_template("top.html")
+    disable = request.args.get("disable", type=bool)    # This should be implied false
+    return render_template("top.html", disable=disable)
 
 
 @app.route("/tweet/<tweetid>")
@@ -40,19 +44,21 @@ def one_day():
         return render_template("day.html")
 
     elif request.method == "POST":
+        user_prefs = twitter.UserPreferences(1)
         date = request.form['tweetday'] or datetime.datetime.today().strftime("%Y-%m-%d")
         print("Getting tweets for {}.".format(date))
         tweets = twitter.get_tweets_for_date_range(date, date)
-        tweets = twitter.tweets_in_local_time(tweets, True)
+        tweets = twitter.tweets_in_local_time(tweets, user_prefs, True)
 
         return render_template("day.html", events=tweets, default=date)
 
 
 @app.route("/day/<date>", methods=["GET"])
 def one_day_from_url(date):
+    user_pref = twitter.UserPreferences(1)
     print("Getting tweets for {}.".format(date))
     tweets = twitter.get_tweets_for_date_range(date, date)
-    tweets = twitter.tweets_in_local_time(tweets, True)
+    tweets = twitter.tweets_in_local_time(tweets, user_pref, True)
 
     return render_template("day.html", events=tweets, default=date)
 
@@ -64,10 +70,11 @@ def search():
         return render_template("search.html")
 
     elif request.method == "POST":
+        user_prefs = twitter.UserPreferences(1)
         search_term = request.form["search"]
         print("Searching for tweets containing '{}'".format(search_term))
         tweets = twitter.search_for_term(search_term)
-        tweets = twitter.tweets_in_local_time(tweets, True)
+        tweets = twitter.tweets_in_local_time(tweets, user_prefs, True)
 
         return render_template("search.html", events=tweets, default=search_term, count=len(tweets))
 
@@ -140,6 +147,21 @@ def upload_data():
             file_proc_bkg.start()
 
         return render_template("upload.html", status_message=f"The file {file.filename} has been successfully uploaded.")
+
+
+@app.route("/settings", methods=["GET", "POST"])
+def user_settings():
+    user_prefs = twitter.UserPreferences(1)
+
+    if request.method == "GET":
+        return render_template("settings.html", timezones=pytz.all_timezones, user_prefs=user_prefs)
+
+    elif request.method == "POST":
+        user_prefs.update(timezone=request.form['timezone'])
+        print(f"Timezone is {request.form['timezone']}, saved successfully")
+        save_message = "Changes saved successfully"
+
+        return render_template("settings.html", timezones=pytz.all_timezones, user_prefs=user_prefs, msg=save_message)
 
 
 # Running this should launch the server, but it doesn't seem to work in Unix
