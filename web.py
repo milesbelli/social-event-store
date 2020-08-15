@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect
+from flask import Flask, render_template, request, redirect, send_file
 import twitter
 import datetime
 import pytz
@@ -162,6 +162,24 @@ def user_settings():
         save_message = "Changes saved successfully"
 
         return render_template("settings.html", timezones=pytz.all_timezones, user_prefs=user_prefs, msg=save_message)
+
+
+@app.route("/export", methods=["GET", "POST"])
+def export_ical():
+
+    user_prefs = twitter.UserPreferences(1)
+
+    if request.method == "GET":
+        return render_template("export.html")
+
+    elif request.method == "POST":
+        start_date = request.form["start-date"]
+        end_date = request.form["end-date"]
+
+        tweets = twitter.get_tweets_for_date_range(start_date, end_date, user_prefs)
+        output_path = twitter.export_ical(tweets)
+
+        return send_file(output_path, as_attachment=True)
 
 
 # Running this should launch the server, but it doesn't seem to work in Unix
