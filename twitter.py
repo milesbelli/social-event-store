@@ -473,6 +473,9 @@ def build_date_pickers():
 def unpack_and_store_files(zipfile_path, parent_directory):
     # Returns the temporary directory for the files that were extracted
 
+    if not Path(parent_directory).exists():
+        Path.mkdir(Path(parent_directory))
+
     if zipfile.is_zipfile(zipfile_path):
 
         directory_stamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S%f")
