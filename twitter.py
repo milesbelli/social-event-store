@@ -573,7 +573,7 @@ def database_running():
 
 def export_ical(tweets):
     ical_text = output_tweets_to_ical(tweets)
-    output_path = f"output/export_{datetime.datetime.now().strftime('%Y%m%d%H%M%S%f')}.csv"
+    output_path = f"output/export_{datetime.datetime.now().strftime('%Y%m%d%H%M%S%f')}.ics"
 
     with open(output_path, "w", encoding="utf8") as ics_file:
         ics_file.write(ical_text)
