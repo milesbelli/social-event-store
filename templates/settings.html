@@ -24,6 +24,14 @@
             </select>
             </td>
         </tr>
+        <tr>
+            <td>
+                View in reverse-chronological order
+            </td>
+            <td>
+                <input type="checkbox" id="reverse_order" name="reverse_order" form="save-settings" {% if user_prefs.reverse_order %} checked="checked" {% endif %}>
+            </td>
+        </tr>
     </table>
     <p><input type="submit" value="Save"></p>
     <p>{{ msg }}</p>

@@ -102,11 +102,18 @@ def calendar(date):
 @app.route("/viewer/<year>/<month>")
 def viewer(year, month):
 
+    user_prefs = twitter.UserPreferences(1)
+
     first_of_month = datetime.date(int(year), int(month), 1)
 
-    month_of_events = twitter.get_one_month_of_events(int(year), int(month))
+    month_of_events = twitter.get_one_month_of_events(int(year), int(month), preferences=user_prefs)
     output_calendar = twitter.calendar_grid(first_of_month, tweets=month_of_events)
 
+    # After setting up the calendar, reverse the order if user preferences is set.
+    if user_prefs.reverse_order:
+        month_of_events = twitter.reverse_events(month_of_events)
+
+    # Quickly get next/previous months
     next_dt = datetime.date(first_of_month.year, first_of_month.month, 28) + datetime.timedelta(7, 0)
     next_dt = datetime.date(next_dt.year, next_dt.month, 1)
     prev_dt = datetime.date(first_of_month.year, first_of_month.month, 1) - datetime.timedelta(1, 0)
@@ -157,7 +164,7 @@ def user_settings():
         return render_template("settings.html", timezones=pytz.all_timezones, user_prefs=user_prefs)
 
     elif request.method == "POST":
-        user_prefs.update(timezone=request.form['timezone'])
+        user_prefs.update(timezone=request.form['timezone'], reverse_order=request.form['reverse_order'])
         print(f"Timezone is {request.form['timezone']}, saved successfully")
         save_message = "Changes saved successfully"
 
@@ -175,6 +182,7 @@ def export_ical():
         if download:
             return send_file(download, as_attachment=True)
 
+        # This is the default response the user should get upon first loading the Export page
         else:
             return render_template("export.html")
 

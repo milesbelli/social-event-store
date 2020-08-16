@@ -271,6 +271,7 @@ def output_tweets_to_ical(list_of_tweets):
 
     return ical_string
 
+
 def utc_to_local(source_dt, **kwargs):
     # Use pytz module to convert a utc datetime to local datetime
 
@@ -411,9 +412,9 @@ def to_hex(integer):
     return "{}{}".format(first_digit, second_digit)
 
 
-def get_one_month_of_events(year, month):
+def get_one_month_of_events(year, month, **kwargs):
 
-    user_prefs = UserPreferences(1)
+    user_prefs = kwargs.get("preferences") or UserPreferences(1)
 
     start_time = datetime.datetime.now()
 
@@ -449,6 +450,15 @@ def get_one_month_of_events(year, month):
     print(f"Got month of tweets parsed in {datetime.datetime.now() - start_time}")
 
     return list_of_days
+
+
+def reverse_events(day_list):
+    day_list.reverse()
+    for day in day_list:
+        day["events"].reverse()
+
+    return day_list
+
 
 
 def build_date_pickers():
@@ -586,10 +596,14 @@ class UserPreferences:
         self.user_id = user_id
         db_prefs = eventdb.get_user_preferences(self.user_id)
         self.timezone = db_prefs.get('timezone') or 'UTC'
+        self.reverse_order = db_prefs.get('reverse_order') or False
 
     def update(self, **kwargs):
         self.timezone = kwargs.get('timezone') or self.timezone
-        eventdb.set_user_preferences(1, timezone=self.timezone)
+        self.reverse_order = kwargs.get('reverse_order') or self.reverse_order
+        eventdb.set_user_preferences(1,
+                                     timezone=self.timezone,
+                                     reverse_order=self.reverse_order)
 
 
 if __name__ == '__main__':

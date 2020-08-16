@@ -324,7 +324,8 @@ def set_user_preferences(user_id, **kwargs):
     cnx = create_connection("social")
     cursor = cnx.cursor()
 
-    sql_query = (f"INSERT INTO user_preference VALUES ('{user_id}', 'timezone', '{kwargs.get('timezone')}')" +
+    sql_query = (f"INSERT INTO user_preference VALUES ('{user_id}', 'timezone', '{kwargs.get('timezone')}')," +
+                 f" ('{user_id}', 'reverse_order', '{kwargs.get('reverse_order')}')"
                  " ON DUPLICATE KEY UPDATE preference_value=CASE" +
                  f" WHEN preference_key = 'timezone' THEN '{kwargs.get('timezone')}'" +
                  f" ELSE NULL END;")
