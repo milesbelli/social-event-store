@@ -190,9 +190,10 @@ def localize_date_range(start_date, end_date, **kwargs):
     return start_date, end_date
 
 
-def get_tweets_for_date_range(start_date, end_date, user_prefs):
+def get_tweets_for_date_range(start_date, end_date, user_prefs=None):
 
-    start_date, end_date = localize_date_range(start_date, end_date, timezone=user_prefs.timezone)
+    if user_prefs:
+        start_date, end_date = localize_date_range(start_date, end_date, timezone=user_prefs.timezone)
 
     output = eventdb.get_datetime_range(start_date, end_date)
 
@@ -473,6 +474,9 @@ def build_date_pickers():
 def unpack_and_store_files(zipfile_path, parent_directory):
     # Returns the temporary directory for the files that were extracted
 
+    if not Path(parent_directory).exists():
+        Path.mkdir(Path(parent_directory))
+
     if zipfile.is_zipfile(zipfile_path):
 
         directory_stamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S%f")
@@ -565,6 +569,16 @@ def database_running():
 
     except:
         return False
+
+
+def export_ical(tweets):
+    ical_text = output_tweets_to_ical(tweets)
+    output_path = f"output/export_{datetime.datetime.now().strftime('%Y%m%d%H%M%S%f')}.ics"
+
+    with open(output_path, "w", encoding="utf8") as ics_file:
+        ics_file.write(ical_text)
+
+    return output_path
 
 
 class UserPreferences:

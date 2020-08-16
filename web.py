@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect
+from flask import Flask, render_template, request, redirect, send_file
 import twitter
 import datetime
 import pytz
@@ -164,6 +164,34 @@ def user_settings():
         return render_template("settings.html", timezones=pytz.all_timezones, user_prefs=user_prefs, msg=save_message)
 
 
-# Running this should launch the server, but it doesn't seem to work in Unix
+@app.route("/export", methods=["GET", "POST"])
+def export_ical():
+    user_prefs = twitter.UserPreferences(1)
+
+    if request.method == "GET":
+        download = request.args.get("download")
+
+        # The download argument indicates user clicked the download button
+        if download:
+            return send_file(download, as_attachment=True)
+
+        else:
+            return render_template("export.html")
+
+    elif request.method == "POST":
+        start_date = request.form.get("start-date")
+        end_date = request.form.get("end-date")
+
+        if start_date and end_date:
+            tweets = twitter.get_tweets_for_date_range(start_date, end_date, user_prefs)
+            output_path = twitter.export_ical(tweets)
+
+            return render_template("export.html", count=len(tweets), link=output_path, start=start_date, end=end_date)
+
+        else:
+            return render_template("export.html", message="You need to select a date range.")
+
+
+# Running this will launch the server
 if __name__ == "__main__":
     app.run(host="0.0.0.0")

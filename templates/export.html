@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Export as iCal</title>
+</head>
+<body>
+<iframe class="main" src="/top"></iframe>
+<h1>Export iCal</h1>
+<p>Pick a start date and end date and the exporter will retrieve all events for this range and
+convert them into an ical file which can be imported into most calendar apps. There is no limit to
+the date range, but large date ranges may be slow to export, and be aware that calendar apps may
+struggle to handle more than a few thousand events.</p>
+<form id="export-ical" method="post" action="/export">
+    <label for="start-date">Start:</label>
+    <input type="date" id="start-date" name="start-date">
+    <label for="end-date">End:</label>
+    <input type="date" id="end-date" name="end-date">
+    <input type="submit" value="Export">
+</form>
+<p id="status-message">
+    {% if link %}
+    Download is ready; {{ count }} events exported successfully for range {{ start }} to {{ end }}.
+    <a href="/export?download={{ link }}">Download</a>
+    {% elif message %}
+    {{ message }}
+    {% endif %}
+</p>
+</body>
+</html>
