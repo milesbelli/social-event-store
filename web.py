@@ -166,22 +166,32 @@ def user_settings():
 
 @app.route("/export", methods=["GET", "POST"])
 def export_ical():
-
     user_prefs = twitter.UserPreferences(1)
 
     if request.method == "GET":
-        return render_template("export.html")
+        download = request.args.get("download")
+
+        # The download argument indicates user clicked the download button
+        if download:
+            return send_file(download, as_attachment=True)
+
+        else:
+            return render_template("export.html")
 
     elif request.method == "POST":
-        start_date = request.form["start-date"]
-        end_date = request.form["end-date"]
+        start_date = request.form.get("start-date")
+        end_date = request.form.get("end-date")
 
-        tweets = twitter.get_tweets_for_date_range(start_date, end_date, user_prefs)
-        output_path = twitter.export_ical(tweets)
+        if start_date and end_date:
+            tweets = twitter.get_tweets_for_date_range(start_date, end_date, user_prefs)
+            output_path = twitter.export_ical(tweets)
 
-        return send_file(output_path, as_attachment=True)
+            return render_template("export.html", count=len(tweets), link=output_path, start=start_date, end=end_date)
+
+        else:
+            return render_template("export.html", message="You need to select a date range.")
 
 
-# Running this should launch the server, but it doesn't seem to work in Unix
+# Running this will launch the server
 if __name__ == "__main__":
     app.run(host="0.0.0.0")
