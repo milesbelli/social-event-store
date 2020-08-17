@@ -328,6 +328,7 @@ def set_user_preferences(user_id, **kwargs):
                  f" ('{user_id}', 'reverse_order', '{kwargs.get('reverse_order')}')"
                  " ON DUPLICATE KEY UPDATE preference_value=CASE" +
                  f" WHEN preference_key = 'timezone' THEN '{kwargs.get('timezone')}'" +
+                 f" WHEN preference_key = 'reverse_order' THEN '{kwargs.get('reverse_order')}'"
                  f" ELSE NULL END;")
 
     cursor.execute(sql_query)

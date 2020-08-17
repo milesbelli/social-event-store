@@ -164,7 +164,9 @@ def user_settings():
         return render_template("settings.html", timezones=pytz.all_timezones, user_prefs=user_prefs)
 
     elif request.method == "POST":
-        user_prefs.update(timezone=request.form['timezone'], reverse_order=request.form['reverse_order'])
+        reverse_order = 1 if request.form.get('reverse_order') else 0
+        print(f" reverse order is {reverse_order}")
+        user_prefs.update(timezone=request.form.get('timezone'), reverse_order=reverse_order)
         print(f"Timezone is {request.form['timezone']}, saved successfully")
         save_message = "Changes saved successfully"
 
