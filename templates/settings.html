@@ -9,6 +9,7 @@
 <body>
 
 <iframe class="main" src="/top"></iframe>
+<h1>Settings</h1>
 <p>Set user preferences.</p>
 <form id="save-settings" action="/settings" method="post">
     <table id="settings-table">
@@ -29,7 +30,7 @@
                 View in reverse-chronological order
             </td>
             <td>
-                <input type="checkbox" id="reverse_order" name="reverse_order" form="save-settings" {% if user_prefs.reverse_order == 1 %} checked="checked" {% endif %}>
+                <input type="checkbox" id="reverse_order" name="reverse_order" form="save-settings" {% if user_prefs.reverse_order %} checked="checked" {% endif %}>
             </td>
         </tr>
     </table>
