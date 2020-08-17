@@ -110,7 +110,7 @@ def viewer(year, month):
     output_calendar = twitter.calendar_grid(first_of_month, tweets=month_of_events)
 
     # After setting up the calendar, reverse the order if user preferences is set.
-    if user_prefs.reverse_order:
+    if user_prefs.reverse_order == 1:
         month_of_events = twitter.reverse_events(month_of_events)
 
     # Quickly get next/previous months
