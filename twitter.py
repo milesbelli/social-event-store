@@ -460,7 +460,6 @@ def reverse_events(day_list):
     return day_list
 
 
-
 def build_date_pickers():
 
     years = eventdb.get_years_with_data()
@@ -582,6 +581,11 @@ def database_running():
 
 
 def export_ical(tweets):
+
+    # Output folder must be created, check for this
+    if not Path("output").exists():
+        Path.mkdir(Path("output"))
+
     ical_text = output_tweets_to_ical(tweets)
     output_path = f"output/export_{datetime.datetime.now().strftime('%Y%m%d%H%M%S%f')}.ics"
 
