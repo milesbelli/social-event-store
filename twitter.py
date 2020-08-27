@@ -455,7 +455,8 @@ def get_one_month_of_events(year, month, **kwargs):
 def reverse_events(day_list):
     day_list.reverse()
     for day in day_list:
-        day["events"].reverse()
+        if type(day) == dict:
+            day["events"].reverse()
 
     return day_list
 

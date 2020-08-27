@@ -76,6 +76,10 @@ def search():
         tweets = twitter.search_for_term(search_term)
         tweets = twitter.tweets_in_local_time(tweets, user_prefs, True)
 
+        # After setting up the calendar, reverse the order if user preferences is set.
+        if user_prefs.reverse_order == 1:
+            tweets = twitter.reverse_events(tweets)
+
         return render_template("search.html", events=tweets, default=search_term, count=len(tweets))
 
 
