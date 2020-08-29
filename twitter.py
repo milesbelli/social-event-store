@@ -242,30 +242,21 @@ def output_tweets_to_ical(list_of_tweets):
 
         end_time = start_time + datetime.timedelta(0, 900)
 
-        geocoordinates = "GEO:{};{}\n".format(tweet[5], tweet[6]) if tweet[5] else str()
+        geocoordinates = f"GEO:{tweet[5]};{tweet[6]}\n" if tweet[5] else str()
 
-        ical_string += word_wrap("BEGIN:VEVENT\n"
-                                 "UID:{}{}@social-event-store\n"
-                                 "DTSTAMP:{}T{}Z\n"
-                                 "DTSTART:{}T{}Z\n"
-                                 "DTEND:{}T{}Z\n"
-                                 "{}"
-                                 "SUMMARY:{}\n"
-                                 "DESCRIPTION:{}\\n\\nhttps://twitter.com/i/status/{} | via {}\n"
-                                 "END:VEVENT\n".format(tweet[2],
-                                                       time_now,
-                                                       date_now,
-                                                       time_now,
-                                                       str(tweet[0]).replace("-", ""),
-                                                       str(start_time.time()).replace(":", ""),
-                                                       str(end_time.date()).replace("-", ""),
-                                                       str(end_time.time()).replace(":", ""),
-                                                       geocoordinates,
-                                                       tweet[3].replace("\n", " ").replace("\r", " "),
-                                                       tweet[3].replace("\n", "\\n").replace("\r", "\\n"),
-                                                       tweet[2],
-                                                       tweet[4]
-                                                       ))
+        event_title = tweet[3].replace('\n', ' ').replace('\r', ' ')
+        event_body = tweet[3].replace('\n', '\\n').replace('\r', '\\n')
+
+        ical_string += word_wrap(f"BEGIN:VEVENT\n"
+                                 f"UID:{tweet[2]}{time_now}@social-event-store\n"
+                                 f"DTSTAMP:{date_now}T{time_now}Z\n"
+                                 f"DTSTART:{str(tweet[0]).replace('-', '')}T{str(start_time.time()).replace(':', '')}Z\n"
+                                 f"DTEND:{str(tweet[0]).replace('-', '')}T{str(start_time.time()).replace(':', '')}Z\n"
+                                 f"{geocoordinates}"
+                                 f"SUMMARY:{event_title}\n"
+                                 f"DESCRIPTION:{event_body}"
+                                 f"\\n\\nhttps://twitter.com/i/status/{tweet[2]} | via {tweet[4]}\n"
+                                 f"END:VEVENT\n")
 
     ical_string += "END:VCALENDAR"
 
