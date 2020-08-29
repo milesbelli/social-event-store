@@ -82,3 +82,10 @@ button {
     color: red;
     font-size: 24px;
 }
+
+input, select {
+    background-color: #333333;
+    outline: 1px solid #00ffff;
+    color: #00ffff;
+    border: none;
+}

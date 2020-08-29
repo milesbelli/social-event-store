@@ -240,36 +240,28 @@ def output_tweets_to_ical(list_of_tweets):
         # Ever wonder how to get a datetime object out of a date and a timedelta? Wonder no more!
         start_time = datetime.datetime.combine(tweet[0], datetime.time()) + tweet[1]
 
-        end_time = start_time + datetime.timedelta(0, 900)
+        geocoordinates = f"GEO:{tweet[5]};{tweet[6]}\n" if tweet[5] else str()
 
-        geocoordinates = "GEO:{};{}\n".format(tweet[5], tweet[6]) if tweet[5] else str()
+        event_title = tweet[3].replace('\n', ' ').replace('\r', ' ')
+        event_body = tweet[3].replace('\n', '\\n').replace('\r', '\\n')
+        event_date = str(tweet[0]).replace('-', '')
+        event_time = str(start_time.time()).replace(':', '')
 
-        ical_string += word_wrap("BEGIN:VEVENT\n"
-                                 "UID:{}{}@social-event-store\n"
-                                 "DTSTAMP:{}T{}Z\n"
-                                 "DTSTART:{}T{}Z\n"
-                                 "DTEND:{}T{}Z\n"
-                                 "{}"
-                                 "SUMMARY:{}\n"
-                                 "DESCRIPTION:{}\\n\\nhttps://twitter.com/i/status/{} | via {}\n"
-                                 "END:VEVENT\n".format(tweet[2],
-                                                       time_now,
-                                                       date_now,
-                                                       time_now,
-                                                       str(tweet[0]).replace("-", ""),
-                                                       str(start_time.time()).replace(":", ""),
-                                                       str(end_time.date()).replace("-", ""),
-                                                       str(end_time.time()).replace(":", ""),
-                                                       geocoordinates,
-                                                       tweet[3].replace("\n", " ").replace("\r", " "),
-                                                       tweet[3].replace("\n", "\\n").replace("\r", "\\n"),
-                                                       tweet[2],
-                                                       tweet[4]
-                                                       ))
+        ical_string += word_wrap(f"BEGIN:VEVENT\n"
+                                 f"UID:{tweet[2]}{time_now}@social-event-store\n"
+                                 f"DTSTAMP:{date_now}T{time_now}Z\n"
+                                 f"DTSTART:{event_date}T{event_time}Z\n"
+                                 f"DTEND:{event_date}T{event_time}Z\n"
+                                 f"{geocoordinates}"
+                                 f"SUMMARY:{event_title}\n"
+                                 f"DESCRIPTION:{event_body}"
+                                 f"\\n\\nhttps://twitter.com/i/status/{tweet[2]} | via {tweet[4]}\n"
+                                 f"END:VEVENT\n")
 
     ical_string += "END:VCALENDAR"
 
     return ical_string
+
 
 def utc_to_local(source_dt, **kwargs):
     # Use pytz module to convert a utc datetime to local datetime
@@ -411,9 +403,9 @@ def to_hex(integer):
     return "{}{}".format(first_digit, second_digit)
 
 
-def get_one_month_of_events(year, month):
+def get_one_month_of_events(year, month, **kwargs):
 
-    user_prefs = UserPreferences(1)
+    user_prefs = kwargs.get("preferences") or UserPreferences(1)
 
     start_time = datetime.datetime.now()
 
@@ -449,6 +441,15 @@ def get_one_month_of_events(year, month):
     print(f"Got month of tweets parsed in {datetime.datetime.now() - start_time}")
 
     return list_of_days
+
+
+def reverse_events(day_list):
+    day_list.reverse()
+    for day in day_list:
+        if type(day) == dict:
+            day["events"].reverse()
+
+    return day_list
 
 
 def build_date_pickers():
@@ -572,6 +573,11 @@ def database_running():
 
 
 def export_ical(tweets):
+
+    # Output folder must be created, check for this
+    if not Path("output").exists():
+        Path.mkdir(Path("output"))
+
     ical_text = output_tweets_to_ical(tweets)
     output_path = f"output/export_{datetime.datetime.now().strftime('%Y%m%d%H%M%S%f')}.ics"
 
@@ -586,10 +592,14 @@ class UserPreferences:
         self.user_id = user_id
         db_prefs = eventdb.get_user_preferences(self.user_id)
         self.timezone = db_prefs.get('timezone') or 'UTC'
+        self.reverse_order = int(db_prefs.get('reverse_order') or 0)
 
     def update(self, **kwargs):
         self.timezone = kwargs.get('timezone') or self.timezone
-        eventdb.set_user_preferences(1, timezone=self.timezone)
+        self.reverse_order = kwargs.get('reverse_order')
+        eventdb.set_user_preferences(1,
+                                     timezone=self.timezone,
+                                     reverse_order=self.reverse_order)
 
 
 if __name__ == '__main__':
