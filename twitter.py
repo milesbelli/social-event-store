@@ -244,12 +244,14 @@ def output_tweets_to_ical(list_of_tweets):
 
         event_title = tweet[3].replace('\n', ' ').replace('\r', ' ')
         event_body = tweet[3].replace('\n', '\\n').replace('\r', '\\n')
+        event_date = str(tweet[0]).replace('-', '')
+        event_time = str(start_time.time()).replace(':', '')
 
         ical_string += word_wrap(f"BEGIN:VEVENT\n"
                                  f"UID:{tweet[2]}{time_now}@social-event-store\n"
                                  f"DTSTAMP:{date_now}T{time_now}Z\n"
-                                 f"DTSTART:{str(tweet[0]).replace('-', '')}T{str(start_time.time()).replace(':', '')}Z\n"
-                                 f"DTEND:{str(tweet[0]).replace('-', '')}T{str(start_time.time()).replace(':', '')}Z\n"
+                                 f"DTSTART:{event_date}T{event_time}Z\n"
+                                 f"DTEND:{event_date}T{event_time}Z\n"
                                  f"{geocoordinates}"
                                  f"SUMMARY:{event_title}\n"
                                  f"DESCRIPTION:{event_body}"
