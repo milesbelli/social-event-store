@@ -240,8 +240,6 @@ def output_tweets_to_ical(list_of_tweets):
         # Ever wonder how to get a datetime object out of a date and a timedelta? Wonder no more!
         start_time = datetime.datetime.combine(tweet[0], datetime.time()) + tweet[1]
 
-        end_time = start_time + datetime.timedelta(0, 900)
-
         geocoordinates = f"GEO:{tweet[5]};{tweet[6]}\n" if tweet[5] else str()
 
         event_title = tweet[3].replace('\n', ' ').replace('\r', ' ')
