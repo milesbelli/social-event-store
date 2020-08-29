@@ -14,12 +14,37 @@ convert them into an ical file which can be imported into most calendar apps. Th
 the date range, but large date ranges may be slow to export, and be aware that calendar apps may
 struggle to handle more than a few thousand events.</p>
 <form id="export-ical" method="post" action="/export">
-    <label for="start-date">Start:</label>
-    <input type="date" id="start-date" name="start-date">
-    <label for="end-date">End:</label>
-    <input type="date" id="end-date" name="end-date">
-    <input type="submit" value="Export">
+    <table>
+        <tr>
+            <td>
+                <label for="source">Source:</label>
+            </td>
+            <td>
+                <select id="source" name="source" form="export-ical">
+                    <option value="twitter">Twitter</option>
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <label for="start-date">Start:</label>
+            </td>
+            <td>
+                <input type="date" id="start-date" name="start-date">
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <label for="end-date">End:</label>
+            </td>
+            <td>
+                <input type="date" id="end-date" name="end-date">
+            </td>
+        </tr>
+    </table>
+<input type="submit" value="Export">
 </form>
+
 <p id="status-message">
     {% if link %}
     Download is ready; {{ count }} events exported successfully for range {{ start }} to {{ end }}.
