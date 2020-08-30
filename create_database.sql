@@ -72,6 +72,7 @@ PRIMARY KEY(userid, preference_key));
 CREATE TABLE IF NOT EXISTS fitbit_sleep (
 sleepid INT(15) NOT NULL AUTO_INCREMENT,
 userid INT(11) NOT NULL,
+logid INT(15) NOT NULL,
 startdatetime DATETIME NOT NULL,
 timezone VARCHAR(40) NOT NULL,
 duration INT(8),
