@@ -6,23 +6,20 @@ from pathlib import Path
 
 class FitbitImporter:
     def __init__(self, directory):
-        self.json_list = self.process_directory(directory)
+        self.__process_directory(directory)
 
-    def process_directory(self, dir_path):
+    def __len__(self):
+        return len(self.json_list)
+
+    def __process_directory(self, dir_path):
         target_dir = Path(dir_path)
-        list_of_events = list()
+        self.json_list = list()
 
         for target_file in target_dir.iterdir():
-            list_of_events += self.json_load_file(target_file)
-
-        return list_of_events
-
-    def json_load_file(self, filepath):
-        with open(filepath, "r") as file:
-            file = file.read()
-            json_file = json.loads(file)
-
-        return json_file
+            with open(target_file, "r") as file:
+                file = file.read()
+                json_file = json.loads(file)
+            self.json_list += json_file
 
     def get_item(self, item_position):
 
@@ -30,12 +27,16 @@ class FitbitImporter:
 
 
 class FitbitSleepImporter(FitbitImporter):
-    def add_to_database(self):
+    def __init__(self, directory):
+        super().__init__(directory)
+        self.data_type = "sleep"
 
-        return "Let's add this stuff to the db!"
+    def add_to_database(self):
+        return f"Let's add some {self.data_type} data to the db!"
 
 
 if __name__ == "__main__":
     all_data = FitbitSleepImporter("data/Fitbit Sleep")
     print(all_data.get_item(492))
     print(all_data.add_to_database())
+    print(len(all_data))
