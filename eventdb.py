@@ -194,12 +194,38 @@ def insert_fitbit_sleep(sleep, user_prefs):
 
         cursor.execute(sql_add_to_db)
 
-        sql_add_to_events = ("INSERT INTO events (userid, eventdate, eventtime, eventtype, detailid) "
-                             "SELECT userid, DATE(startdatetime), TIME(startdatetime), 'fitbit-sleep', sleepid "
-                             "FROM fitbit_sleep WHERE sleepid NOT IN "
-                             "(SELECT detailid FROM events WHERE eventtype = 'fitbit-sleep')")
+        # Need to find all events just added which are not yet in the events table, so they can be added.
+        sql_get_newly_added_sleep = ("SELECT userid, startdatetime, sleepid "
+                                     "FROM fitbit_sleep WHERE sleepid NOT IN "
+                                     "(SELECT detailid FROM events WHERE eventtype = 'fitbit-sleep')")
 
-        cursor.execute(sql_add_to_events)
+        cursor.execute(sql_get_newly_added_sleep)
+
+        new_sleep_events = list()
+        event_values = str()
+
+        for i in cursor:
+            new_sleep_events.append(i)
+
+        # Every event from the fitbit sleep table needs to have its time adjusted to UTC before
+        # going in the events table. Fitbit sleep is tracked in local time but all events in events table
+        # must be consistently UTC.
+        for event in new_sleep_events:
+
+            if len(event_values) > 0:
+                event_values += ", "
+
+            user_id = event[0]
+            event_date = common.local_to_utc(event[1], timezone=timezone).strftime("%Y-%m-%d")
+            event_time = common.local_to_utc(event[1], timezone=timezone).strftime("%H:%M:%S")
+            event_id = event[2]
+
+            event_values += f"('{user_id}', '{event_date}', '{event_time}', 'fitbit-sleep', '{event_id}')"
+
+        sql_add_new_to_events_utc = ("INSERT INTO events (userid, eventdate, eventtime, eventtype, detailid) "
+                                     f"VALUES {event_values};")
+
+        cursor.execute(sql_add_new_to_events_utc)
 
         cnx.commit()
     cursor.close()

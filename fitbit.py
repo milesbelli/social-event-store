@@ -42,7 +42,6 @@ class FitbitSleepImporter(FitbitImporter):
 
     def add_to_database(self, user_prefs):
         eventdb.insert_fitbit_sleep(self.json_list, user_prefs)
-        return f"Up to {len(self)} entries can be added to the db!"
 
     # Fitbit sleep data can contain duplicates! They must be removed at some point, so might as well do it here.
     def __enforce_unique_set(self):
@@ -66,7 +65,6 @@ if __name__ == "__main__":
     maxlog = 0
     for item in all_data.json_list:
         maxlog = item["logId"] if item["logId"] > maxlog else maxlog
-
 
     all_data.add_to_database(my_user)
     print(len(all_data))

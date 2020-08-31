@@ -1,4 +1,5 @@
 import eventdb
+import pytz
 
 
 class UserPreferences:
@@ -15,3 +16,26 @@ class UserPreferences:
                                      timezone=self.timezone,
                                      reverse_order=self.reverse_order)
 
+
+def utc_to_local(source_dt, **kwargs):
+    # Use pytz module to convert a utc datetime to local datetime
+
+    timezone = kwargs.get("timezone")
+
+    utc = pytz.timezone("utc")
+    local = pytz.timezone(timezone)
+
+    utc_dt = utc.localize(source_dt)
+    return utc_dt.astimezone(local)
+
+
+def local_to_utc(source_dt, **kwargs):
+    # Use pytz module to convert a local datetime to utc datetime
+
+    timezone = kwargs.get("timezone") or 'UTC'
+
+    local = pytz.timezone(timezone)
+    utc = pytz.timezone("utc")
+
+    local_dt = local.localize(source_dt)
+    return local_dt.astimezone(utc)

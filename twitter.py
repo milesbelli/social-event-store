@@ -181,8 +181,8 @@ def localize_date_range(start_date, end_date, **kwargs):
 
     # Then go from Local to UTC
     timezone = kwargs.get('timezone') or 'UTC'
-    start_date = local_to_utc(start_date, timezone=timezone)
-    end_date = local_to_utc(end_date, timezone=timezone)
+    start_date = common.local_to_utc(start_date, timezone=timezone)
+    end_date = common.local_to_utc(end_date, timezone=timezone)
 
     # Finally back to strings
     start_date = start_date.strftime('%Y-%m-%d %H:%M:%S')
@@ -264,37 +264,13 @@ def output_tweets_to_ical(list_of_tweets):
     return ical_string
 
 
-def utc_to_local(source_dt, **kwargs):
-    # Use pytz module to convert a utc datetime to local datetime
-
-    timezone = kwargs.get("timezone")
-
-    utc = pytz.timezone("utc")
-    local = pytz.timezone(timezone)
-
-    utc_dt = utc.localize(source_dt)
-    return utc_dt.astimezone(local)
-
-
-def local_to_utc(source_dt, **kwargs):
-    # Use pytz module to convert a local datetime to utc datetime
-
-    timezone = kwargs.get("timezone") or 'UTC'
-
-    local = pytz.timezone(timezone)
-    utc = pytz.timezone("utc")
-
-    local_dt = local.localize(source_dt)
-    return local_dt.astimezone(utc)
-
-
 def tweets_in_local_time(tweets, user_prefs, am_pm_time=False):
 
     output_tweets = list()
 
     for tweet in tweets:
         tweet_dtime = datetime.datetime.combine(tweet[0], datetime.time()) + tweet[1]
-        tweet_dtime = utc_to_local(tweet_dtime, timezone=user_prefs.timezone)
+        tweet_dtime = common.utc_to_local(tweet_dtime, timezone=user_prefs.timezone)
 
         tweet_out = list()
         tweet_out.append(tweet_dtime.date())
