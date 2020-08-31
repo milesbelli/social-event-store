@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, send_file
 import twitter
 import datetime
 import pytz
+import common
 from multiprocessing import Process
 
 app = Flask(__name__)
@@ -44,7 +45,7 @@ def one_day():
         return render_template("day.html")
 
     elif request.method == "POST":
-        user_prefs = twitter.UserPreferences(1)
+        user_prefs = common.UserPreferences(1)
         date = request.form['tweetday'] or datetime.datetime.today().strftime("%Y-%m-%d")
         print("Getting tweets for {}.".format(date))
         tweets = twitter.get_tweets_for_date_range(date, date)
@@ -55,7 +56,7 @@ def one_day():
 
 @app.route("/day/<date>", methods=["GET"])
 def one_day_from_url(date):
-    user_pref = twitter.UserPreferences(1)
+    user_pref = common.UserPreferences(1)
     print("Getting tweets for {}.".format(date))
     tweets = twitter.get_tweets_for_date_range(date, date)
     tweets = twitter.tweets_in_local_time(tweets, user_pref, True)
@@ -70,7 +71,7 @@ def search():
         return render_template("search.html")
 
     elif request.method == "POST":
-        user_prefs = twitter.UserPreferences(1)
+        user_prefs = common.UserPreferences(1)
         search_term = request.form["search"]
         print("Searching for tweets containing '{}'".format(search_term))
         tweets = twitter.search_for_term(search_term)
@@ -106,7 +107,7 @@ def calendar(date):
 @app.route("/viewer/<year>/<month>")
 def viewer(year, month):
 
-    user_prefs = twitter.UserPreferences(1)
+    user_prefs = common.UserPreferences(1)
 
     first_of_month = datetime.date(int(year), int(month), 1)
 
@@ -162,7 +163,7 @@ def upload_data():
 
 @app.route("/settings", methods=["GET", "POST"])
 def user_settings():
-    user_prefs = twitter.UserPreferences(1)
+    user_prefs = common.UserPreferences(1)
 
     if request.method == "GET":
         return render_template("settings.html", timezones=pytz.all_timezones, user_prefs=user_prefs)
@@ -179,7 +180,7 @@ def user_settings():
 
 @app.route("/export", methods=["GET", "POST"])
 def export_ical():
-    user_prefs = twitter.UserPreferences(1)
+    user_prefs = common.UserPreferences(1)
 
     if request.method == "GET":
         download = request.args.get("download")

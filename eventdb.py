@@ -1,6 +1,7 @@
 import mysql.connector
 import secure
 import datetime
+import common
 
 
 def create_connection(dbname):
@@ -148,7 +149,61 @@ def insert_tweets(list_of_tweets, cnx):
 
     cnx.commit()
     cursor.close()
-    
+
+
+def insert_fitbit_sleep(sleep, user_prefs):
+    cnx = create_connection('social')
+    cursor = cnx.cursor()
+    user_id = 1                                # Static for now
+    values_list = str()
+
+    # Establish list of existing sleep events to eliminate duplicates
+    sql_get_all_logids = f"SELECT logid FROM fitbit_sleep WHERE userid = {user_id}"
+
+    cursor.execute(sql_get_all_logids)
+
+    sql_results = list()
+
+    for i in cursor:
+        sql_results.append(i[0])
+
+    # Loop over sleep event list
+    for session in sleep:
+        log_id = session["logId"]
+
+        # Add any previously unrecorded sleep to the list of values
+        if log_id not in sql_results:
+
+            # Extra comma separator in between multiple values
+            if len(values_list) > 0:
+                values_list += ", "
+
+            start_date_time = session["startTime"]
+            end_date_time = session["endTime"]
+            timezone = user_prefs.timezone
+            duration = session["duration"]
+            main_sleep = 1 if session["mainSleep"] else 0
+
+            values_list += (f"('{user_id}', '{log_id}', '{start_date_time}', '{end_date_time}',"
+                            f" '{timezone}', '{duration}', '{main_sleep}')")
+
+    if len(values_list) > 0:
+        sql_add_to_db = ("INSERT INTO fitbit_sleep (userid, logid, startdatetime,"
+                         " enddatetime, timezone, duration, mainsleep) "
+                         f"VALUES {values_list}")
+
+        cursor.execute(sql_add_to_db)
+
+        sql_add_to_events = ("INSERT INTO events (userid, eventdate, eventtime, eventtype, detailid) "
+                             "SELECT userid, DATE(startdatetime), TIME(startdatetime), 'fitbit-sleep', sleepid "
+                             "FROM fitbit_sleep WHERE sleepid NOT IN "
+                             "(SELECT detailid FROM events WHERE eventtype = 'fitbit-sleep')")
+
+        cursor.execute(sql_add_to_events)
+
+        cnx.commit()
+    cursor.close()
+
     
 def get_existing_tweets(cursor):
       

@@ -8,6 +8,7 @@ import zipfile
 from multiprocessing import Process
 import time
 import requests
+import common
 
 
 def retrieve_from_twitter(post_id):
@@ -405,7 +406,7 @@ def to_hex(integer):
 
 def get_one_month_of_events(year, month, **kwargs):
 
-    user_prefs = kwargs.get("preferences") or UserPreferences(1)
+    user_prefs = kwargs.get("preferences") or common.UserPreferences(1)
 
     start_time = datetime.datetime.now()
 
@@ -585,21 +586,6 @@ def export_ical(tweets):
         ics_file.write(ical_text)
 
     return output_path
-
-
-class UserPreferences:
-    def __init__(self, user_id):
-        self.user_id = user_id
-        db_prefs = eventdb.get_user_preferences(self.user_id)
-        self.timezone = db_prefs.get('timezone') or 'UTC'
-        self.reverse_order = int(db_prefs.get('reverse_order') or 0)
-
-    def update(self, **kwargs):
-        self.timezone = kwargs.get('timezone') or self.timezone
-        self.reverse_order = kwargs.get('reverse_order')
-        eventdb.set_user_preferences(1,
-                                     timezone=self.timezone,
-                                     reverse_order=self.reverse_order)
 
 
 if __name__ == '__main__':

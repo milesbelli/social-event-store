@@ -1,6 +1,7 @@
 import json
 import datetime
 import eventdb
+import common
 from pathlib import Path
 
 
@@ -39,7 +40,8 @@ class FitbitSleepImporter(FitbitImporter):
         super().__init__(directory)
         self.__enforce_unique_set()
 
-    def add_to_database(self):
+    def add_to_database(self, user_prefs):
+        eventdb.insert_fitbit_sleep(self.json_list, user_prefs)
         return f"Up to {len(self)} entries can be added to the db!"
 
     # Fitbit sleep data can contain duplicates! They must be removed at some point, so might as well do it here.
@@ -57,7 +59,16 @@ class FitbitSleepImporter(FitbitImporter):
 
 if __name__ == "__main__":
     all_data = FitbitSleepImporter("data/Fitbit Sleep")
-    print(all_data.get_item(492))
-    print(all_data.add_to_database())
+    print(all_data.get_item(106))
+    my_user = common.UserPreferences(1)
+
+
+    maxlog = 0
+    for item in all_data.json_list:
+        maxlog = item["logId"] if item["logId"] > maxlog else maxlog
+
+
+    all_data.add_to_database(my_user)
     print(len(all_data))
 
+    print(maxlog)

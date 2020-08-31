@@ -70,17 +70,18 @@ preference_value VARCHAR(128) NOT NULL,
 PRIMARY KEY(userid, preference_key));
 
 CREATE TABLE IF NOT EXISTS fitbit_sleep (
-sleepid INT(15) NOT NULL AUTO_INCREMENT,
+sleepid BIGINT(15) NOT NULL AUTO_INCREMENT,
 userid INT(11) NOT NULL,
-logid INT(15) NOT NULL,
+logid BIGINT(15) NOT NULL,
 startdatetime DATETIME NOT NULL,
+enddatetime DATETIME NOT NULL,
 timezone VARCHAR(40) NOT NULL,
 duration INT(8),
 mainsleep INT(1),
 PRIMARY KEY(sleepid));
 
 CREATE TABLE IF NOT EXISTS fitbit_sleep_stages (
-sleepid INT(15) NOT NULL,
+sleepid BIGINT(15) NOT NULL,
 sleepstage VARCHAR(16) NOT NULL,
 stagecount INT(5),
 stageminutes INT(4),
@@ -88,7 +89,7 @@ avgstageminutes INT(4),
 PRIMARY KEY(sleepid, sleepstage));
 
 CREATE TABLE IF NOT EXISTS fitbit_sleep_data (
-sleepid INT(15) NOT NULL,
+sleepid BIGINT(15) NOT NULL,
 sleepdatetime DATETIME NOT NULL,
 sleepstage VARCHAR(16),
 seconds INT(5),
