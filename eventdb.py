@@ -163,6 +163,7 @@ def insert_fitbit_sleep(sleep, user_prefs):
     cursor.execute(sql_get_all_logids)
 
     sql_results = list()
+    sleep_levels = dict()
 
     for i in cursor:
         sql_results.append(i[0])
@@ -187,6 +188,8 @@ def insert_fitbit_sleep(sleep, user_prefs):
             values_list += (f"('{user_id}', '{log_id}', '{start_date_time}', '{end_date_time}',"
                             f" '{timezone}', '{duration}', '{main_sleep}')")
 
+            sleep_levels[log_id] = session["levels"]
+
     if len(values_list) > 0:
         sql_add_to_db = ("INSERT INTO fitbit_sleep (userid, logid, startdatetime,"
                          " enddatetime, timezone, duration, mainsleep) "
@@ -195,7 +198,7 @@ def insert_fitbit_sleep(sleep, user_prefs):
         cursor.execute(sql_add_to_db)
 
         # Need to find all events just added which are not yet in the events table, so they can be added.
-        sql_get_newly_added_sleep = ("SELECT userid, startdatetime, sleepid "
+        sql_get_newly_added_sleep = ("SELECT userid, startdatetime, sleepid, logid "
                                      "FROM fitbit_sleep WHERE sleepid NOT IN "
                                      "(SELECT detailid FROM events WHERE eventtype = 'fitbit-sleep')")
 
@@ -203,9 +206,41 @@ def insert_fitbit_sleep(sleep, user_prefs):
 
         new_sleep_events = list()
         event_values = str()
+        logid_index = dict()
 
         for i in cursor:
+            logid_index[i[3]] = i[2]
             new_sleep_events.append(i)
+
+        # Populate secondary tables
+
+        for log_id in sleep_levels:
+            for level in sleep_levels[log_id]["summary"]:
+
+                count = sleep_levels[log_id]["summary"][level].get("count")
+                minutes = sleep_levels[log_id]["summary"][level].get("minutes")
+                avg_minutes = sleep_levels[log_id]["summary"][level].get("thirtyDayAvgMinutes") or 0
+
+                stages_values = f"('{logid_index[log_id]}', '{level}', '{count}', '{minutes}', '{avg_minutes}')"
+
+                sql_add_stages = ("INSERT INTO fitbit_sleep_stages (sleepid, sleepstage, stagecount,"
+                                  " stageminutes, avgstageminutes)"
+                                  f" VALUES {stages_values}")
+
+                cursor.execute(sql_add_stages)
+
+            for item in sleep_levels[log_id]["data"]:
+
+                sleep_date_time = item["dateTime"]
+                level = item["level"]
+                seconds = item["seconds"]
+
+                data_values = f"('{logid_index[log_id]}', '{sleep_date_time}', '{level}', '{seconds}')"
+
+                sql_add_data = ("INSERT INTO fitbit_sleep_data (sleepid, sleepdatetime, sleepstage, seconds)"
+                                f"VALUES {data_values}")
+
+                cursor.execute(sql_add_data)
 
         # Every event from the fitbit sleep table needs to have its time adjusted to UTC before
         # going in the events table. Fitbit sleep is tracked in local time but all events in events table
