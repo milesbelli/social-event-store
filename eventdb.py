@@ -330,8 +330,7 @@ def get_datetime_range(start_datetime, end_datetime, list_of_data_types):
                          "ON detailid = tweetid "
                          "WHERE eventtype = 'twitter' "
                          f"AND CONCAT(eventdate,' ',eventtime) >= '{start_datetime}' "
-                         f"AND CONCAT(eventdate,' ',eventtime) <= '{end_datetime}' "
-                         "ORDER BY eventdate ASC, eventtime ASC")
+                         f"AND CONCAT(eventdate,' ',eventtime) <= '{end_datetime}' ")
 
     fitbit_sql_query = ("SELECT eventdate, eventtime, detailid, duration, timezone, logid, NULL, eventtype "
                         "FROM fitbit_sleep "
@@ -339,8 +338,7 @@ def get_datetime_range(start_datetime, end_datetime, list_of_data_types):
                         "ON detailid = sleepid "
                         "WHERE eventtype = 'fitbit-sleep' "
                         f"AND CONCAT(eventdate,' ',eventtime) >= '{start_datetime}' "
-                        f"AND CONCAT(eventdate,' ',eventtime) <= '{end_datetime}' "
-                        "ORDER BY eventdate ASC, eventtime ASC")
+                        f"AND CONCAT(eventdate,' ',eventtime) <= '{end_datetime}' ")
 
     if 'twitter' in list_of_data_types:
         subquery_list.append(twitter_sql_query)
@@ -348,7 +346,7 @@ def get_datetime_range(start_datetime, end_datetime, list_of_data_types):
     if 'fitbit-sleep' in list_of_data_types:
         subquery_list.append(fitbit_sql_query)
 
-    sql_query = " UNION ".join(subquery_list) + ";"
+    sql_query = " UNION ".join(subquery_list) + "ORDER BY eventdate ASC, eventtime ASC;"
 
     query_start_time = datetime.datetime.now()
     cursor.execute(sql_query)
