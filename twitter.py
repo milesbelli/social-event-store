@@ -196,7 +196,7 @@ def get_tweets_for_date_range(start_date, end_date, user_prefs=None):
     if user_prefs:
         start_date, end_date = localize_date_range(start_date, end_date, timezone=user_prefs.timezone)
 
-    output = eventdb.get_datetime_range(start_date, end_date)
+    output = eventdb.get_datetime_range(start_date, end_date, ['twitter'])
 
     return output
 

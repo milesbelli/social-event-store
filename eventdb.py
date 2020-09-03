@@ -317,18 +317,38 @@ def get_date_range(cursor, start_date, end_date):
     return cursor
 
 
-def get_datetime_range(start_datetime, end_datetime):
+def get_datetime_range(start_datetime, end_datetime, list_of_data_types):
 
     cnx = create_connection("social")
     cursor = cnx.cursor()
 
-    sql_query = ("SELECT eventdate, eventtime, detailid, tweettext, client, latitude, longitude "
-                 "FROM tweetdetails "
-                 "LEFT JOIN events "
-                 "ON detailid = tweetid "
-                 "WHERE CONCAT(eventdate,' ',eventtime) >= '{}' "
-                 "AND CONCAT(eventdate,' ',eventtime) <= '{}' "
-                 "ORDER BY eventdate ASC, eventtime ASC;".format(start_datetime, end_datetime))
+    subquery_list = list()
+
+    twitter_sql_query = ("SELECT eventdate, eventtime, detailid, tweettext, client, latitude, longitude, eventtype "
+                         "FROM tweetdetails "
+                         "LEFT JOIN events "
+                         "ON detailid = tweetid "
+                         "WHERE eventtype = 'twitter' "
+                         f"AND CONCAT(eventdate,' ',eventtime) >= '{start_datetime}' "
+                         f"AND CONCAT(eventdate,' ',eventtime) <= '{end_datetime}' "
+                         "ORDER BY eventdate ASC, eventtime ASC")
+
+    fitbit_sql_query = ("SELECT eventdate, eventtime, detailid, duration, timezone, logid, NULL, eventtype "
+                        "FROM fitbit_sleep "
+                        "LEFT JOIN events "
+                        "ON detailid = sleepid "
+                        "WHERE eventtype = 'fitbit-sleep' "
+                        f"AND CONCAT(eventdate,' ',eventtime) >= '{start_datetime}' "
+                        f"AND CONCAT(eventdate,' ',eventtime) <= '{end_datetime}' "
+                        "ORDER BY eventdate ASC, eventtime ASC")
+
+    if 'twitter' in list_of_data_types:
+        subquery_list.append(twitter_sql_query)
+
+    if 'fitbit-sleep' in list_of_data_types:
+        subquery_list.append(fitbit_sql_query)
+
+    sql_query = " UNION ".join(subquery_list) + ";"
 
     query_start_time = datetime.datetime.now()
     cursor.execute(sql_query)
