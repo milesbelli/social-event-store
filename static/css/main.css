@@ -30,8 +30,15 @@ iframe.main {
     margin-right: 2%;
     #margin-bottom: 2%;
     padding: 8px;
-    background-color: #333A43;
     border-radius: 4px;
+}
+
+.twitter {
+    background-color: #333A43;
+}
+
+.fitbit-sleep {
+    background-color: #334343;
 }
 
 .time {

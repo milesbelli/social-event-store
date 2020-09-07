@@ -196,7 +196,7 @@ def get_tweets_for_date_range(start_date, end_date, user_prefs=None):
     if user_prefs:
         start_date, end_date = localize_date_range(start_date, end_date, timezone=user_prefs.timezone)
 
-    output = eventdb.get_datetime_range(start_date, end_date, ['twitter'])
+    output = eventdb.get_datetime_range(start_date, end_date, ["twitter", "fitbit-sleep"])
 
     return output
 
@@ -228,7 +228,7 @@ def word_wrap(text_to_format):
     return formatted_text[:-1]
 
 
-def output_tweets_to_ical(list_of_tweets):
+def output_events_to_ical(list_of_events):
 
     ical_string = ("BEGIN:VCALENDAR\nVERSION:2.0\n"
                    "PRODID:-//Louis Mitas//social-event-store 1.0.0//EN\n")
@@ -236,28 +236,29 @@ def output_tweets_to_ical(list_of_tweets):
     time_now = str(datetime.datetime.now().time()).replace(":", "")[:6]
     date_now = str(datetime.datetime.now().date()).replace("-", "")
 
-    for tweet in list_of_tweets:
+    for event in list_of_events:
 
         # Ever wonder how to get a datetime object out of a date and a timedelta? Wonder no more!
-        start_time = datetime.datetime.combine(tweet[0], datetime.time()) + tweet[1]
+        start_time = datetime.datetime.combine(event[0], datetime.time()) + event[1]
 
-        geocoordinates = f"GEO:{tweet[5]};{tweet[6]}\n" if tweet[5] else str()
+        if event[7] == "twitter":
+            geocoordinates = f"GEO:{event[5]};{event[6]}\n" if event[5] else str()
 
-        event_title = tweet[3].replace('\n', ' ').replace('\r', ' ')
-        event_body = tweet[3].replace('\n', '\\n').replace('\r', '\\n')
-        event_date = str(tweet[0]).replace('-', '')
-        event_time = str(start_time.time()).replace(':', '')
+            event_title = event[3].replace('\n', ' ').replace('\r', ' ')
+            event_body = event[3].replace('\n', '\\n').replace('\r', '\\n')
+            event_date = str(event[0]).replace('-', '')
+            event_time = str(start_time.time()).replace(':', '')
 
-        ical_string += word_wrap(f"BEGIN:VEVENT\n"
-                                 f"UID:{tweet[2]}{time_now}@social-event-store\n"
-                                 f"DTSTAMP:{date_now}T{time_now}Z\n"
-                                 f"DTSTART:{event_date}T{event_time}Z\n"
-                                 f"DTEND:{event_date}T{event_time}Z\n"
-                                 f"{geocoordinates}"
-                                 f"SUMMARY:{event_title}\n"
-                                 f"DESCRIPTION:{event_body}"
-                                 f"\\n\\nhttps://twitter.com/i/status/{tweet[2]} | via {tweet[4]}\n"
-                                 f"END:VEVENT\n")
+            ical_string += word_wrap(f"BEGIN:VEVENT\n"
+                                     f"UID:{event[2]}{time_now}@social-event-store\n"
+                                     f"DTSTAMP:{date_now}T{time_now}Z\n"
+                                     f"DTSTART:{event_date}T{event_time}Z\n"
+                                     f"DTEND:{event_date}T{event_time}Z\n"
+                                     f"{geocoordinates}"
+                                     f"SUMMARY:{event_title}\n"
+                                     f"DESCRIPTION:{event_body}"
+                                     f"\\n\\nhttps://twitter.com/i/status/{event[2]} | via {event[4]}\n"
+                                     f"END:VEVENT\n")
 
     ical_string += "END:VCALENDAR"
 
@@ -403,16 +404,21 @@ def get_one_month_of_events(year, month, **kwargs):
         list_of_days.append(today)
         day_of_month = day_of_month + datetime.timedelta(1, 0)
 
-    tweets = tweets_in_local_time(get_tweets_for_date_range(first_day, last_day, user_prefs),
+    events = tweets_in_local_time(get_tweets_for_date_range(first_day, last_day, user_prefs),
                                   user_prefs, True)
-    tweets_by_date = dict()
-    for tweet in tweets:
-        if not tweets_by_date.get(tweet[0].strftime("%Y-%m-%d")):
-            tweets_by_date[tweet[0].strftime("%Y-%m-%d")] = []
-        tweets_by_date[tweet[0].strftime("%Y-%m-%d")].append(tweet)
+    events_by_date = dict()
+    for event in events:
+        if not events_by_date.get(event[0].strftime("%Y-%m-%d")):
+            events_by_date[event[0].strftime("%Y-%m-%d")] = []
+
+        if event[7] == "fitbit-sleep":
+            sleep_time = datetime.datetime(1, 1, 1) + datetime.timedelta(0, int(event[3])/1000)
+            readable_time = sleep_time.strftime("%H hours, %M minutes")
+            event[3] = f"Fell asleep for {readable_time} - ended on {event[8].strftime('%B %d, at %I:%M %p')}"
+        events_by_date[event[0].strftime("%Y-%m-%d")].append(event)
 
     for day in list_of_days:
-        day["events"] = tweets_by_date.get(day["date_full"]) or day["events"]
+        day["events"] = events_by_date.get(day["date_full"]) or day["events"]
         day["count"] = len(day["events"])
 
     print(f"Got month of tweets parsed in {datetime.datetime.now() - start_time}")
@@ -549,13 +555,13 @@ def database_running():
         return False
 
 
-def export_ical(tweets):
+def export_ical(events):
 
     # Output folder must be created, check for this
     if not Path("output").exists():
         Path.mkdir(Path("output"))
 
-    ical_text = output_tweets_to_ical(tweets)
+    ical_text = output_events_to_ical(events)
     output_path = f"output/export_{datetime.datetime.now().strftime('%Y%m%d%H%M%S%f')}.ics"
 
     with open(output_path, "w", encoding="utf8") as ics_file:

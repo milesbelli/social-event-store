@@ -100,8 +100,9 @@
 <h2 id="{{ day['date_day'] }}">{{ day["date_human"] }}</h2>
 <p>{{ day["count"] }} event{% if day["count"] > 1 %}s{% endif %} <a href="#">Top</a></p>
     {% for row in day["events"] %}
+{% if row[7] == "twitter" %}
 <div class="time">{{ row[1] }}</div>
-<div class="event">
+<div class="event {{ row[7] }}">
     <div class="text">
         {% for textline in row[3].split('\n') %}
         {{ textline }}<br>
@@ -115,6 +116,18 @@
     <div class="client">via {{ row[4] }}</div>
     <div class="view_link"><a target="_blank" rel="noopener noreferrer" href="https://www.twitter.com/i/status/{{ row[2] }}/">View on Twitter</a></div>
 </div>
+{% elif row[7] == "fitbit-sleep" %}
+<div class="time">{{ row[1] }}</div>
+<div class="event {{ row[7] }}">
+    <div class="text">
+        {% for textline in row[3].split('\n') %}
+        {{ textline }}<br>
+        {% endfor %}
+    </div>
+    <div class="client">In {{ row[4] }} time</div>
+    <div class="view_link"><a target="_blank" rel="noopener noreferrer" href="https://www.fitbit.com/sleep/{{ row[8].strftime('%Y-%m-%d') }}/{{ row[2] }}/">View on Fitbit</a></div>
+</div>
+{% endif %}
     {% endfor %}
 {% endif %}
 {% endfor %}
