@@ -170,40 +170,9 @@ def get_one_tweet(tweetid):
     return output
 
 
-def localize_date_range(start_date, end_date, **kwargs):
-    # First convert the str dates to datetime dates
-    start_date = datetime.datetime.strptime(start_date, "%Y-%m-%d")
-    end_date = datetime.datetime.strptime(end_date, "%Y-%m-%d")
-
-    # Then add times to be datetime objects
-    start_date = datetime.datetime.combine(start_date, datetime.time(0, 0))
-    end_date = datetime.datetime.combine(end_date, datetime.time(23, 59, 59))
-
-    # Then go from Local to UTC
-    timezone = kwargs.get('timezone') or 'UTC'
-    start_date = common.local_to_utc(start_date, timezone=timezone)
-    end_date = common.local_to_utc(end_date, timezone=timezone)
-
-    # Finally back to strings
-    start_date = start_date.strftime('%Y-%m-%d %H:%M:%S')
-    end_date = end_date.strftime('%Y-%m-%d %H:%M:%S')
-
-    return start_date, end_date
-
-
-def get_tweets_for_date_range(start_date, end_date, user_prefs=None):
-
-    if user_prefs:
-        start_date, end_date = localize_date_range(start_date, end_date, timezone=user_prefs.timezone)
-
-    output = eventdb.get_datetime_range(start_date, end_date, ["twitter", "fitbit-sleep"])
-
-    return output
-
-
 def get_count_for_date_range(start_date, end_date):
 
-    start_date, end_date = localize_date_range(start_date, end_date)
+    start_date, end_date = common.localize_date_range(start_date, end_date)
 
     output = eventdb.get_count_for_range(start_date, end_date)
 
@@ -263,27 +232,6 @@ def output_events_to_ical(list_of_events):
     ical_string += "END:VCALENDAR"
 
     return ical_string
-
-
-def tweets_in_local_time(tweets, user_prefs, am_pm_time=False):
-
-    output_tweets = list()
-
-    for tweet in tweets:
-        tweet_dtime = datetime.datetime.combine(tweet[0], datetime.time()) + tweet[1]
-        tweet_dtime = common.utc_to_local(tweet_dtime, timezone=user_prefs.timezone)
-
-        tweet_out = list()
-        tweet_out.append(tweet_dtime.date())
-        time = tweet_dtime.strftime('%I:%M:%S %p') if am_pm_time else tweet_dtime.time()
-        tweet_out.append(time)
-
-        for i in range(2, len(tweet)):
-            tweet_out.append(tweet[i])
-
-        output_tweets.append(tweet_out)
-
-    return output_tweets
 
 
 def search_for_term(search_term):
@@ -379,51 +327,6 @@ def to_hex(integer):
     second_digit = above_dec[second_digit] if second_digit > 9 else second_digit
 
     return "{}{}".format(first_digit, second_digit)
-
-
-def get_one_month_of_events(year, month, **kwargs):
-
-    user_prefs = kwargs.get("preferences") or common.UserPreferences(1)
-
-    start_time = datetime.datetime.now()
-
-    day_of_month = datetime.date(year, month, 1)
-    first_day = day_of_month.strftime("%Y-%m-%d")
-    list_of_days = list()
-
-    while day_of_month.month == month:
-        str_date = day_of_month.strftime("%Y-%m-%d")
-        today = dict()
-        today["date_human"] = day_of_month.strftime("%A, %B %d %Y")
-        today["date_full"] = str_date
-        today["date_day"] = str(day_of_month.day)
-        today["events"] = []
-        today["count"] = len(today["events"])
-        last_day = str_date
-
-        list_of_days.append(today)
-        day_of_month = day_of_month + datetime.timedelta(1, 0)
-
-    events = tweets_in_local_time(get_tweets_for_date_range(first_day, last_day, user_prefs),
-                                  user_prefs, True)
-    events_by_date = dict()
-    for event in events:
-        if not events_by_date.get(event[0].strftime("%Y-%m-%d")):
-            events_by_date[event[0].strftime("%Y-%m-%d")] = []
-
-        if event[7] == "fitbit-sleep":
-            sleep_time = datetime.datetime(1, 1, 1) + datetime.timedelta(0, int(event[3])/1000)
-            readable_time = sleep_time.strftime("%H hours, %M minutes")
-            event[3] = f"Fell asleep for {readable_time} - ended on {event[8].strftime('%B %d, at %I:%M %p')}"
-        events_by_date[event[0].strftime("%Y-%m-%d")].append(event)
-
-    for day in list_of_days:
-        day["events"] = events_by_date.get(day["date_full"]) or day["events"]
-        day["count"] = len(day["events"])
-
-    print(f"Got month of tweets parsed in {datetime.datetime.now() - start_time}")
-
-    return list_of_days
 
 
 def reverse_events(day_list):

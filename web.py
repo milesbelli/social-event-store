@@ -48,8 +48,8 @@ def one_day():
         user_prefs = common.UserPreferences(1)
         date = request.form['tweetday'] or datetime.datetime.today().strftime("%Y-%m-%d")
         print("Getting tweets for {}.".format(date))
-        tweets = twitter.get_tweets_for_date_range(date, date)
-        tweets = twitter.tweets_in_local_time(tweets, user_prefs, True)
+        tweets = common.get_events_for_date_range(date, date)
+        tweets = common.events_in_local_time(tweets, user_prefs, True)
 
         return render_template("day.html", events=tweets, default=date)
 
@@ -58,8 +58,8 @@ def one_day():
 def one_day_from_url(date):
     user_pref = common.UserPreferences(1)
     print("Getting tweets for {}.".format(date))
-    tweets = twitter.get_tweets_for_date_range(date, date)
-    tweets = twitter.tweets_in_local_time(tweets, user_pref, True)
+    tweets = common.get_events_for_date_range(date, date)
+    tweets = common.events_in_local_time(tweets, user_pref, True)
 
     return render_template("day.html", events=tweets, default=date)
 
@@ -75,7 +75,7 @@ def search():
         search_term = request.form["search"]
         print("Searching for tweets containing '{}'".format(search_term))
         tweets = twitter.search_for_term(search_term)
-        tweets = twitter.tweets_in_local_time(tweets, user_prefs, True)
+        tweets = common.events_in_local_time(tweets, user_prefs, True)
 
         # After setting up the calendar, reverse the order if user preferences is set.
         if user_prefs.reverse_order == 1:
@@ -111,7 +111,7 @@ def viewer(year, month):
 
     first_of_month = datetime.date(int(year), int(month), 1)
 
-    month_of_events = twitter.get_one_month_of_events(int(year), int(month), preferences=user_prefs)
+    month_of_events = common.get_one_month_of_events(int(year), int(month), preferences=user_prefs)
     output_calendar = twitter.calendar_grid(first_of_month, tweets=month_of_events)
 
     # After setting up the calendar, reverse the order if user preferences is set.
@@ -198,7 +198,7 @@ def export_ical():
         end_date = request.form.get("end-date")
 
         if start_date and end_date:
-            tweets = twitter.get_tweets_for_date_range(start_date, end_date, user_prefs)
+            tweets = common.get_events_for_date_range(start_date, end_date, user_prefs)
             output_path = twitter.export_ical(tweets)
 
             return render_template("export.html", count=len(tweets), link=output_path, start=start_date, end=end_date)

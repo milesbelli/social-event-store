@@ -398,7 +398,7 @@ def get_search_term(search_term):
     search_term = search_term.replace("%", "\\%")
     search_term = search_term.replace("_", "\\_")
 
-    sql_query = ("SELECT eventdate, eventtime, detailid, tweettext, client, latitude, longitude "
+    sql_query = ("SELECT eventdate, eventtime, detailid, tweettext, client, latitude, longitude, eventtype "
                  "FROM tweetdetails "
                  "LEFT JOIN events "
                  "ON detailid = tweetid "
