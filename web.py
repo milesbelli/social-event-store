@@ -3,6 +3,7 @@ import twitter
 import datetime
 import pytz
 import common
+import fitbit
 from multiprocessing import Process
 
 app = Flask(__name__)
@@ -156,6 +157,9 @@ def upload_data():
         destination_file.write(file.read())
         if request.form["source"] == "twitter":
             file_proc_bkg = Process(target=twitter.process_from_file, args=(file_path,), daemon=True)
+            file_proc_bkg.start()
+        elif request.form["source"] == "fitbit-sleep":
+            file_proc_bkg = Process(target=fitbit.process_from_file, args=(file_path,), daemon=True)
             file_proc_bkg.start()
 
         return render_template("upload.html", status_message=f"The file {file.filename} has been successfully uploaded.")

@@ -139,9 +139,10 @@ def insert_tweets(list_of_tweets, cnx):
         for duplicate_tweet in conflicting_duplicates_dict:
             for duplicate_item in conflicting_duplicates_dict[duplicate_tweet]:
                 add_to_string = "('{}','{}','{}')".format(duplicate_tweet, duplicate_item,
-                                                    conflicting_duplicates_dict[duplicate_tweet][duplicate_item])
+                                                          conflicting_duplicates_dict[duplicate_tweet][duplicate_item])
                 unique_conflicts = add_to_string if len(unique_conflicts) == 0 else unique_conflicts +\
-                                                                                    ", " + add_to_string
+                    ", " + add_to_string
+
         if len(unique_conflicts) > 0:
 
             sql_insert_conflicts = "INSERT INTO tweetconflicts VALUES {}".format(unique_conflicts)

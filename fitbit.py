@@ -56,11 +56,18 @@ class FitbitSleepImporter(FitbitImporter):
         self.json_list = unique_list
 
 
+def process_from_file(file_path):
+    current_user = common.UserPreferences(1)
+    process_dir = common.unpack_and_store_files(file_path, "output")
+    sleep_import = FitbitSleepImporter(process_dir)
+    sleep_import.add_to_database(current_user)
+    common.cleanup(process_dir)
+
+
 if __name__ == "__main__":
     all_data = FitbitSleepImporter("data/Fitbit Sleep")
     print(all_data.get_item(106))
     my_user = common.UserPreferences(1)
-
 
     maxlog = 0
     for item in all_data.json_list:

@@ -3,10 +3,6 @@ import json
 import datetime
 import eventdb
 from pathlib import Path
-import pytz
-import zipfile
-from multiprocessing import Process
-import time
 import requests
 import common
 
@@ -154,12 +150,12 @@ def process_directory(dir_path, acct=None):
     eventdb.insert_tweets(list_of_tweets, cnx)
     eventdb.close_connection(cnx)
 
-    cleanup(dir_path)
+    common.cleanup(dir_path)
 
 
 def process_from_file(file_path):
 
-    process_dir = unpack_and_store_files(file_path, "output")
+    process_dir = common.unpack_and_store_files(file_path, "output")
     process_directory(process_dir)
 
     
@@ -356,80 +352,6 @@ def build_date_pickers():
     date_picker["months"] = months
 
     return date_picker
-
-
-def unpack_and_store_files(zipfile_path, parent_directory):
-    # Returns the temporary directory for the files that were extracted
-
-    if not Path(parent_directory).exists():
-        Path.mkdir(Path(parent_directory))
-
-    if zipfile.is_zipfile(zipfile_path):
-
-        directory_stamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S%f")
-        output_path = f"{parent_directory}/{directory_stamp}"
-
-        Path.mkdir(Path(output_path))
-
-        with zipfile.ZipFile(zipfile_path) as zipfile_to_process:
-            for entry in zipfile_to_process.namelist():
-
-                if ("data/js/tweets" in entry and ".js" in entry) or ("tweet.js" in entry):
-                    js_file_to_save = zipfile_to_process.read(entry)
-                    output_file = open(f"{output_path}/{entry.split('/')[-1]}", "wb")
-                    output_file.write(js_file_to_save)
-                    output_file.close()
-
-                elif "account.js" in entry:
-                    account_js = zipfile_to_process.read(entry)
-                    Path.mkdir(Path(f"{output_path}/acct"))
-                    output_acct = open(f"{output_path}/acct/account.js", "wb")
-                    output_acct.write(account_js)
-                    output_acct.close()
-
-        cleanup(zipfile_path)
-
-        return output_path
-
-
-def cleanup(to_delete):
-    # This probably would not have been needed on Unix. Windows locks
-    # files in such a way that they cannot be flagged for deleting at a
-    # later time, so the workaround is to keep trying in a daemon until
-    # the file lock is released.
-
-    print(f"Received request to delete {to_delete}...")
-
-    max_attempts = 12
-    attempts = 0
-    deleted = False
-
-    def delete_dir(dir_path):
-        for file in dir_path.iterdir():
-            if file.is_file():
-                file.unlink()
-                print(f"Deleted {file}")
-            elif Path(file).is_dir():
-                delete_dir(Path(file))
-        dir_path.rmdir()
-        print(f"Deleted {dir_path}")
-
-    while attempts < max_attempts and not deleted:
-        try:
-            target_path = Path(to_delete)
-            if target_path.is_dir():
-                delete_dir(target_path)
-            else:
-                target_path.unlink()
-                print(f"Deleted {target_path}")
-
-            deleted = True
-
-        except OSError:
-            print(f"Could not delete {to_delete}, file is busy.")
-
-        attempts += 1
-        time.sleep(5)
 
 
 def fix_symbols(message):
