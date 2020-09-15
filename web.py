@@ -198,14 +198,15 @@ def export_ical():
             return render_template("export.html")
 
     elif request.method == "POST":
+        source = request.form.get("source")
         start_date = request.form.get("start-date")
         end_date = request.form.get("end-date")
 
         if start_date and end_date:
-            tweets = common.get_events_for_date_range(start_date, end_date, user_prefs)
-            output_path = twitter.export_ical(tweets)
+            events = common.get_events_for_date_range(start_date, end_date, user_prefs, sources=[source])
+            output_path = common.export_ical(events)
 
-            return render_template("export.html", count=len(tweets), link=output_path, start=start_date, end=end_date)
+            return render_template("export.html", count=len(events), link=output_path, start=start_date, end=end_date)
 
         else:
             return render_template("export.html", message="You need to select a date range.")

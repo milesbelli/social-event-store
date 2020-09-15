@@ -113,12 +113,14 @@ def get_one_month_of_events(year, month, **kwargs):
     return list_of_days
 
 
-def get_events_for_date_range(start_date, end_date, user_prefs=None):
+def get_events_for_date_range(start_date, end_date, user_prefs=None, **kwargs):
+
+    sources = kwargs.get("sources") or ["twitter", "fitbit-sleep"]
 
     if user_prefs:
         start_date, end_date = localize_date_range(start_date, end_date, timezone=user_prefs.timezone)
 
-    output = eventdb.get_datetime_range(start_date, end_date, ["twitter", "fitbit-sleep"])
+    output = eventdb.get_datetime_range(start_date, end_date, sources)
 
     return output
 
@@ -225,3 +227,91 @@ def cleanup(to_delete):
 
         attempts += 1
         time.sleep(5)
+
+
+def output_events_to_ical(list_of_events):
+
+    ical_string = ("BEGIN:VCALENDAR\nVERSION:2.0\n"
+                   "PRODID:-//Louis Mitas//social-event-store 1.0.0//EN\n")
+
+    time_now = str(datetime.datetime.now().time()).replace(":", "")[:6]
+    date_now = str(datetime.datetime.now().date()).replace("-", "")
+
+    for event in list_of_events:
+
+        # Ever wonder how to get a datetime object out of a date and a timedelta? Wonder no more!
+        start_time = datetime.datetime.combine(event[0], datetime.time()) + event[1]
+
+        if event[7] == "twitter":
+            geocoordinates = f"GEO:{event[5]};{event[6]}\n" if event[5] else str()
+
+            event_title = event[3].replace('\n', ' ').replace('\r', ' ')
+            event_body = event[3].replace('\n', '\\n').replace('\r', '\\n')
+            event_date = str(event[0]).replace('-', '')
+            event_time = str(start_time.time()).replace(':', '')
+
+            ical_string += word_wrap(f"BEGIN:VEVENT\n"
+                                     f"UID:{event[2]}{time_now}@social-event-store\n"
+                                     f"DTSTAMP:{date_now}T{time_now}Z\n"
+                                     f"DTSTART:{event_date}T{event_time}Z\n"
+                                     f"DTEND:{event_date}T{event_time}Z\n"
+                                     f"{geocoordinates}"
+                                     f"SUMMARY:{event_title}\n"
+                                     f"DESCRIPTION:{event_body}"
+                                     f"\\n\\nhttps://twitter.com/i/status/{event[2]} | via {event[4]}\n"
+                                     f"END:VEVENT\n")
+
+        elif event[7] == "fitbit-sleep":
+
+            event_date = str(event[0]).replace('-', '')
+            event_time = str(start_time.time()).replace(':', '')
+            sleep_time = datetime.datetime(1, 1, 1) + datetime.timedelta(0, int(event[3])/1000)
+            end_datetime = start_time + datetime.timedelta(0, int(event[3])/1000)
+            readable_time = sleep_time.strftime("%H hours, %M minutes")
+            date_end = str(end_datetime.date()).replace('-', '')
+            time_end = str(end_datetime.time()).replace(':', '')
+
+            ical_string += word_wrap(f"BEGIN:VEVENT\n"
+                                     f"UID:{event[2]}{time_now}@social-event-store\n"
+                                     f"DTSTAMP:{date_now}T{time_now}Z\n"
+                                     f"DTSTART:{event_date}T{event_time}Z\n"
+                                     f"DTEND:{date_end}T{time_end}Z\n"
+                                     f"SUMMARY:Fell asleep for {readable_time}\n"
+                                     f"END:VEVENT\n")
+
+    ical_string += "END:VCALENDAR"
+
+    return ical_string
+
+
+def export_ical(events):
+
+    # Output folder must be created, check for this
+    if not Path("output").exists():
+        Path.mkdir(Path("output"))
+
+    ical_text = output_events_to_ical(events)
+    output_path = f"output/export_{datetime.datetime.now().strftime('%Y%m%d%H%M%S%f')}.ics"
+
+    with open(output_path, "w", encoding="utf8") as ics_file:
+        ics_file.write(ical_text)
+
+    return output_path
+
+
+def word_wrap(text_to_format):
+    formatted_text = str()
+
+    lines_list = text_to_format.split('\n')
+
+    for line in lines_list:
+        cursor = 0
+        while cursor < len(line):
+            curstart = cursor
+            offset = 74 if formatted_text[-2:] == "\n " else 75
+            cursor = cursor + offset if cursor + offset < len(line) else len(line)
+            formatted_text = formatted_text + line[curstart:cursor] + "\n " \
+                if cursor < len(line) else formatted_text + line[curstart:cursor]
+        formatted_text += "\n"
+
+    return formatted_text[:-1]
