@@ -242,13 +242,16 @@ def output_events_to_ical(list_of_events):
         # Ever wonder how to get a datetime object out of a date and a timedelta? Wonder no more!
         start_time = datetime.datetime.combine(event[0], datetime.time()) + event[1]
 
+        # Event date and time are fairly universal by design, and that's about it
+        event_date = str(event[0]).replace('-', '')
+        event_time = str(start_time.time()).replace(':', '')
+
+        # Constructing ical event for Twitter
         if event[7] == "twitter":
             geocoordinates = f"GEO:{event[5]};{event[6]}\n" if event[5] else str()
 
             event_title = event[3].replace('\n', ' ').replace('\r', ' ')
             event_body = event[3].replace('\n', '\\n').replace('\r', '\\n')
-            event_date = str(event[0]).replace('-', '')
-            event_time = str(start_time.time()).replace(':', '')
 
             ical_string += word_wrap(f"BEGIN:VEVENT\n"
                                      f"UID:{event[2]}{time_now}@social-event-store\n"
@@ -261,10 +264,9 @@ def output_events_to_ical(list_of_events):
                                      f"\\n\\nhttps://twitter.com/i/status/{event[2]} | via {event[4]}\n"
                                      f"END:VEVENT\n")
 
+        # Constructing ical event for Fitbit sleep events
         elif event[7] == "fitbit-sleep":
 
-            event_date = str(event[0]).replace('-', '')
-            event_time = str(start_time.time()).replace(':', '')
             sleep_time = datetime.datetime(1, 1, 1) + datetime.timedelta(0, int(event[3])/1000)
             end_datetime = start_time + datetime.timedelta(0, int(event[3])/1000)
             readable_time = sleep_time.strftime("%H hours, %M minutes")
