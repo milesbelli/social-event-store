@@ -266,7 +266,49 @@ def insert_fitbit_sleep(sleep, user_prefs):
         cnx.commit()
     cursor.close()
 
-    
+
+def get_fitbit_sleep_event(sleep_id):
+
+    cnx = create_connection("social")
+    cursor = cnx.cursor()
+
+    sql_fitbit_sleep = ("SELECT eventdate, eventtime, sleepid, logid, startdatetime, enddatetime, timezone,"
+                        " duration, mainsleep FROM events e LEFT JOIN fitbit_sleep f"
+                        " ON e.detailid = f.sleepid"
+                        f" WHERE f.sleepid = {sleep_id} AND e.eventtype = 'fitbit-sleep'")
+
+    cursor.execute(sql_fitbit_sleep)
+
+    try:
+        output = cursor.next()
+
+    except StopIteration:
+        output = ()
+
+    close_connection(cnx)
+
+    return output
+
+
+def update_fitbit_sleep_timezone(sleep_id, event_date, event_time, timezone):
+
+    cnx = create_connection("social")
+    cursor = cnx.cursor()
+
+    sql_event_update = (f"UPDATE events SET eventdate = '{event_date}', eventtime = '{event_time}'"
+                        f" WHERE detailid = {sleep_id} and eventtype = 'fitbit-sleep'")
+
+    cursor.execute(sql_event_update)
+
+    sql_fitbit_sleep_update = (f"UPDATE fitbit_sleep SET timezone = '{timezone}'"
+                               f" WHERE sleepid = {sleep_id}")
+
+    cursor.execute(sql_fitbit_sleep_update)
+
+    cnx.commit()
+    close_connection(cnx)
+
+
 def get_existing_tweets(cursor):
       
     sql_get_all_tweet_ids = "SELECT tweetid FROM tweetdetails;"

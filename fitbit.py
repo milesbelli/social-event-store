@@ -56,6 +56,31 @@ class FitbitSleepImporter(FitbitImporter):
         self.json_list = unique_list
 
 
+class FitbitSleepEvent:
+    def __init__(self, sleep_id):
+        data = eventdb.get_fitbit_sleep_event(sleep_id)
+        if data:
+            self.datetime = datetime.datetime.combine(data[0], datetime.time(0, 0, 0)) + data[1]
+            self.sleep_id = data[2]
+            self.log_id = data[3]
+            self.start_time = data[4]
+            self.end_time = data[5]
+            self.timezone = data[6]
+            self.duration = data[7]
+            self.main_sleep = data[8]
+        else:
+            raise ValueError('Event id not found in database')
+
+    def update_timezone(self, new_timezone):
+        # convert utc time to "old" local
+        local_datetime = common.utc_to_local(self.datetime, timezone=self.timezone)
+        # take that "old" local and re-compute utc with "new" timezone
+        self.datetime = common.local_to_utc(local_datetime.replace(tzinfo=None), timezone=new_timezone)
+        self.timezone = new_timezone
+        # store that in the db
+        eventdb.update_fitbit_sleep_timezone(self.sleep_id, self.datetime.date(), self.datetime.time(), self.timezone)
+
+
 def process_from_file(file_path):
     current_user = common.UserPreferences(1)
     process_dir = common.unpack_and_store_files(file_path, "output")
