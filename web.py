@@ -212,6 +212,15 @@ def export_ical():
             return render_template("export.html", message="You need to select a date range.")
 
 
+@app.route("/edit-sleep/<sleep_id>", methods=["GET", "POST"])
+def edit_sleep(sleep_id):
+    fitbit_sleep_event = fitbit.FitbitSleepEvent(sleep_id)
+
+    if request.method == "GET":
+
+        return render_template("edit-sleep.html", event=fitbit_sleep_event)
+
+
 # Running this will launch the server
 if __name__ == "__main__":
     app.run(host="0.0.0.0")
