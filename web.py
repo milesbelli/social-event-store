@@ -218,7 +218,14 @@ def edit_sleep(sleep_id):
 
     if request.method == "GET":
 
-        return render_template("edit-sleep.html", event=fitbit_sleep_event)
+        return render_template("edit-sleep.html", event=fitbit_sleep_event, timezones=pytz.all_timezones)
+
+    elif request.method == "POST":
+        old_timezone = fitbit_sleep_event.timezone
+        fitbit_sleep_event.update_timezone(request.form["timezone"])
+        save_message = f"Timezone changed from {old_timezone} to {fitbit_sleep_event.timezone}."
+        return render_template("edit-sleep.html", event=fitbit_sleep_event, timezones=pytz.all_timezones,
+                               message=save_message)
 
 
 # Running this will launch the server

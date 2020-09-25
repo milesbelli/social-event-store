@@ -368,7 +368,7 @@ def get_datetime_range(start_datetime, end_datetime, list_of_data_types):
     subquery_list = list()
 
     twitter_sql_query = ("SELECT eventdate, eventtime, detailid, tweettext, client, "
-                         "latitude, longitude, eventtype, NULL "
+                         "latitude, longitude, eventtype, NULL, NULL "
                          "FROM tweetdetails "
                          "LEFT JOIN events "
                          "ON detailid = tweetid "
@@ -376,7 +376,8 @@ def get_datetime_range(start_datetime, end_datetime, list_of_data_types):
                          f"AND CONCAT(eventdate,' ',eventtime) >= '{start_datetime}' "
                          f"AND CONCAT(eventdate,' ',eventtime) <= '{end_datetime}' ")
 
-    fitbit_sql_query = ("SELECT eventdate, eventtime, logid, duration, timezone, NULL, NULL, eventtype, enddatetime "
+    fitbit_sql_query = ("SELECT eventdate, eventtime, logid, duration, timezone, NULL, NULL, "
+                        "eventtype, enddatetime, sleepid "
                         "FROM fitbit_sleep "
                         "LEFT JOIN events "
                         "ON detailid = sleepid "

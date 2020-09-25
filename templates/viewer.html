@@ -124,7 +124,7 @@
         {{ textline }}<br>
         {% endfor %}
     </div>
-    <div class="client">In {{ row[4] }} time</div>
+    <div class="client">In {{ row[4] }} &bull; <a href="/edit-sleep/{{ row[9] }}">Edit</a></div>
     <div class="view_link"><a target="_blank" rel="noopener noreferrer" href="https://www.fitbit.com/sleep/{{ row[8].strftime('%Y-%m-%d') }}/{{ row[2] }}/">View on Fitbit</a></div>
 </div>
 {% endif %}

@@ -9,9 +9,43 @@
 <body>
 <iframe class="main" src="/top"></iframe>
 <h1>Edit Sleep Event</h1>
-<p>{{ event.sleep_id }}</p>
-<p>{{ event.start_time }}</p>
-<p>{{ event.end_time }}</p>
-<p>{{ event.timezone }}</p>
+<a href="/viewer/{{ event.datetime.strftime('%Y') }}/{{ event.datetime.strftime('%m') }}#{{ event.datetime.strftime('%d') }}">
+    Go to Viewer
+</a>
+<p>Edit a single sleep event.</p>
+<form name="sleep-event" action="/edit-sleep/{{ event.sleep_id }}" method="post">
+    <table>
+        <tr>
+            <td>UTC Start:</td>
+            <td>{{ event.datetime }}</td>
+        </tr>
+        <tr>
+            <td>Sleep ID:</td>
+            <td>{{ event.sleep_id }}</td>
+        </tr>
+        <tr>
+            <td>Local Start Time:</td>
+            <td>{{ event.start_time }}</td>
+        </tr>
+        <tr>
+            <td>Local End Time:</td>
+            <td>{{ event.end_time }}</td>
+        </tr>
+        <tr>
+            <td>Timezone:</td>
+            <td>
+
+            <select id="timezone" name="timezone">
+                {% for tz in timezones %}
+                    <option value="{{ tz }}" {% if event.timezone == tz %} selected {% endif %}>{{ tz }}</option>
+                {% endfor %}
+            </select>
+                </td>
+        </tr>
+    </table>
+    <input type="hidden" name="sleep-id" value="{{ event.sleep_id }}">
+    <input type="submit" value="Save">
+</form>
+{{ message }}
 </body>
 </html>
