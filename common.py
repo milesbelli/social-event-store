@@ -195,7 +195,7 @@ def cleanup(to_delete):
     # later time, so the workaround is to keep trying in a daemon until
     # the file lock is released.
 
-    print(f"Received request to delete {to_delete}...")
+    print(f"[{datetime.datetime.now()}] Received request to delete {to_delete}...")
 
     max_attempts = 12
     attempts = 0
@@ -205,11 +205,11 @@ def cleanup(to_delete):
         for file in dir_path.iterdir():
             if file.is_file():
                 file.unlink()
-                print(f"Deleted {file}")
+                print(f"[{datetime.datetime.now()}] Deleted {file}")
             elif Path(file).is_dir():
                 delete_dir(Path(file))
         dir_path.rmdir()
-        print(f"Deleted {dir_path}")
+        print(f"[{datetime.datetime.now()}] Deleted {dir_path}")
 
     while attempts < max_attempts and not deleted:
         try:
@@ -218,15 +218,15 @@ def cleanup(to_delete):
                 delete_dir(target_path)
             else:
                 target_path.unlink()
-                print(f"Deleted {target_path}")
+                print(f"[{datetime.datetime.now()}] Deleted {target_path}")
 
             deleted = True
 
         except OSError:
-            print(f"Could not delete {to_delete}, file is busy.")
+            print(f"[{datetime.datetime.now()}] Could not delete {to_delete}, file is busy.")
+            time.sleep(5)
 
         attempts += 1
-        time.sleep(5)
 
 
 def output_events_to_ical(list_of_events):

@@ -34,7 +34,6 @@
         <tr>
             <td>Timezone:</td>
             <td>
-
             <select id="timezone" name="timezone">
                 {% for tz in timezones %}
                     <option value="{{ tz }}" {% if event.timezone == tz %} selected {% endif %}>{{ tz }}</option>

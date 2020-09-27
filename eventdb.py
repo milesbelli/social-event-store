@@ -153,6 +153,10 @@ def insert_tweets(list_of_tweets, cnx):
 
 
 def insert_fitbit_sleep(sleep, user_prefs):
+
+    print(f"[{datetime.datetime.now()}] Beginning to store sleep events, total of {len(sleep)} records to process.")
+    proc_start_time = datetime.datetime.now()
+
     cnx = create_connection('social')
     cursor = cnx.cursor()
     user_id = 1                                # Static for now
@@ -216,13 +220,21 @@ def insert_fitbit_sleep(sleep, user_prefs):
         # Populate secondary tables
 
         for log_id in sleep_levels:
+            list_of_stages_values = list()
+
             for level in sleep_levels[log_id]["summary"]:
 
                 count = sleep_levels[log_id]["summary"][level].get("count")
                 minutes = sleep_levels[log_id]["summary"][level].get("minutes")
                 avg_minutes = sleep_levels[log_id]["summary"][level].get("thirtyDayAvgMinutes") or 0
 
+                # The "values" section of the sql statement will go on a list to be grouped in an optimal size
                 stages_values = f"('{logid_index[log_id]}', '{level}', '{count}', '{minutes}', '{avg_minutes}')"
+                list_of_stages_values.append(stages_values)
+
+            list_of_stages_values = group_insert_into_db(list_of_stages_values, 10)
+
+            for stages_values in list_of_stages_values:
 
                 sql_add_stages = ("INSERT INTO fitbit_sleep_stages (sleepid, sleepstage, stagecount,"
                                   " stageminutes, avgstageminutes)"
@@ -230,13 +242,21 @@ def insert_fitbit_sleep(sleep, user_prefs):
 
                 cursor.execute(sql_add_stages)
 
+            list_of_data_values = list()
+
             for item in sleep_levels[log_id]["data"]:
 
                 sleep_date_time = item["dateTime"]
                 level = item["level"]
                 seconds = item["seconds"]
 
+                # group data "values" to be optimal
                 data_values = f"('{logid_index[log_id]}', '{sleep_date_time}', '{level}', '{seconds}')"
+                list_of_data_values.append(data_values)
+
+            list_of_data_values = group_insert_into_db(list_of_data_values, 100)
+
+            for data_values in list_of_data_values:
 
                 sql_add_data = ("INSERT INTO fitbit_sleep_data (sleepid, sleepdatetime, sleepstage, seconds)"
                                 f"VALUES {data_values}")
@@ -265,6 +285,8 @@ def insert_fitbit_sleep(sleep, user_prefs):
 
         cnx.commit()
     cursor.close()
+
+    print(f"[{datetime.datetime.now()}] Finished processing all events, time elapsed was {datetime.datetime.now() - proc_start_time}")
 
 
 def get_fitbit_sleep_event(sleep_id):
@@ -406,6 +428,38 @@ def get_datetime_range(start_datetime, end_datetime, list_of_data_types):
     close_connection(cnx)
 
     return output
+
+
+def group_insert_into_db(list_of_rows, group_size):
+    """It is far more optimal to insert multiple values with a single SQL statement. However, it is possible to create
+    statements which are too large and cause an error. The workaround for this is to divide the values into chunks which
+    are large enough to be optimal while being small enough to avoid an error.
+    This function takes both the list of values and a size parameter, to adjust the size of each group."""
+
+    list_pos = 0
+    sub_list = list()
+    combined_list = list()
+
+    # Iterate through the whole list of items
+    while list_pos < len(list_of_rows):
+
+        # Start building a sub-list to later add
+        if len(sub_list) < group_size:
+            sub_list.append(list_of_rows[list_pos])
+
+        # Once the sub-list is "full" it is dumped onto the return list
+        else:
+            combined_list.append(", ".join(sub_list))
+            sub_list = list()
+            sub_list.append(list_of_rows[list_pos])
+
+        list_pos += 1
+
+    # Whatever was on the sub-list when the loop ended gets added
+    if len(sub_list) > 0:
+        combined_list.append(", ".join(sub_list))
+
+    return combined_list
 
 
 def get_count_for_range(start_datetime, end_datetime):

@@ -22,6 +22,7 @@ class FitbitImporter:
                 json_file = json.loads(file)
             self.json_list += json_file
 
+
     def get_item(self, item_position):
 
         return self.json_list[item_position]
@@ -37,8 +38,12 @@ class FitbitImporter:
 
 class FitbitSleepImporter(FitbitImporter):
     def __init__(self, directory):
+        print(f"[{datetime.datetime.now()}] Parsing files from directory.")
+        start_process_time = datetime.datetime.now()
         super().__init__(directory)
         self.__enforce_unique_set()
+        print(f"[{datetime.datetime.now()}] Completed sleep data processing of directory. "
+              f"Time taken: {datetime.datetime.now() - start_process_time}")
 
     def add_to_database(self, user_prefs):
         eventdb.insert_fitbit_sleep(self.json_list, user_prefs)
