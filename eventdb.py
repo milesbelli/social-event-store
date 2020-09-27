@@ -301,11 +301,7 @@ def get_fitbit_sleep_event(sleep_id):
 
     cursor.execute(sql_fitbit_sleep)
 
-    try:
-        output = cursor.next()
-
-    except StopIteration:
-        output = ()
+    output = cursor.fetchone()
 
     close_connection(cnx)
 
