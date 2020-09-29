@@ -386,7 +386,7 @@ def get_datetime_range(start_datetime, end_datetime, list_of_data_types):
     subquery_list = list()
 
     twitter_sql_query = ("SELECT eventdate, eventtime, detailid, tweettext, client, "
-                         "latitude, longitude, eventtype, NULL, NULL "
+                         "latitude, longitude, eventtype, NULL, NULL, NULL, NULL "
                          "FROM tweetdetails "
                          "LEFT JOIN events "
                          "ON detailid = tweetid "
@@ -394,14 +394,18 @@ def get_datetime_range(start_datetime, end_datetime, list_of_data_types):
                          f"AND CONCAT(eventdate,' ',eventtime) >= '{start_datetime}' "
                          f"AND CONCAT(eventdate,' ',eventtime) <= '{end_datetime}' ")
 
-    fitbit_sql_query = ("SELECT eventdate, eventtime, logid, duration, timezone, NULL, NULL, "
-                        "eventtype, enddatetime, sleepid "
-                        "FROM fitbit_sleep "
+    fitbit_sql_query = ("SELECT eventdate, eventtime, f.logid, f.duration, f.timezone, NULL, NULL, "
+                        "eventtype, enddatetime, f.sleepid, sum(stageminutes), startdatetime "
+                        "FROM fitbit_sleep f "
                         "LEFT JOIN events "
-                        "ON detailid = sleepid "
+                        "ON detailid = f.sleepid "
+                        "LEFT JOIN fitbit_sleep_stages s "
+                        "ON f.sleepid = s.sleepid "
                         "WHERE eventtype = 'fitbit-sleep' "
                         f"AND CONCAT(eventdate,' ',eventtime) >= '{start_datetime}' "
-                        f"AND CONCAT(eventdate,' ',eventtime) <= '{end_datetime}' ")
+                        f"AND CONCAT(eventdate,' ',eventtime) <= '{end_datetime}' "
+                        f"AND sleepstage NOT LIKE '%wake' AND sleepstage NOT LIKE 'restless' "
+                        f"GROUP BY s.sleepid, eventdate, eventtime, f.logid, f.duration, f.timezone, f.sleepid ")
 
     if 'twitter' in list_of_data_types:
         subquery_list.append(twitter_sql_query)
@@ -491,6 +495,9 @@ def get_search_term(search_term):
     search_term = search_term.replace("\\", "\\\\")
     search_term = search_term.replace("%", "\\%")
     search_term = search_term.replace("_", "\\_")
+
+    if "client:\"" in search_term:
+        pass
 
     sql_query = ("SELECT eventdate, eventtime, detailid, tweettext, client, latitude, longitude, eventtype "
                  "FROM tweetdetails "

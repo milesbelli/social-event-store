@@ -100,7 +100,12 @@ def get_one_month_of_events(year, month, **kwargs):
         if event[7] == "fitbit-sleep":
             sleep_time = datetime.datetime(1, 1, 1) + datetime.timedelta(0, int(event[3])/1000)
             readable_time = sleep_time.strftime("%H hours, %M minutes")
-            event[3] = f"Fell asleep for {readable_time} - ended on {event[8].strftime('%B %d, at %I:%M %p')}"
+            rest_time = datetime.datetime(1, 1, 1) + datetime.timedelta(0, int(event[10]) * 60)
+            readable_rest = rest_time.strftime("%H hours, %M minutes")
+            event[3] = (f"Total time in bed: {readable_time} \n"
+                        f"Restful time: {readable_rest}\n"
+                        f"Local start time: {event[11].strftime('%B %d, at %I:%M %p')}\n"
+                        f"Local end time: {event[8].strftime('%B %d, at %I:%M %p')}")
 
         events_by_date[event[0].strftime("%Y-%m-%d")].append(event)
 
