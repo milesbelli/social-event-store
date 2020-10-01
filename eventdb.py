@@ -496,14 +496,25 @@ def get_search_term(search_term):
     search_term = search_term.replace("%", "\\%")
     search_term = search_term.replace("_", "\\_")
 
+    client_sql = str()
+
     if "client:\"" in search_term:
-        pass
+        keyword_index = search_term.index("client:\"")
+        open_quote_index = search_term.index("\"", keyword_index)
+        closed_quote_index = search_term.index("\"", open_quote_index + 1)
+        client_search = search_term[open_quote_index + 1:closed_quote_index]
+
+        client_sql = f"AND client like '%{client_search}%'"
+
+        search_term = search_term[:keyword_index] + search_term[closed_quote_index+1:]
+        print(search_term)
 
     sql_query = ("SELECT eventdate, eventtime, detailid, tweettext, client, latitude, longitude, eventtype "
                  "FROM tweetdetails "
                  "LEFT JOIN events "
                  "ON detailid = tweetid "
                  f"WHERE tweettext LIKE '%{search_term}%' "
+                 f"{client_sql}"
                  "ORDER BY eventdate ASC, eventtime ASC;")
 
     cursor.execute(sql_query)
