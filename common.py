@@ -275,15 +275,24 @@ def output_events_to_ical(list_of_events):
             sleep_time = datetime.datetime(1, 1, 1) + datetime.timedelta(0, int(event[3])/1000)
             end_datetime = start_time + datetime.timedelta(0, int(event[3])/1000)
             readable_time = sleep_time.strftime("%H hours, %M minutes")
+            rest_time = datetime.datetime(1, 1, 1) + datetime.timedelta(0, int(event[10]) * 60)
+            readable_rest = rest_time.strftime("%H hours, %M minutes")
             date_end = str(end_datetime.date()).replace('-', '')
             time_end = str(end_datetime.time()).replace(':', '')
+
+            title_text = f"Restful time: {readable_rest}"
+            body_text = (f"Total time in bed: {readable_time}\\n"
+                         f"Restful time: {readable_rest}\\n"
+                         f"Local start time: {event[11].strftime('%B %d, at %I:%M %p')}\\n"
+                         f"Local end time: {event[8].strftime('%B %d, at %I:%M %p')}")
 
             ical_string += word_wrap(f"BEGIN:VEVENT\n"
                                      f"UID:{event[2]}{time_now}@social-event-store\n"
                                      f"DTSTAMP:{date_now}T{time_now}Z\n"
                                      f"DTSTART:{event_date}T{event_time}Z\n"
                                      f"DTEND:{date_end}T{time_end}Z\n"
-                                     f"SUMMARY:Fell asleep for {readable_time}\n"
+                                     f"SUMMARY:{title_text}\n"
+                                     f"DESCRIPTION:{body_text}\n"
                                      f"END:VEVENT\n")
 
     ical_string += "END:VCALENDAR"
