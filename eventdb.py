@@ -496,18 +496,34 @@ def get_search_term(search_term):
     search_term = search_term.replace("%", "\\%")
     search_term = search_term.replace("_", "\\_")
 
-    client_sql = str()
+    def keyword_parse(keyword):
 
-    if "client:\"" in search_term:
-        keyword_index = search_term.index("client:\"")
-        open_quote_index = search_term.index("\"", keyword_index)
-        closed_quote_index = search_term.index("\"", open_quote_index + 1)
-        client_search = search_term[open_quote_index + 1:closed_quote_index]
+        if keyword in search_term:
+            try:
+                keyword_index = search_term.index(keyword)
+                open_quote_index = search_term.index("\"", keyword_index)
+                closed_quote_index = search_term.index("\"", open_quote_index + 1)
+                keyword_search = search_term[open_quote_index + 1:closed_quote_index]
 
-        client_sql = f"AND client like '%{client_search}%'"
+                modified_search = search_term[:keyword_index] + search_term[closed_quote_index + 1:]
 
-        search_term = search_term[:keyword_index] + search_term[closed_quote_index+1:]
-        print(search_term)
+            except ValueError as error:
+                print(f"Error while parsing keyword: {error}")
+                keyword_search = str()
+                modified_search = search_term
+
+        else:
+            keyword_search = str()
+            modified_search = search_term
+
+        return keyword_search, modified_search
+
+    client_search, search_term = keyword_parse("client:\"")
+    client_sql = f"AND client like '%{client_search}%' " if client_search else str()
+
+    geo_search, search_term = keyword_parse("geo:")
+    geo_sql = f"AND latitude IS NOT NULL AND longitude IS NOT NULL " if geo_search == "true" else \
+        f"AND latitude IS NULL AND longitude IS NULL " if geo_search == "false" else str()
 
     sql_query = ("SELECT eventdate, eventtime, detailid, tweettext, client, latitude, longitude, eventtype "
                  "FROM tweetdetails "
@@ -515,6 +531,7 @@ def get_search_term(search_term):
                  "ON detailid = tweetid "
                  f"WHERE tweettext LIKE '%{search_term}%' "
                  f"{client_sql}"
+                 f"{geo_sql}"
                  "ORDER BY eventdate ASC, eventtime ASC;")
 
     cursor.execute(sql_query)
