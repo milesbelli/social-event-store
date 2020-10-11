@@ -96,3 +96,15 @@ input, select {
     color: #00ffff;
     border: none;
 }
+
+.date-header {
+    position: fixed;
+    background-color: #333333;
+    border: 10px solid #333333;
+    border-left: 0px;
+    border-radius: 5px;
+    display: none;
+    font-size: 1.5em;
+    font-weight: bold;
+    margin-top: -8px;
+}
