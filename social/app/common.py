@@ -1,4 +1,4 @@
-import eventdb
+from app import eventdb
 import pytz
 import datetime
 import zipfile

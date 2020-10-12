@@ -1,7 +1,6 @@
 import json
 import datetime
-import eventdb
-import common
+from app import common, eventdb
 from pathlib import Path
 
 

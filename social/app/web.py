@@ -1,9 +1,7 @@
 from flask import Flask, render_template, request, redirect, send_file
-import twitter
 import datetime
 import pytz
-import common
-import fitbit
+from app import fitbit, common, twitter
 from multiprocessing import Process
 
 app = Flask(__name__)
@@ -226,7 +224,6 @@ def edit_sleep(sleep_id):
         save_message = f"Timezone changed from {old_timezone} to {fitbit_sleep_event.timezone}."
         return render_template("edit-sleep.html", event=fitbit_sleep_event, timezones=pytz.all_timezones,
                                message=save_message)
-
 
 # Running this will launch the server
 if __name__ == "__main__":

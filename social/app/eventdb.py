@@ -1,14 +1,15 @@
 import mysql.connector
-import secure
 import datetime
-import common
+from app import common, secure
 
 
 def create_connection(dbname):
+
+    db_host = secure.host() or "127.0.0.1"
     
     cnx = mysql.connector.connect(user=secure.username(),
                                   password=secure.password(),
-                                  host='127.0.0.1')
+                                  host=db_host)
     cnx.set_charset_collation("utf8mb4", "utf8mb4_general_ci")
     
     cursor = cnx.cursor()
