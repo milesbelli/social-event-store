@@ -9,11 +9,13 @@ from pathlib import Path
 class UserPreferences:
     def __init__(self, user_id):
         self.user_id = user_id
+        # Pull prefs from DB and then save them to object
         db_prefs = eventdb.get_user_preferences(self.user_id)
         self.timezone = db_prefs.get('timezone') or 'UTC'
         self.reverse_order = int(db_prefs.get('reverse_order') or 0)
 
     def update(self, **kwargs):
+        # Update the items provided
         self.timezone = kwargs.get('timezone') or self.timezone
         self.reverse_order = kwargs.get('reverse_order')
         eventdb.set_user_preferences(1,
@@ -47,20 +49,28 @@ def local_to_utc(source_dt, **kwargs):
 
 def events_in_local_time(events, user_prefs, am_pm_time=False):
 
+    # Loop through list of events and change all times to local
+
     output_events = list()
 
     for event in events:
         event_dtime = datetime.datetime.combine(event[0], datetime.time()) + event[1]
         event_dtime = utc_to_local(event_dtime, timezone=user_prefs.timezone)
 
+        # All columns in event will be stored in this list
         event_out = list()
+        # Append the date to the list
         event_out.append(event_dtime.date())
+        # Handle either 24h or 12h time
         event_time = event_dtime.strftime('%I:%M:%S %p') if am_pm_time else event_dtime.time()
+        # Append the time to the list
         event_out.append(event_time)
 
+        # Append all successive items to the list
         for i in range(2, len(event)):
             event_out.append(event[i])
 
+        # Append whole event to the list
         output_events.append(event_out)
 
     return output_events
@@ -70,12 +80,16 @@ def get_one_month_of_events(year, month, **kwargs):
 
     user_prefs = kwargs.get("preferences") or UserPreferences(1)
 
+    # for performance logging
     start_time = datetime.datetime.now()
 
+    # Create a datetime object for the first of the given month
     day_of_month = datetime.date(year, month, 1)
     first_day = day_of_month.strftime("%Y-%m-%d")
+    # Create the list to use
     list_of_days = list()
 
+    # Advance through the month one day at a time and build the object to store the events
     while day_of_month.month == month:
         str_date = day_of_month.strftime("%Y-%m-%d")
         today = dict()
@@ -89,10 +103,14 @@ def get_one_month_of_events(year, month, **kwargs):
         list_of_days.append(today)
         day_of_month = day_of_month + datetime.timedelta(1, 0)
 
+    # Now that the object is built, query DB for all events for the time range
     events = events_in_local_time(get_events_for_date_range(first_day, last_day, user_prefs),
                                   user_prefs, True)
+
+    # Populate a dict with dates as keys, and a list of the events as values
     events_by_date = dict()
     for event in events:
+        # Add a date as key if not already in the dict
         if not events_by_date.get(event[0].strftime("%Y-%m-%d")):
             events_by_date[event[0].strftime("%Y-%m-%d")] = []
 
@@ -109,16 +127,20 @@ def get_one_month_of_events(year, month, **kwargs):
 
         events_by_date[event[0].strftime("%Y-%m-%d")].append(event)
 
+    # Additionally store useful metadata like number of events for each day
     for day in list_of_days:
         day["events"] = events_by_date.get(day["date_full"]) or day["events"]
         day["count"] = len(day["events"])
 
+    # performance measurement logging
     print(f"Got month of events parsed in {datetime.datetime.now() - start_time}")
 
     return list_of_days
 
 
 def get_events_for_date_range(start_date, end_date, user_prefs=None, **kwargs):
+
+    # Query the db for events of given type(s) and date range
 
     sources = kwargs.get("sources") or ["twitter", "fitbit-sleep"]
 
@@ -159,6 +181,8 @@ def unpack_and_store_files(zipfile_path, parent_directory):
 
     if zipfile.is_zipfile(zipfile_path):
 
+        # Generate a unique foldername for storing output files
+        # TODO: Make this more unique? A datetime string isn't unique enough
         directory_stamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S%f")
         output_path = f"{parent_directory}/{directory_stamp}"
 
@@ -206,6 +230,8 @@ def cleanup(to_delete):
     attempts = 0
     deleted = False
 
+    # Cute little function to recursively delete all files in a directory since a directory must be
+    # empty before it can be deleted for some reason
     def delete_dir(dir_path):
         for file in dir_path.iterdir():
             if file.is_file():
@@ -236,6 +262,7 @@ def cleanup(to_delete):
 
 def output_events_to_ical(list_of_events):
 
+    # Hardcoding required iCal file formatting
     ical_string = ("BEGIN:VCALENDAR\nVERSION:2.0\n"
                    "PRODID:-//Louis Mitas//social-event-store 1.0.0//EN\n")
 
@@ -315,6 +342,8 @@ def export_ical(events):
     return output_path
 
 
+# iCal requires a file not contain any line longer than 75 octets which I realize is not the same thing as characters,
+# so this might need to be enhanced later to support that, but for right now this is to handle that requirement
 def word_wrap(text_to_format):
     formatted_text = str()
 
