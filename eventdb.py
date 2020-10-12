@@ -73,7 +73,6 @@ def insert_tweets(list_of_tweets, cnx):
             duplicate_dict[str(list_of_tweets[i]["id"])] = list_of_tweets[i]
             values_duplicates = tweet_id if len(values_duplicates) == 0 else values_duplicates + ", " + tweet_id
 
-
     if len(values_tweets) > 0:
     
         sql_insert_tweets = ("INSERT INTO tweetdetails"
