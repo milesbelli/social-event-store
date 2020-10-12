@@ -1,10 +1,8 @@
 import urllib.request
 import json
 import datetime
-import eventdb
+from app import common, eventdb
 from pathlib import Path
-import requests
-import common
 
 
 def retrieve_from_twitter(post_id):
