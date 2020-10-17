@@ -107,4 +107,5 @@ input, select {
     font-size: 1.5em;
     font-weight: bold;
     margin-top: -8px;
+    z-index: 100;
 }
