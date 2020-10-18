@@ -1,7 +1,7 @@
 import urllib.request
 import json
 import datetime
-from app import common, eventdb
+import common, eventdb
 from pathlib import Path
 
 

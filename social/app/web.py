@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, send_file
 import datetime
 import pytz
-from app import fitbit, common, twitter
+import fitbit, common, twitter
 from multiprocessing import Process
 
 app = Flask(__name__)

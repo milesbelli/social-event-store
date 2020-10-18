@@ -1,6 +1,6 @@
 import mysql.connector
 import datetime
-from app import common, secure
+import common, secure
 
 
 def create_connection(dbname):
