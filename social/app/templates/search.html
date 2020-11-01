@@ -53,14 +53,14 @@
     <input type="submit" value="Submit">
 </form>
 <p>Search returned {{ count }} result(s)</p>
-    {% for row in events %}
+{% for row in events %}
 <div class="time">
     {{ row[0].strftime("%A, %B %d %Y") }} -
     <a href="/viewer/{{ row[0].year }}/{{ row[0].month }}#{{row[0].day }}">
         {{ row[1] }}
     </a>
 </div>
-<div class="event">
+<div class="event {{ row[7] }}">
     <div class="text">
         {% for textline in row[3].split('\n') %}
         {{ textline }}<br>
@@ -74,6 +74,6 @@
     <div class="client">via {{ row[4] }}</div>
     <div class="view_link"><a target="_blank" rel="noopener noreferrer" href="https://www.twitter.com/i/status/{{ row[2] }}/">View on Twitter</a></div>
 </div>
-    {% endfor %}
+{% endfor %}
 </body>
 </html>

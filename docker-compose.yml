@@ -1,0 +1,22 @@
+version: "3.7"
+
+services:
+
+  social:
+    build: ./social
+    container_name: social
+    restart: always
+    #environment:
+    expose:
+      - 8080
+    # To connect to MySQL db being run locally, network mode should be set to host
+    network_mode: "host"
+
+  nginx:
+    build: ./nginx
+    container_name: nginx
+    restart: always
+    ports:
+      - "80:80"
+    # This should match whatever social is doing
+    network_mode: "host"

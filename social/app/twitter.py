@@ -1,13 +1,8 @@
 import urllib.request
 import json
 import datetime
-import eventdb
+import common, eventdb
 from pathlib import Path
-import pytz
-import zipfile
-from multiprocessing import Process
-import time
-import requests
 
 
 def retrieve_from_twitter(post_id):
@@ -153,12 +148,12 @@ def process_directory(dir_path, acct=None):
     eventdb.insert_tweets(list_of_tweets, cnx)
     eventdb.close_connection(cnx)
 
-    cleanup(dir_path)
+    common.cleanup(dir_path)
 
 
 def process_from_file(file_path):
 
-    process_dir = unpack_and_store_files(file_path, "output")
+    process_dir = common.unpack_and_store_files(file_path, "output")
     process_directory(process_dir)
 
     
@@ -169,143 +164,13 @@ def get_one_tweet(tweetid):
     return output
 
 
-def localize_date_range(start_date, end_date, **kwargs):
-    # First convert the str dates to datetime dates
-    start_date = datetime.datetime.strptime(start_date, "%Y-%m-%d")
-    end_date = datetime.datetime.strptime(end_date, "%Y-%m-%d")
-
-    # Then add times to be datetime objects
-    start_date = datetime.datetime.combine(start_date, datetime.time(0, 0))
-    end_date = datetime.datetime.combine(end_date, datetime.time(23, 59, 59))
-
-    # Then go from Local to UTC
-    timezone = kwargs.get('timezone') or 'UTC'
-    start_date = local_to_utc(start_date, timezone=timezone)
-    end_date = local_to_utc(end_date, timezone=timezone)
-
-    # Finally back to strings
-    start_date = start_date.strftime('%Y-%m-%d %H:%M:%S')
-    end_date = end_date.strftime('%Y-%m-%d %H:%M:%S')
-
-    return start_date, end_date
-
-
-def get_tweets_for_date_range(start_date, end_date, user_prefs=None):
-
-    if user_prefs:
-        start_date, end_date = localize_date_range(start_date, end_date, timezone=user_prefs.timezone)
-
-    output = eventdb.get_datetime_range(start_date, end_date)
-
-    return output
-
-
 def get_count_for_date_range(start_date, end_date):
 
-    start_date, end_date = localize_date_range(start_date, end_date)
+    start_date, end_date = common.localize_date_range(start_date, end_date)
 
     output = eventdb.get_count_for_range(start_date, end_date)
 
     return output
-
-
-def word_wrap(text_to_format):
-    formatted_text = str()
-
-    lines_list = text_to_format.split('\n')
-
-    for line in lines_list:
-        cursor = 0
-        while cursor < len(line):
-            curstart = cursor
-            offset = 74 if formatted_text[-2:] == "\n " else 75
-            cursor = cursor + offset if cursor + offset < len(line) else len(line)
-            formatted_text = formatted_text + line[curstart:cursor] + "\n " \
-                if cursor < len(line) else formatted_text + line[curstart:cursor]
-        formatted_text += "\n"
-
-    return formatted_text[:-1]
-
-
-def output_tweets_to_ical(list_of_tweets):
-
-    ical_string = ("BEGIN:VCALENDAR\nVERSION:2.0\n"
-                   "PRODID:-//Louis Mitas//social-event-store 1.0.0//EN\n")
-
-    time_now = str(datetime.datetime.now().time()).replace(":", "")[:6]
-    date_now = str(datetime.datetime.now().date()).replace("-", "")
-
-    for tweet in list_of_tweets:
-
-        # Ever wonder how to get a datetime object out of a date and a timedelta? Wonder no more!
-        start_time = datetime.datetime.combine(tweet[0], datetime.time()) + tweet[1]
-
-        geocoordinates = f"GEO:{tweet[5]};{tweet[6]}\n" if tweet[5] else str()
-
-        event_title = tweet[3].replace('\n', ' ').replace('\r', ' ')
-        event_body = tweet[3].replace('\n', '\\n').replace('\r', '\\n')
-        event_date = str(tweet[0]).replace('-', '')
-        event_time = str(start_time.time()).replace(':', '')
-
-        ical_string += word_wrap(f"BEGIN:VEVENT\n"
-                                 f"UID:{tweet[2]}{time_now}@social-event-store\n"
-                                 f"DTSTAMP:{date_now}T{time_now}Z\n"
-                                 f"DTSTART:{event_date}T{event_time}Z\n"
-                                 f"DTEND:{event_date}T{event_time}Z\n"
-                                 f"{geocoordinates}"
-                                 f"SUMMARY:{event_title}\n"
-                                 f"DESCRIPTION:{event_body}"
-                                 f"\\n\\nhttps://twitter.com/i/status/{tweet[2]} | via {tweet[4]}\n"
-                                 f"END:VEVENT\n")
-
-    ical_string += "END:VCALENDAR"
-
-    return ical_string
-
-
-def utc_to_local(source_dt, **kwargs):
-    # Use pytz module to convert a utc datetime to local datetime
-
-    timezone = kwargs.get("timezone")
-
-    utc = pytz.timezone("utc")
-    local = pytz.timezone(timezone)
-
-    utc_dt = utc.localize(source_dt)
-    return utc_dt.astimezone(local)
-
-
-def local_to_utc(source_dt, **kwargs):
-    # Use pytz module to convert a local datetime to utc datetime
-
-    timezone = kwargs.get("timezone") or 'UTC'
-
-    local = pytz.timezone(timezone)
-    utc = pytz.timezone("utc")
-
-    local_dt = local.localize(source_dt)
-    return local_dt.astimezone(utc)
-
-
-def tweets_in_local_time(tweets, user_prefs, am_pm_time=False):
-
-    output_tweets = list()
-
-    for tweet in tweets:
-        tweet_dtime = datetime.datetime.combine(tweet[0], datetime.time()) + tweet[1]
-        tweet_dtime = utc_to_local(tweet_dtime, timezone=user_prefs.timezone)
-
-        tweet_out = list()
-        tweet_out.append(tweet_dtime.date())
-        time = tweet_dtime.strftime('%I:%M:%S %p') if am_pm_time else tweet_dtime.time()
-        tweet_out.append(time)
-
-        for i in range(2, len(tweet)):
-            tweet_out.append(tweet[i])
-
-        output_tweets.append(tweet_out)
-
-    return output_tweets
 
 
 def search_for_term(search_term):
@@ -403,46 +268,6 @@ def to_hex(integer):
     return "{}{}".format(first_digit, second_digit)
 
 
-def get_one_month_of_events(year, month, **kwargs):
-
-    user_prefs = kwargs.get("preferences") or UserPreferences(1)
-
-    start_time = datetime.datetime.now()
-
-    day_of_month = datetime.date(year, month, 1)
-    first_day = day_of_month.strftime("%Y-%m-%d")
-    list_of_days = list()
-
-    while day_of_month.month == month:
-        str_date = day_of_month.strftime("%Y-%m-%d")
-        today = dict()
-        today["date_human"] = day_of_month.strftime("%A, %B %d %Y")
-        today["date_full"] = str_date
-        today["date_day"] = str(day_of_month.day)
-        today["events"] = []
-        today["count"] = len(today["events"])
-        last_day = str_date
-
-        list_of_days.append(today)
-        day_of_month = day_of_month + datetime.timedelta(1, 0)
-
-    tweets = tweets_in_local_time(get_tweets_for_date_range(first_day, last_day, user_prefs),
-                                  user_prefs, True)
-    tweets_by_date = dict()
-    for tweet in tweets:
-        if not tweets_by_date.get(tweet[0].strftime("%Y-%m-%d")):
-            tweets_by_date[tweet[0].strftime("%Y-%m-%d")] = []
-        tweets_by_date[tweet[0].strftime("%Y-%m-%d")].append(tweet)
-
-    for day in list_of_days:
-        day["events"] = tweets_by_date.get(day["date_full"]) or day["events"]
-        day["count"] = len(day["events"])
-
-    print(f"Got month of tweets parsed in {datetime.datetime.now() - start_time}")
-
-    return list_of_days
-
-
 def reverse_events(day_list):
     day_list.reverse()
     for day in day_list:
@@ -472,80 +297,6 @@ def build_date_pickers():
     return date_picker
 
 
-def unpack_and_store_files(zipfile_path, parent_directory):
-    # Returns the temporary directory for the files that were extracted
-
-    if not Path(parent_directory).exists():
-        Path.mkdir(Path(parent_directory))
-
-    if zipfile.is_zipfile(zipfile_path):
-
-        directory_stamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S%f")
-        output_path = f"{parent_directory}/{directory_stamp}"
-
-        Path.mkdir(Path(output_path))
-
-        with zipfile.ZipFile(zipfile_path) as zipfile_to_process:
-            for entry in zipfile_to_process.namelist():
-
-                if ("data/js/tweets" in entry and ".js" in entry) or ("tweet.js" in entry):
-                    js_file_to_save = zipfile_to_process.read(entry)
-                    output_file = open(f"{output_path}/{entry.split('/')[-1]}", "wb")
-                    output_file.write(js_file_to_save)
-                    output_file.close()
-
-                elif "account.js" in entry:
-                    account_js = zipfile_to_process.read(entry)
-                    Path.mkdir(Path(f"{output_path}/acct"))
-                    output_acct = open(f"{output_path}/acct/account.js", "wb")
-                    output_acct.write(account_js)
-                    output_acct.close()
-
-        cleanup(zipfile_path)
-
-        return output_path
-
-
-def cleanup(to_delete):
-    # This probably would not have been needed on Unix. Windows locks
-    # files in such a way that they cannot be flagged for deleting at a
-    # later time, so the workaround is to keep trying in a daemon until
-    # the file lock is released.
-
-    print(f"Received request to delete {to_delete}...")
-
-    max_attempts = 12
-    attempts = 0
-    deleted = False
-
-    def delete_dir(dir_path):
-        for file in dir_path.iterdir():
-            if file.is_file():
-                file.unlink()
-                print(f"Deleted {file}")
-            elif Path(file).is_dir():
-                delete_dir(Path(file))
-        dir_path.rmdir()
-        print(f"Deleted {dir_path}")
-
-    while attempts < max_attempts and not deleted:
-        try:
-            target_path = Path(to_delete)
-            if target_path.is_dir():
-                delete_dir(target_path)
-            else:
-                target_path.unlink()
-                print(f"Deleted {target_path}")
-
-            deleted = True
-
-        except OSError:
-            print(f"Could not delete {to_delete}, file is busy.")
-
-        attempts += 1
-        time.sleep(5)
-
-
 def fix_symbols(message):
 
     symbols = {"&gt;": ">",
@@ -570,36 +321,6 @@ def database_running():
 
     except:
         return False
-
-
-def export_ical(tweets):
-
-    # Output folder must be created, check for this
-    if not Path("output").exists():
-        Path.mkdir(Path("output"))
-
-    ical_text = output_tweets_to_ical(tweets)
-    output_path = f"output/export_{datetime.datetime.now().strftime('%Y%m%d%H%M%S%f')}.ics"
-
-    with open(output_path, "w", encoding="utf8") as ics_file:
-        ics_file.write(ical_text)
-
-    return output_path
-
-
-class UserPreferences:
-    def __init__(self, user_id):
-        self.user_id = user_id
-        db_prefs = eventdb.get_user_preferences(self.user_id)
-        self.timezone = db_prefs.get('timezone') or 'UTC'
-        self.reverse_order = int(db_prefs.get('reverse_order') or 0)
-
-    def update(self, **kwargs):
-        self.timezone = kwargs.get('timezone') or self.timezone
-        self.reverse_order = kwargs.get('reverse_order')
-        eventdb.set_user_preferences(1,
-                                     timezone=self.timezone,
-                                     reverse_order=self.reverse_order)
 
 
 if __name__ == '__main__':

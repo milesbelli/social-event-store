@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, send_file
-import twitter
 import datetime
 import pytz
+import fitbit, common, twitter
 from multiprocessing import Process
 
 app = Flask(__name__)
@@ -44,21 +44,21 @@ def one_day():
         return render_template("day.html")
 
     elif request.method == "POST":
-        user_prefs = twitter.UserPreferences(1)
+        user_prefs = common.UserPreferences(1)
         date = request.form['tweetday'] or datetime.datetime.today().strftime("%Y-%m-%d")
         print("Getting tweets for {}.".format(date))
-        tweets = twitter.get_tweets_for_date_range(date, date)
-        tweets = twitter.tweets_in_local_time(tweets, user_prefs, True)
+        tweets = common.get_events_for_date_range(date, date)
+        tweets = common.events_in_local_time(tweets, user_prefs, True)
 
         return render_template("day.html", events=tweets, default=date)
 
 
 @app.route("/day/<date>", methods=["GET"])
 def one_day_from_url(date):
-    user_pref = twitter.UserPreferences(1)
+    user_pref = common.UserPreferences(1)
     print("Getting tweets for {}.".format(date))
-    tweets = twitter.get_tweets_for_date_range(date, date)
-    tweets = twitter.tweets_in_local_time(tweets, user_pref, True)
+    tweets = common.get_events_for_date_range(date, date)
+    tweets = common.events_in_local_time(tweets, user_pref, True)
 
     return render_template("day.html", events=tweets, default=date)
 
@@ -70,11 +70,11 @@ def search():
         return render_template("search.html")
 
     elif request.method == "POST":
-        user_prefs = twitter.UserPreferences(1)
+        user_prefs = common.UserPreferences(1)
         search_term = request.form["search"]
         print("Searching for tweets containing '{}'".format(search_term))
         tweets = twitter.search_for_term(search_term)
-        tweets = twitter.tweets_in_local_time(tweets, user_prefs, True)
+        tweets = common.events_in_local_time(tweets, user_prefs, True)
 
         # After setting up the calendar, reverse the order if user preferences is set.
         if user_prefs.reverse_order == 1:
@@ -106,11 +106,11 @@ def calendar(date):
 @app.route("/viewer/<year>/<month>")
 def viewer(year, month):
 
-    user_prefs = twitter.UserPreferences(1)
+    user_prefs = common.UserPreferences(1)
 
     first_of_month = datetime.date(int(year), int(month), 1)
 
-    month_of_events = twitter.get_one_month_of_events(int(year), int(month), preferences=user_prefs)
+    month_of_events = common.get_one_month_of_events(int(year), int(month), preferences=user_prefs)
     output_calendar = twitter.calendar_grid(first_of_month, tweets=month_of_events)
 
     # After setting up the calendar, reverse the order if user preferences is set.
@@ -156,13 +156,16 @@ def upload_data():
         if request.form["source"] == "twitter":
             file_proc_bkg = Process(target=twitter.process_from_file, args=(file_path,), daemon=True)
             file_proc_bkg.start()
+        elif request.form["source"] == "fitbit-sleep":
+            file_proc_bkg = Process(target=fitbit.process_from_file, args=(file_path,), daemon=True)
+            file_proc_bkg.start()
 
         return render_template("upload.html", status_message=f"The file {file.filename} has been successfully uploaded.")
 
 
 @app.route("/settings", methods=["GET", "POST"])
 def user_settings():
-    user_prefs = twitter.UserPreferences(1)
+    user_prefs = common.UserPreferences(1)
 
     if request.method == "GET":
         return render_template("settings.html", timezones=pytz.all_timezones, user_prefs=user_prefs)
@@ -179,7 +182,7 @@ def user_settings():
 
 @app.route("/export", methods=["GET", "POST"])
 def export_ical():
-    user_prefs = twitter.UserPreferences(1)
+    user_prefs = common.UserPreferences(1)
 
     if request.method == "GET":
         download = request.args.get("download")
@@ -193,18 +196,34 @@ def export_ical():
             return render_template("export.html")
 
     elif request.method == "POST":
+        source = request.form.get("source")
         start_date = request.form.get("start-date")
         end_date = request.form.get("end-date")
 
         if start_date and end_date:
-            tweets = twitter.get_tweets_for_date_range(start_date, end_date, user_prefs)
-            output_path = twitter.export_ical(tweets)
+            events = common.get_events_for_date_range(start_date, end_date, user_prefs, sources=[source])
+            output_path = common.export_ical(events)
 
-            return render_template("export.html", count=len(tweets), link=output_path, start=start_date, end=end_date)
+            return render_template("export.html", count=len(events), link=output_path, start=start_date, end=end_date)
 
         else:
             return render_template("export.html", message="You need to select a date range.")
 
+
+@app.route("/edit-sleep/<sleep_id>", methods=["GET", "POST"])
+def edit_sleep(sleep_id):
+    fitbit_sleep_event = fitbit.FitbitSleepEvent(sleep_id)
+
+    if request.method == "GET":
+
+        return render_template("edit-sleep.html", event=fitbit_sleep_event, timezones=pytz.all_timezones)
+
+    elif request.method == "POST":
+        old_timezone = fitbit_sleep_event.timezone
+        fitbit_sleep_event.update_timezone(request.form["timezone"])
+        save_message = f"Timezone changed from {old_timezone} to {fitbit_sleep_event.timezone}."
+        return render_template("edit-sleep.html", event=fitbit_sleep_event, timezones=pytz.all_timezones,
+                               message=save_message)
 
 # Running this will launch the server
 if __name__ == "__main__":

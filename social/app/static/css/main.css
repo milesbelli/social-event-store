@@ -30,8 +30,15 @@ iframe.main {
     margin-right: 2%;
     #margin-bottom: 2%;
     padding: 8px;
-    background-color: #333A43;
     border-radius: 4px;
+}
+
+.twitter {
+    background-color: #333A43;
+}
+
+.fitbit-sleep {
+    background-color: #334343;
 }
 
 .time {
@@ -88,4 +95,18 @@ input, select {
     outline: 1px solid #00ffff;
     color: #00ffff;
     border: none;
+}
+
+.date-header {
+    position: fixed;
+    background-color: #333333;
+    border: 10px solid #333333;
+    border-left: 0px;
+    border-bottom-right-radius: 5px;
+    border-bottom-left-radius: 5px;
+    display: none;
+    font-size: 1.5em;
+    font-weight: bold;
+    margin-top: -8px;
+    z-index: 200;
 }
