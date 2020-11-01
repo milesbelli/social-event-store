@@ -207,7 +207,7 @@ def unpack_and_store_files(zipfile_path, parent_directory):
                     output_acct.close()
 
                 # Fitbit sleep file
-                elif "sleep-" in entry:
+                elif "sleep-" in entry and ".js" in entry:
                     sleep_file_to_save = zipfile_to_process.read(entry)
                     output_file = open(f"{output_path}/{entry.split('/')[-1]}", "wb")
                     output_file.write(sleep_file_to_save)
