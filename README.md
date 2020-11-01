@@ -4,13 +4,13 @@ The goal of this project is to bring data archives from disparate sources togeth
 
 ## Sources
 
-### In Progress
+### Supported
 
 * Twitter
+* Fitbit Sleep
 
 ### Planned
 
-* Fitbit
 * Instagram
 * Mastodon
 * Swarm/Foursquare
@@ -23,25 +23,29 @@ The goal of this project is to bring data archives from disparate sources togeth
 
 ## Roadmap
 
-### Milestone 1
+### Milestone 1 - Completed
 
 * Read Twitter archive formats
 * Import Twitter into database
 
-### Milestone 2
+### Milestone 2 - Completed
 
 * Support reimporting (continuous updating)
 * Export Twitter archive to *.ical file
 
-### Milestone 3 - Current
+### Milestone 3 - Completed
 
 * Simple web viewer interface built on Flask
 
-### Milestone 4
+### Milestone 4 - Completed
 
 * Read Fitbit archive format for sleep
-* Read Fitbit archive format for exercise
-* Import Fitbit sleep and exercise into database
+* Import Fitbit sleep into database
+
+### Milestone 5 - In progress
+
+* Read Foursquare/Swarm archive format
+* Import Swarm checkins into database
 
 *Future milestones TBA*
 
