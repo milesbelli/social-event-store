@@ -11,14 +11,21 @@ function update_date_header() {
     for (i = 0; i < allDates.length; i++) {
         thisDate = document.getElementById(allDates[i].id)
         scrollingPosition = document.documentElement.scrollTop
+
+        // Check scrolling position against positions of dates in list
         if (scrollingPosition > (thisDate.offsetTop - 10)) {
             passedId = thisDate;
             document.getElementById("floating-date-header").style.display = 'block';
-        } else if (i == 0) {
+        } else if (i == 0){
             document.getElementById("floating-date-header").style.display = 'none';
             i = allDates.length;
         } else {
-            i = allDates.length;
+        i = allDates.length;
+        }
+
+        // Hide the date header if it's too close to the next date
+        if ((i == allDates.length) && (scrollingPosition > (thisDate.offsetTop - 50))){
+        document.getElementById("floating-date-header").style.display = 'none';
         }
     }
 
