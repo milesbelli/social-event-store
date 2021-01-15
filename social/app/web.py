@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, send_file
+from flask import Flask, render_template, request, redirect, send_file, jsonify
 import datetime
 import pytz
 import fitbit, common, twitter
@@ -224,6 +224,13 @@ def edit_sleep(sleep_id):
         save_message = f"Timezone changed from {old_timezone} to {fitbit_sleep_event.timezone}."
         return render_template("edit-sleep.html", event=fitbit_sleep_event, timezones=pytz.all_timezones,
                                message=save_message)
+
+@app.route("/get-status/<status_id>", methods=["GET"])
+def get_twitter_status(status_id):
+    status = twitter.get_status_from_twitter(status_id)
+    if status:
+        return jsonify(status)
+
 
 # Running this will launch the server
 if __name__ == "__main__":

@@ -68,4 +68,17 @@ function get_map(map_id, latitude, longitude) {
         document.getElementById(map_id).style.display="none";
     }
 
-}
+};
+
+function fetch_reply(reply_id) {
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {
+            var obj = JSON.parse(this.responseText)
+            document.getElementById("reply_"+reply_id).innerHTML = (obj["user"]["screen_name"] + ": " + obj["text"]);
+        };
+    };
+
+    xhttp.open("GET", "/get-status/" + reply_id, true);
+    xhttp.send();
+};

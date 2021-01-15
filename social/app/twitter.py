@@ -3,6 +3,7 @@ import json
 import datetime
 import common, eventdb
 from pathlib import Path
+import requests
 
 
 def retrieve_from_twitter(post_id):
@@ -321,6 +322,13 @@ def database_running():
 
     except:
         return False
+
+def get_status_from_twitter(status_id):
+    request_string = ("https://cdn.syndication.twimg.com/tweet?features=tfw_experiments_cookie_expiration"
+                      f"%3A1209600%3Btfw_horizon_tweet_embed_9555%3Ahte%3Btfw_tiny_tweet%3Aon&id={status_id}&lang=en")
+    response = requests.get(request_string)
+    if response.status_code == 200:
+        return json.loads(response.content)
 
 
 if __name__ == '__main__':
