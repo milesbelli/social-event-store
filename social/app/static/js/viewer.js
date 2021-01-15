@@ -70,12 +70,13 @@ function get_map(map_id, latitude, longitude) {
 
 };
 
-function fetch_reply(reply_id) {
+function fetch_reply(reply_id, status_id) {
     var xhttp = new XMLHttpRequest();
     xhttp.onreadystatechange = function() {
         if (this.readyState == 4 && this.status == 200) {
             var obj = JSON.parse(this.responseText)
-            document.getElementById("reply_"+reply_id).innerHTML = (obj["user"]["screen_name"] + ": " + obj["text"]);
+            document.getElementById("reply_"+status_id).innerHTML = (obj["user"]["screen_name"] + ": " + obj["text"]);
+            document.getElementById("reply_"+status_id).style.display = "block";
         };
     };
 

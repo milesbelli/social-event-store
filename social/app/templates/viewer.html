@@ -69,8 +69,8 @@
 <div class="time">{{ row[1] }}</div>
 <div class="event {{ row[7] }}">
     {% if row[12] %}
-    <button onclick="fetch_reply({{ row[12] }})">Reply</button>
-    <div id="reply_{{ row[12] }}"></div>
+    <button onclick="fetch_reply({{ row[12] }}, {{ row[2] }})">Reply</button>
+    <div class="reply-embed" id="reply_{{ row[2] }}"></div>
     {% endif %}
     <div class="text">
         {% for textline in row[3].split('\n') %}

@@ -110,3 +110,10 @@ input, select {
     margin-top: -8px;
     z-index: 200;
 }
+
+.reply-embed {
+    background-color: #333333;
+    border: 5px solid #333333;
+    margin:5px;
+    display: none;
+}
