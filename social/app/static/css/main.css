@@ -112,8 +112,9 @@ input, select {
 }
 
 .reply-embed {
-    background-color: #333333;
-    border: 5px solid #333333;
+    border: 1px solid #535A63;
+    padding: 5px;
     margin:5px;
+    border-radius: 4px;
     display: none;
 }

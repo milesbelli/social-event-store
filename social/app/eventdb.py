@@ -539,7 +539,8 @@ def get_search_term(search_term):
     geo_sql = f"AND latitude IS NOT NULL AND longitude IS NOT NULL " if geo_search == "true" else \
         f"AND latitude IS NULL AND longitude IS NULL " if geo_search == "false" else str()
 
-    sql_query = ("SELECT eventdate, eventtime, detailid, tweettext, client, latitude, longitude, eventtype "
+    sql_query = ("SELECT eventdate, eventtime, detailid, tweettext, client, latitude, longitude, eventtype, "
+                 "NULL, NULL, NULL, NULL, replyid "
                  "FROM tweetdetails "
                  "LEFT JOIN events "
                  "ON detailid = tweetid "

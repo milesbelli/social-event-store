@@ -69,7 +69,7 @@
 <div class="time">{{ row[1] }}</div>
 <div class="event {{ row[7] }}">
     {% if row[12] %}
-    <button onclick="fetch_reply({{ row[12] }}, {{ row[2] }})">Reply</button>
+    <button onclick="fetch_reply('{{ row[12] }}', '{{ row[2] }}')">Reply</button>
     <div class="reply-embed" id="reply_{{ row[2] }}"></div>
     {% endif %}
     <div class="text">

@@ -3,44 +3,8 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Search</title>
-    <script type="text/javascript">
-        function show_hide_map(map_id) {
-            if(document.getElementById(map_id).style.display=="none"){
-                document.getElementById(map_id).style.display="block";
-            }
-            else {
-                document.getElementById(map_id).style.display="none";
-            }
-        }
-    </script>
     <script type='text/javascript' src='http://www.bing.com/api/maps/mapcontrol?callback=GetMap&key=AkHjJGDqUeq04-lIEphg6sWsiAjtfIyb3MgcVLNR9gpLhWFICvl78R-HHV4Y2Dna' async defer></script>
-    <script type="text/javascript">
-        function get_map(map_id, latitude, longitude) {
-            console.log("#"+map_id)
-            console.log(latitude+", "+longitude);
-
-            if(document.getElementById(map_id).style.display=="none") {
-                document.getElementById(map_id).style.display="block";
-
-                var map = new Microsoft.Maps.Map("#"+map_id, {
-                center: new Microsoft.Maps.Location(latitude, longitude),
-                zoom: 14
-                });
-
-                var center = map.getCenter();
-
-                var pin = new Microsoft.Maps.Pushpin(center);
-
-                map.entities.push(pin);
-
-            }
-
-            else {
-                document.getElementById(map_id).style.display="none";
-            }
-
-        }
-    </script>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/viewer.js') }}"></script>
 
 </head>
 <body>
@@ -61,6 +25,10 @@
     </a>
 </div>
 <div class="event {{ row[7] }}">
+    {% if row[12] %}
+    <button onclick="fetch_reply('{{ row[12] }}', '{{ row[2] }}')">Reply</button>
+    <div class="reply-embed" id="reply_{{ row[2] }}"></div>
+    {% endif %}
     <div class="text">
         {% for textline in row[3].split('\n') %}
         {{ textline }}<br>

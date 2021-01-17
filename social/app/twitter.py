@@ -329,6 +329,8 @@ def get_status_from_twitter(status_id):
     response = requests.get(request_string)
     if response.status_code == 200:
         return json.loads(response.content)
+    else:
+        return {"user": {"screen_name":""}, "text":f"<a target='_blank' href='https://twitter.com/i/status/{status_id}'>View on Twitter</a>"}
 
 
 if __name__ == '__main__':

@@ -75,11 +75,14 @@ function fetch_reply(reply_id, status_id) {
     xhttp.onreadystatechange = function() {
         if (this.readyState == 4 && this.status == 200) {
             var obj = JSON.parse(this.responseText)
-            document.getElementById("reply_"+status_id).innerHTML = (obj["user"]["screen_name"] + ": " + obj["text"]);
+            var user_name = ""
+            if (obj["user"]["screen_name"]) {
+            user_name = obj["user"]["screen_name"] + ": "}
+            document.getElementById("reply_"+status_id).innerHTML = (user_name + obj["text"]);
             document.getElementById("reply_"+status_id).style.display = "block";
         };
     };
-
+    console.log("Fetching status id: " + reply_id)
     xhttp.open("GET", "/get-status/" + reply_id, true);
     xhttp.send();
 };
