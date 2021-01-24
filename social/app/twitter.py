@@ -324,13 +324,17 @@ def database_running():
         return False
 
 def get_status_from_twitter(status_id):
-    request_string = ("https://cdn.syndication.twimg.com/tweet?features=tfw_experiments_cookie_expiration"
-                      f"%3A1209600%3Btfw_horizon_tweet_embed_9555%3Ahte%3Btfw_tiny_tweet%3Aon&id={status_id}&lang=en")
+    request_string = (f"https://cdn.syndication.twimg.com/tweet?id={status_id}&lang=en")
     response = requests.get(request_string)
     if response.status_code == 200:
-        return json.loads(response.content)
+        output_status = json.loads(response.content)
+        output_status["text"] = (output_status["text"] +
+                                 f" <a class='view_link' target='_blank' href='https://twitter.com/i/status/{status_id}'>View on Twitter</a>")
+        return output_status
     else:
-        return {"user": {"screen_name":""}, "text":f"<a target='_blank' href='https://twitter.com/i/status/{status_id}'>View on Twitter</a>"}
+        output_status = {"user": {"screen_name":""},
+                         "text": f"<a style='font-size:14px' target='_blank' href='https://twitter.com/i/status/{status_id}'>View on Twitter</a>"}
+        return output_status
 
 
 if __name__ == '__main__':

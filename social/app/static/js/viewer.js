@@ -80,6 +80,7 @@ function fetch_reply(reply_id, status_id) {
             user_name = obj["user"]["screen_name"] + ": "}
             document.getElementById("reply_"+status_id).innerHTML = (user_name + obj["text"]);
             document.getElementById("reply_"+status_id).style.display = "block";
+            document.getElementById("reply_btn_"+status_id).style.display = "none";
         };
     };
     console.log("Fetching status id: " + reply_id)
