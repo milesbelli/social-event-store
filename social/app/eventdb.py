@@ -616,6 +616,50 @@ def set_user_preferences(user_id, **kwargs):
     close_connection(cnx)
 
 
+def insert_in_reply_to(tweet_id, create_date, user_name, in_reply_to_user, status_text, user_id, lang):
+    cnx = create_connection("social")
+    cursor = cnx.cursor()
+
+    in_reply_to_user = in_reply_to_user or "NULL"
+
+    # Drop timezone tag
+    create_date = create_date.strip("Z")
+
+    # format single quotes in status
+    status_text = status_text.replace("'", "''")
+
+
+    sql_query = ("INSERT INTO tweet_in_reply VALUES" +
+                 f"({tweet_id}, '{create_date}', '{user_name}', {user_id}," +
+                 f" {in_reply_to_user}, '{status_text}', '{lang}');")
+
+    cursor.execute(sql_query)
+    cnx.commit()
+
+    close_connection(cnx)
+
+
+def get_in_reply_to(tweet_id):
+
+    cnx = create_connection("social")
+    cursor = cnx.cursor()
+
+    sql_query = (f"SELECT tweetid, createdate, username, statustext FROM tweet_in_reply where tweetid = {tweet_id};")
+
+    cursor.execute(sql_query)
+
+    reply = cursor.fetchone()
+
+    if reply:
+        output = {"id_str": str(reply[0]),
+                  "created_date": reply[1],
+                  "user": {"screen_name": reply[2]},
+                  "text": reply[3]}
+        return output
+    else:
+        return None
+
+
 def close_connection(cnx):
 
     return cnx.close()

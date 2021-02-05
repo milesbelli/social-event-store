@@ -93,4 +93,14 @@ sleepid BIGINT(15) NOT NULL,
 sleepdatetime DATETIME NOT NULL,
 sleepstage VARCHAR(16),
 seconds INT(5),
-PRIMARY KEY(sleepid, sleepdatetime))
+PRIMARY KEY(sleepid, sleepdatetime));
+
+CREATE TABLE IF NOT EXISTS tweet_in_reply (
+tweetid BIGINT(20) NOT NULL,
+createdate DATETIME,
+username VARCHAR(16),
+userid BIGINT(20),
+inreplytouser BIGINT(20),
+statustext VARCHAR(280),
+lang VARCHAR(4),
+PRIMARY KEY(tweetid));

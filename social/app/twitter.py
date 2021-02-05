@@ -324,17 +324,34 @@ def database_running():
         return False
 
 def get_status_from_twitter(status_id):
-    request_string = (f"https://cdn.syndication.twimg.com/tweet?id={status_id}&lang=en")
-    response = requests.get(request_string)
-    if response.status_code == 200:
-        output_status = json.loads(response.content)
-        output_status["text"] = (output_status["text"] +
-                                 f" <a class='view_link' target='_blank' href='https://twitter.com/i/status/{status_id}'>View on Twitter</a>")
-        return output_status
+
+    reply_to = eventdb.get_in_reply_to(status_id)
+
+    if not reply_to:
+        request_string = (f"https://cdn.syndication.twimg.com/tweet?id={status_id}&lang=en")
+        response = requests.get(request_string)
+        if response.status_code == 200:
+            output_status = json.loads(response.content)
+
+            eventdb.insert_in_reply_to(output_status["id_str"],
+                                       output_status["created_at"],
+                                       output_status["user"]["screen_name"],
+                                       output_status.get("in_reply_to_status_id_str"),
+                                       output_status["text"],
+                                       output_status["user"]["id_str"],
+                                       output_status["lang"])
+
+            output_status["text"] = (output_status["text"] +
+                                     f" <a class='view_link' target='_blank' href='https://twitter.com/i/status/{status_id}'>View on Twitter</a>")
+            return output_status
+        else:
+            output_status = {"user": {"screen_name":""},
+                             "text": f"<a style='font-size:14px' target='_blank' href='https://twitter.com/i/status/{status_id}'>View on Twitter</a>"}
+            return output_status
     else:
-        output_status = {"user": {"screen_name":""},
-                         "text": f"<a style='font-size:14px' target='_blank' href='https://twitter.com/i/status/{status_id}'>View on Twitter</a>"}
-        return output_status
+        reply_to["text"] = (reply_to["text"] +
+                            f" <a class='view_link' target='_blank' href='https://twitter.com/i/status/{status_id}'>View on Twitter</a>")
+        return reply_to
 
 
 if __name__ == '__main__':
