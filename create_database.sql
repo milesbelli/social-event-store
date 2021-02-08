@@ -101,6 +101,7 @@ createdate DATETIME,
 username VARCHAR(16),
 userid BIGINT(20),
 inreplytouser BIGINT(20),
+inreplytoid BIGINT(20),
 statustext VARCHAR(280),
 lang VARCHAR(4),
 PRIMARY KEY(tweetid));

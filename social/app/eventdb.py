@@ -616,11 +616,13 @@ def set_user_preferences(user_id, **kwargs):
     close_connection(cnx)
 
 
-def insert_in_reply_to(tweet_id, create_date, user_name, in_reply_to_user, status_text, user_id, lang):
+def insert_in_reply_to(tweet_id, create_date, user_name, in_reply_to_status, in_reply_to_user, status_text, user_id, lang):
     cnx = create_connection("social")
     cursor = cnx.cursor()
 
+    # Both these can be empty, so we need to swap out for NULL
     in_reply_to_user = in_reply_to_user or "NULL"
+    in_reply_to_status = in_reply_to_status or "NULL"
 
     # Drop timezone tag
     create_date = create_date.strip("Z")
@@ -631,7 +633,7 @@ def insert_in_reply_to(tweet_id, create_date, user_name, in_reply_to_user, statu
 
     sql_query = ("INSERT INTO tweet_in_reply VALUES" +
                  f"({tweet_id}, '{create_date}', '{user_name}', {user_id}," +
-                 f" {in_reply_to_user}, '{status_text}', '{lang}');")
+                 f" {in_reply_to_status}, {in_reply_to_user}, '{status_text}', '{lang}');")
 
     cursor.execute(sql_query)
     cnx.commit()

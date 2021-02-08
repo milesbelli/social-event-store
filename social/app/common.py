@@ -360,3 +360,26 @@ def word_wrap(text_to_format):
         formatted_text += "\n"
 
     return formatted_text[:-1]
+
+
+class eventObject:
+    def __init__(self, **kwargs):
+
+        if not kwargs.get("time"):
+            raise ValueError("Argument 'time' is required for event.")
+
+        object_type = kwargs.get("type")
+
+        if object_type == "twitter":
+            # set up Twitter fields
+            self.datetime = kwargs.get("time")
+            self.body = kwargs.get("body")
+
+        elif object_type == "fitbit":
+            # set up Fitbit fields
+            pass
+        elif object_type == "swarm":
+            # Set up Swarm fields
+            pass
+        else:
+            raise ValueError(f"Unsupported event type: {object_type}")

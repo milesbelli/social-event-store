@@ -337,6 +337,7 @@ def get_status_from_twitter(status_id):
                                        output_status["created_at"],
                                        output_status["user"]["screen_name"],
                                        output_status.get("in_reply_to_status_id_str"),
+                                       output_status.get("in_reply_to_user_id_str"),
                                        output_status["text"],
                                        output_status["user"]["id_str"],
                                        output_status["lang"])
