@@ -375,9 +375,22 @@ class eventObject:
             self.datetime = kwargs.get("time")
             self.body = kwargs.get("body")
 
-        elif object_type == "fitbit":
+        elif object_type == "fitbit-sleep":
             # set up Fitbit fields
-            pass
+            # args needed:
+            # sleep_time, rest_mins, start_time, end_time
+            self.datetime = kwargs.get("time")
+            sleep_time = datetime.datetime(1, 1, 1) + datetime.timedelta(0, int(kwargs.get("sleep_time"))/1000)
+            readable_time = sleep_time.strftime("%H hours, %M minutes")
+            rest_time = datetime.datetime(1, 1, 1) + datetime.timedelta(0, int(kwargs.get("rest_mins")) * 60)
+            readable_rest = rest_time.strftime("%H hours, %M minutes")
+            start_time = kwargs.get("start_time")
+            end_time = kwargs.get("end_time")
+            self.body = (f"Total time in bed: {readable_time} \n"
+                         f"Restful time: {readable_rest}\n"
+                         f"Local start time: {start_time.strftime('%B %d, at %I:%M %p')}\n"
+                         f"Local end time: {end_time.strftime('%B %d, at %I:%M %p')}")
+
         elif object_type == "swarm":
             # Set up Swarm fields
             pass
