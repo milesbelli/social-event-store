@@ -363,32 +363,53 @@ def word_wrap(text_to_format):
 
 
 class eventObject:
-    def __init__(self, **kwargs):
+    '''
+    eventObject is a generic object which stores data for a single event. This can include:
+        * timestamp - timestamp of event
+        * title - the title of the event, if applicable; should be short and will appear bolded in UI
+        * subtitle - an optional smaller subtitle which will appear beneath the title, in italics
+        * body - main body of the event, should generally contain the most information with some exceptions
+        * source_id - a unique id for the event from the source service, used if a view link is available
+    '''
+    def __init__(self, timestamp, object_type, source_id, **kwargs):
 
-        if not kwargs.get("time"):
-            raise ValueError("Argument 'time' is required for event.")
-
-        object_type = kwargs.get("type")
+        if type(timestamp) is not datetime.datetime:
+            raise TypeError("timestamp not in format datetime.datetime")
 
         if object_type == "twitter":
             # set up Twitter fields
-            self.datetime = kwargs.get("time")
+            self.timestamp = timestamp
+            self.id = source_id
             self.body = kwargs.get("body")
+            self.geo = {"latitude": kwargs.get("latitude"),
+                        "longitude": kwargs.get("longitude")}
+            self.reply_id = kwargs.get("reply_id")
+            self.client = kwargs.get("client")
+
 
         elif object_type == "fitbit-sleep":
             # set up Fitbit fields
             # args needed:
             # sleep_time, rest_mins, start_time, end_time
-            self.datetime = kwargs.get("time")
-            sleep_time = datetime.datetime(1, 1, 1) + datetime.timedelta(0, int(kwargs.get("sleep_time"))/1000)
-            readable_time = sleep_time.strftime("%H hours, %M minutes")
-            rest_time = datetime.datetime(1, 1, 1) + datetime.timedelta(0, int(kwargs.get("rest_mins")) * 60)
-            readable_rest = rest_time.strftime("%H hours, %M minutes")
+
+            sleep_time = kwargs.get("sleep_time")
+            rest_time = kwargs.get("rest_mins")
             start_time = kwargs.get("start_time")
             end_time = kwargs.get("end_time")
-            self.body = (f"Total time in bed: {readable_time} \n"
-                         f"Restful time: {readable_rest}\n"
-                         f"Local start time: {start_time.strftime('%B %d, at %I:%M %p')}\n"
+
+            self.timezone = kwargs.get("timezone")
+            self.timestamp = timestamp
+
+            if None in [sleep_time, rest_time, start_time, end_time]:
+                raise ValueError("Required field missing. Required fields are sleep_time, rest_mins, start_time, end_time.")
+
+            sleep_time = datetime.datetime(1, 1, 1) + datetime.timedelta(0, int(sleep_time)/1000)
+            readable_time = sleep_time.strftime("%H hours, %M minutes")
+            rest_time = datetime.datetime(1, 1, 1) + datetime.timedelta(0, int(rest_time) * 60)
+            readable_rest = rest_time.strftime("%H hours, %M minutes")
+            self.body = (f"Total time in bed: {readable_time} \n" +
+                         f"Restful time: {readable_rest}\n" +
+                         f"Local start time: {start_time.strftime('%B %d, at %I:%M %p')}\n" +
                          f"Local end time: {end_time.strftime('%B %d, at %I:%M %p')}")
 
         elif object_type == "swarm":
