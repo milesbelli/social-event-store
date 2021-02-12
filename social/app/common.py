@@ -376,10 +376,12 @@ class eventObject:
         if type(timestamp) is not datetime.datetime:
             raise TypeError("timestamp not in format datetime.datetime")
 
-        if object_type == "twitter":
+        self.type = object_type
+        self.id = source_id
+        self.timestamp = timestamp
+
+        if self.type == "twitter":
             # set up Twitter fields
-            self.timestamp = timestamp
-            self.id = source_id
             self.body = kwargs.get("body")
             self.geo = {"latitude": kwargs.get("latitude"),
                         "longitude": kwargs.get("longitude")}
@@ -387,7 +389,7 @@ class eventObject:
             self.client = kwargs.get("client")
 
 
-        elif object_type == "fitbit-sleep":
+        elif self.type == "fitbit-sleep":
             # set up Fitbit fields
             # args needed:
             # sleep_time, rest_mins, start_time, end_time
@@ -398,7 +400,6 @@ class eventObject:
             end_time = kwargs.get("end_time")
 
             self.timezone = kwargs.get("timezone")
-            self.timestamp = timestamp
 
             if None in [sleep_time, rest_time, start_time, end_time]:
                 raise ValueError("Required field missing. Required fields are sleep_time, rest_mins, start_time, end_time.")
@@ -412,7 +413,7 @@ class eventObject:
                          f"Local start time: {start_time.strftime('%B %d, at %I:%M %p')}\n" +
                          f"Local end time: {end_time.strftime('%B %d, at %I:%M %p')}")
 
-        elif object_type == "swarm":
+        elif self.type == "swarm":
             # Set up Swarm fields
             pass
         else:
