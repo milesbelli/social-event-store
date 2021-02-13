@@ -114,6 +114,11 @@ def get_one_month_of_events(year, month, **kwargs):
         if not events_by_date.get(event[0].strftime("%Y-%m-%d")):
             events_by_date[event[0].strftime("%Y-%m-%d")] = []
 
+        social_event = eventObject(event[0], event[1], event[7], event[2], body=event[3], sleep_time=event[3],
+                                   rest_mins=event[10], start_time=event[11], end_time=event[8], timezone=event[4],
+                                   client=event[4], sleep_id=event[9], latitude=event[5], longitude=event[6],
+                                   reply_id=event[12])
+
         # Fitbit Sleep specific modifications
         if event[7] == "fitbit-sleep":
             sleep_time = datetime.datetime(1, 1, 1) + datetime.timedelta(0, int(event[3])/1000)
@@ -371,14 +376,12 @@ class eventObject:
         * body - main body of the event, should generally contain the most information with some exceptions
         * source_id - a unique id for the event from the source service, used if a view link is available
     '''
-    def __init__(self, timestamp, object_type, source_id, **kwargs):
-
-        if type(timestamp) is not datetime.datetime:
-            raise TypeError("timestamp not in format datetime.datetime")
+    def __init__(self, date, time, object_type, source_id, **kwargs):
 
         self.type = object_type
         self.id = source_id
-        self.timestamp = timestamp
+        self.date = date
+        self.time = time
 
         if self.type == "twitter":
             # set up Twitter fields
@@ -400,6 +403,7 @@ class eventObject:
             end_time = kwargs.get("end_time")
 
             self.timezone = kwargs.get("timezone")
+            self.sleep_id = kwargs.get("sleep_id")
 
             if None in [sleep_time, rest_time, start_time, end_time]:
                 raise ValueError("Required field missing. Required fields are sleep_time, rest_mins, start_time, end_time.")
