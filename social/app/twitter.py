@@ -351,7 +351,7 @@ def get_status_from_twitter(status_id):
             return output_status
     else:
         reply_to["text"] = (reply_to["text"] +
-                            f" <a class='view_link' target='_blank' href='https://twitter.com/i/status/{status_id}'>View on Twitter</a>")
+                            f" <a class='view_link' target='_blank' href='https://twitter.com/i/status/{status_id}'>View Online</a>")
         return reply_to
 
 

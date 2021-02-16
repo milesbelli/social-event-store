@@ -119,18 +119,7 @@ def get_one_month_of_events(year, month, **kwargs):
                                    client=event[4], sleep_id=event[9], latitude=event[5], longitude=event[6],
                                    reply_id=event[12])
 
-        # Fitbit Sleep specific modifications
-        if event[7] == "fitbit-sleep":
-            sleep_time = datetime.datetime(1, 1, 1) + datetime.timedelta(0, int(event[3])/1000)
-            readable_time = sleep_time.strftime("%H hours, %M minutes")
-            rest_time = datetime.datetime(1, 1, 1) + datetime.timedelta(0, int(event[10]) * 60)
-            readable_rest = rest_time.strftime("%H hours, %M minutes")
-            event[3] = (f"Total time in bed: {readable_time} \n"
-                        f"Restful time: {readable_rest}\n"
-                        f"Local start time: {event[11].strftime('%B %d, at %I:%M %p')}\n"
-                        f"Local end time: {event[8].strftime('%B %d, at %I:%M %p')}")
-
-        events_by_date[event[0].strftime("%Y-%m-%d")].append(event)
+        events_by_date[event[0].strftime("%Y-%m-%d")].append(social_event)
 
     # Additionally store useful metadata like number of events for each day
     for day in list_of_days:
@@ -397,28 +386,59 @@ class eventObject:
             # args needed:
             # sleep_time, rest_mins, start_time, end_time
 
+            self.geo = None
+
             sleep_time = kwargs.get("sleep_time")
             rest_time = kwargs.get("rest_mins")
-            start_time = kwargs.get("start_time")
-            end_time = kwargs.get("end_time")
+            self.start_time = kwargs.get("start_time")
+            self.end_time = kwargs.get("end_time")
 
             self.timezone = kwargs.get("timezone")
             self.sleep_id = kwargs.get("sleep_id")
 
-            if None in [sleep_time, rest_time, start_time, end_time]:
+            if None in [sleep_time, rest_time, self.start_time, self.end_time]:
                 raise ValueError("Required field missing. Required fields are sleep_time, rest_mins, start_time, end_time.")
 
-            sleep_time = datetime.datetime(1, 1, 1) + datetime.timedelta(0, int(sleep_time)/1000)
-            readable_time = sleep_time.strftime("%H hours, %M minutes")
-            rest_time = datetime.datetime(1, 1, 1) + datetime.timedelta(0, int(rest_time) * 60)
-            readable_rest = rest_time.strftime("%H hours, %M minutes")
+            self.sleep_time = datetime.datetime(1, 1, 1) + datetime.timedelta(0, int(sleep_time)/1000)
+            readable_time = self.sleep_time.strftime("%H hours, %M minutes")
+            self.rest_time = datetime.datetime(1, 1, 1) + datetime.timedelta(0, int(rest_time) * 60)
+            readable_rest = self.rest_time.strftime("%H hours, %M minutes")
             self.body = (f"Total time in bed: {readable_time} \n" +
                          f"Restful time: {readable_rest}\n" +
-                         f"Local start time: {start_time.strftime('%B %d, at %I:%M %p')}\n" +
-                         f"Local end time: {end_time.strftime('%B %d, at %I:%M %p')}")
+                         f"Local start time: {self.start_time.strftime('%B %d, at %I:%M %p')}\n" +
+                         f"Local end time: {self.end_time.strftime('%B %d, at %I:%M %p')}")
 
         elif self.type == "swarm":
             # Set up Swarm fields
             pass
         else:
-            raise ValueError(f"Unsupported event type: {object_type}")
+            raise ValueError(f"Unsupported event type: {self.type}")
+
+    def get_body(self):
+        return self.body
+
+    def get_footer(self):
+        if self.type == "twitter":
+            return self.client
+        elif self.type == "fitbit-sleep":
+            return self.timezone
+
+    def get_url(self):
+        if self.type == "twitter":
+            url = f"https://www.twitter.com/i/status/{self.id}/"
+        elif self.type == "fitbit-sleep":
+            url = f"https://www.fitbit.com/sleep/{self.end_time.strftime('%Y-%m-%d')}/{self.id}/"
+
+        return url
+
+    def get_reply_id(self):
+        if self.type == "twitter":
+            return self.reply_id or None
+        else:
+            return None
+
+    def get_geo(self):
+        if self.geo:
+            return self.geo if self.geo["latitude"] and self.geo["longitude"] else None
+        else:
+            return None

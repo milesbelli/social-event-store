@@ -19,6 +19,11 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(type(myobj.time), dt.timedelta)
         self.assertGreater(len(myobj.body), 1)
 
+    def test_bad_eventjob_init(self):
+        def setup_function():
+            myobj = c.eventObject(dt.date(2001, 1, 1), dt.timedelta(0, 2000), "bad-type", 1001)
+        self.assertRaises(ValueError, setup_function)
+
 
 if __name__ == '__main__':
     unittest.main()

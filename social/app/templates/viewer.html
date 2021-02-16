@@ -64,39 +64,29 @@
 {% if day["count"] != 0 %}
 <h2 id="{{ day['date_day'] }}">{{ day["date_human"] }}</h2>
 <p>{{ day["count"] }} event{% if day["count"] > 1 %}s{% endif %} <a href="#">Top</a></p>
-    {% for row in day["events"] %}
-{% if row[7] == "twitter" %}
-<div class="time">{{ row[1] }}</div>
-<div class="event {{ row[7] }}">
-    {% if row[12] %}
-    <button id="reply_btn_{{ row[2] }}" onclick="fetch_reply('{{ row[12] }}', '{{ row[2] }}')">In reply to...</button>
-    <div class="reply-embed" id="reply_{{ row[2] }}"></div>
+{% for event in day["events"] %}
+<div class="time">{{ event.date }}</div>
+<div class="event {{ event.type }}">
+    {% if event.get_reply_id() %}
+    <button id="reply_btn_{{ event.id }}" onclick="fetch_reply('{{ event.get_reply_id() }}', '{{ event.id }}')">In reply to...</button>
+    <div class="reply-embed" id="reply_{{ event.id }}"></div>
     {% endif %}
     <div class="text">
-        {% for textline in row[3].split('\n') %}
+        {% for textline in event.get_body().split('\n') %}
         {{ textline }}<br>
         {% endfor %}
     </div>
-    {% if row[5] and row[6] %}
-    <div class="coordinates"><button onclick="get_map('{{ row[2] }}_map', {{ row[5] }}, {{ row[6] }})">Map</button></div>
-    <div class="bing_map" id="{{ row[2] }}_map" style="display:none">
+    {% if event.get_geo() %}
+    <div class="coordinates"><button onclick="get_map('{{ event.id }}_map', {{ event.get_geo()['latitude'] }}, {{ event.get_geo()['longitude'] }})">Map</button></div>
+    <div class="bing_map" id="{{ event.id }}_map" style="display:none">
     </div>
     {% endif %}
-    <div class="client">via {{ row[4] }}</div>
-    <div class="view_link"><a target="_blank" rel="noopener noreferrer" href="https://www.twitter.com/i/status/{{ row[2] }}/">View on Twitter</a></div>
+    <div class="client">via {{ event.get_footer() }}
+    {% if event.type == "fitbit-sleep" %}
+     &bull; <a href="/edit-sleep/{{ event.sleep_id }}">Edit</a>
+    {% endif %}</div>
+    <div class="view_link"><a target="_blank" rel="noopener noreferrer" href="{{ event.get_url() }}">View Online</a></div>
 </div>
-{% elif row[7] == "fitbit-sleep" %}
-<div class="time">{{ row[1] }}</div>
-<div class="event {{ row[7] }}">
-    <div class="text">
-        {% for textline in row[3].split('\n') %}
-        {{ textline }}<br>
-        {% endfor %}
-    </div>
-    <div class="client">In {{ row[4] }} &bull; <a href="/edit-sleep/{{ row[9] }}">Edit</a></div>
-    <div class="view_link"><a target="_blank" rel="noopener noreferrer" href="https://www.fitbit.com/sleep/{{ row[8].strftime('%Y-%m-%d') }}/{{ row[2] }}/">View on Fitbit</a></div>
-</div>
-{% endif %}
     {% endfor %}
 {% endif %}
 {% endfor %}
