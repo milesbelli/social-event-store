@@ -105,3 +105,13 @@ inreplytoid BIGINT(20),
 statustext VARCHAR(280),
 lang VARCHAR(4),
 PRIMARY KEY(tweetid));
+
+CREATE TABLE IF NOT EXISTS foursquare_checkins (
+checkinid VARCHAR(32),
+eventtype VARCHAR(16),
+tzoffset INT(4),
+venueid VARCHAR(32),
+venuename VARCHAR(200),
+venueurl VARCHAR(4000),
+PRIMARY KEY (checkinid)
+);

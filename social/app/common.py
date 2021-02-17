@@ -408,7 +408,7 @@ class eventObject:
                          f"Local start time: {self.start_time.strftime('%B %d, at %I:%M %p')}\n" +
                          f"Local end time: {self.end_time.strftime('%B %d, at %I:%M %p')}")
 
-        elif self.type == "swarm":
+        elif self.type == "foursquare":
             # Set up Swarm fields
             pass
         else:
