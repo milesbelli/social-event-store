@@ -419,9 +419,9 @@ class eventObject:
 
     def get_footer(self):
         if self.type == "twitter":
-            return self.client
+            return f"via {self.client}"
         elif self.type == "fitbit-sleep":
-            return self.timezone
+            return f"in {self.timezone}"
 
     def get_url(self):
         if self.type == "twitter":
@@ -440,5 +440,17 @@ class eventObject:
     def get_geo(self):
         if self.geo:
             return self.geo if self.geo["latitude"] and self.geo["longitude"] else None
+        else:
+            return None
+
+    def is_editable(self):
+        if self.type == "fitbit-sleep":
+            return True
+        else:
+            return False
+
+    def get_edit_url(self):
+        if self.type == "fitbit-sleep":
+            return f"/edit-sleep/{self.sleep_id}"
         else:
             return None

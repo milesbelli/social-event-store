@@ -50,7 +50,7 @@
     <tr>
         {% for day in week %}
         {% if day['full_date'] == date %}
-        <td style="background-color:{{ day['color'] }}; border: 1px solid black">
+        <td style="`background-color:{{ day['color'] }}; border: 1px solid black">
         {% else %}
         <td style="background-color:{{ day['color'] }}">
         {% endif %}
@@ -65,7 +65,7 @@
 <h2 id="{{ day['date_day'] }}">{{ day["date_human"] }}</h2>
 <p>{{ day["count"] }} event{% if day["count"] > 1 %}s{% endif %} <a href="#">Top</a></p>
 {% for event in day["events"] %}
-<div class="time">{{ event.date }}</div>
+<div class="time">{{ event.time }}</div>
 <div class="event {{ event.type }}">
     {% if event.get_reply_id() %}
     <button id="reply_btn_{{ event.id }}" onclick="fetch_reply('{{ event.get_reply_id() }}', '{{ event.id }}')">In reply to...</button>
@@ -81,9 +81,9 @@
     <div class="bing_map" id="{{ event.id }}_map" style="display:none">
     </div>
     {% endif %}
-    <div class="client">via {{ event.get_footer() }}
-    {% if event.type == "fitbit-sleep" %}
-     &bull; <a href="/edit-sleep/{{ event.sleep_id }}">Edit</a>
+    <div class="client">{{ event.get_footer() }}
+    {% if event.is_editable() %}
+     &bull; <a href="{{ event.get_edit_url() }}">Edit</a>
     {% endif %}</div>
     <div class="view_link"><a target="_blank" rel="noopener noreferrer" href="{{ event.get_url() }}">View Online</a></div>
 </div>

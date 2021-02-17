@@ -343,11 +343,11 @@ def get_status_from_twitter(status_id):
                                        output_status["lang"])
 
             output_status["text"] = (output_status["text"] +
-                                     f" <a class='view_link' target='_blank' href='https://twitter.com/i/status/{status_id}'>View on Twitter</a>")
+                                     f" <a class='view_link' target='_blank' href='https://twitter.com/i/status/{status_id}'>View Online</a>")
             return output_status
         else:
             output_status = {"user": {"screen_name":""},
-                             "text": f"<a style='font-size:14px' target='_blank' href='https://twitter.com/i/status/{status_id}'>View on Twitter</a>"}
+                             "text": f"<a style='font-size:14px' target='_blank' href='https://twitter.com/i/status/{status_id}'>View Online</a>"}
             return output_status
     else:
         reply_to["text"] = (reply_to["text"] +
