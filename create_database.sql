@@ -107,11 +107,24 @@ lang VARCHAR(4),
 PRIMARY KEY(tweetid));
 
 CREATE TABLE IF NOT EXISTS foursquare_checkins (
-checkinid VARCHAR(32),
+eventid BIGINT(15) NOT NULL AUTO_INCREMENT,
+checkinid VARCHAR(32) NOT NULL,
 eventtype VARCHAR(16),
-tzoffset INT(4),
-venueid VARCHAR(32),
-venuename VARCHAR(200),
-venueurl VARCHAR(4000),
-PRIMARY KEY (checkinid)
+tzoffset INT(4) NOT NULL,
+venueid VARCHAR(32) NOT NULL,
+PRIMARY KEY (eventid)
+);
+
+CREATE TABLE IF NOT EXISTS foursquare_venues (
+venueid VARCHAR(32) NOT NULL,
+name VARCHAR(200),
+url VARCHAR(4000),
+address VARCHAR(200),
+postalcode INT(5),
+cc VARCHAR(4),
+city VARCHAR(50),
+state VARCHAR(4),
+latitude DOUBLE(10,8),
+longitude DOUBLE(11,8),
+PRIMARY KEY (venueid)
 );
