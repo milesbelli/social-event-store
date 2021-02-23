@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, send_file, jsonify
 import datetime
 import pytz
-import fitbit, common, twitter
+import fitbit, common, twitter, foursquare
 from multiprocessing import Process
 
 app = Flask(__name__)
@@ -158,6 +158,9 @@ def upload_data():
             file_proc_bkg.start()
         elif request.form["source"] == "fitbit-sleep":
             file_proc_bkg = Process(target=fitbit.process_from_file, args=(file_path,), daemon=True)
+            file_proc_bkg.start()
+        elif request.form["source"] == "foursquare":
+            file_proc_bkg = Process(target=foursquare.process_from_file, args=(file_path,), daemon=True)
             file_proc_bkg.start()
 
         return render_template("upload.html", status_message=f"The file {file.filename} has been successfully uploaded.")

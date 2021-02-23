@@ -207,6 +207,12 @@ def unpack_and_store_files(zipfile_path, parent_directory):
                     output_file.write(sleep_file_to_save)
                     output_file.close()
 
+                elif "checkins" in entry and ".js" in entry:
+                    checkin_file_to_save = zipfile_to_process.read(entry)
+                    output_file = open(f"{output_path}/{entry.split('/')[-1]}", "wb")
+                    output_file.write(checkin_file_to_save)
+                    output_file.close()
+
         cleanup(zipfile_path)
 
         return output_path

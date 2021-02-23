@@ -112,7 +112,10 @@ checkinid VARCHAR(32) NOT NULL,
 eventtype VARCHAR(16),
 tzoffset INT(4) NOT NULL,
 venueid VARCHAR(32) NOT NULL,
-PRIMARY KEY (eventid)
+venuename VARCHAR(200),
+checkintime INT(11),
+PRIMARY KEY (eventid),
+UNIQUE KEY (checkinid)
 );
 
 CREATE TABLE IF NOT EXISTS foursquare_venues (

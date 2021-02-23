@@ -326,6 +326,85 @@ def update_fitbit_sleep_timezone(sleep_id, event_date, event_time, timezone):
     cnx.commit()
     close_connection(cnx)
 
+def insert_foursquare_checkins(checkins, user_prefs):
+
+    cnx = create_connection('social')
+    cursor = cnx.cursor()
+    user_id = user_prefs.user_id
+
+    checkin_values = list()
+    event_values = list()
+
+    # Query db to see what all is in the db already
+
+    already_in_db = list()
+
+    sql_get_already_in_db = (f"SELECT checkinid FROM events e LEFT JOIN foursquare_checkins f"
+                             f" ON e.detailid = f.eventid"
+                             f" WHERE e.userid = {user_id} AND e.eventtype = 'foursquare'")
+
+    cursor.execute(sql_get_already_in_db)
+
+    for i in cursor:
+        if i:
+            already_in_db.append(str(i[0]))
+
+
+    # Pop entries from the dict which are already in the db
+
+    for entry in already_in_db:
+        checkins.pop(entry)
+
+    # Each values entry will contain, in this order:
+    # checkinid, eventtype, tzoffset, venueid
+    for key in checkins:
+        checkin = checkins[key]
+        checkin_values.append(f"('{checkin['id']}', '{checkin['type']}', '{checkin['timeZoneOffset']}',"
+                              f" '{checkin['venue']['id']}', '{checkin.get_venue_name_for_sql()}',"
+                              f" '{checkin['createdAt']}')")
+
+    # Insert into db in 100 entry batches
+    grouped_values = group_insert_into_db(checkin_values, 100)
+
+    for events_to_insert in grouped_values:
+
+        sql_insert_checkin_data = (f"INSERT INTO foursquare_checkins (checkinid, eventtype, tzoffset, venueid,"
+                                   f" venuename, checkintime)"
+                                   f" VALUES {events_to_insert};")
+
+        cursor.execute(sql_insert_checkin_data)
+
+
+    sql_get_ids_for_events = (f"SELECT f.checkinid, f.eventid from foursquare_checkins f WHERE f.eventid NOT IN"
+                              f" (SELECT e.detailid FROM events e WHERE e.eventtype = 'foursquare')")
+
+    cursor.execute(sql_get_ids_for_events)
+
+    event_id_dict = dict()
+
+    # Result will be a dict with keys of checkinid and values of eventid, to use for events table detailid
+    for i in cursor:
+        event_id_dict[i[0]] = i[1]
+
+    event_values = list()
+
+    for key in checkins:
+        checkin = checkins[key]
+        event_id = event_id_dict[checkin["id"]]
+        event_values.append(f"('{user_id}', '{checkin.get_date_str()}', '{checkin.get_time_str()}', 'foursquare',"
+                            f" '{event_id}')")
+
+    grouped_event_values = group_insert_into_db(event_values, 100)
+
+    for events_to_insert in grouped_event_values:
+
+        sql_insert_event_data = ("INSERT INTO events (userid, eventdate, eventtime, eventtype, detailid) "
+                                f"VALUES {events_to_insert};")
+
+        cursor.execute(sql_insert_event_data)
+
+    cnx.commit()
+
 
 def get_existing_tweets(cursor):
       
