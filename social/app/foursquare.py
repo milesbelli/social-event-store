@@ -46,6 +46,14 @@ class foursquareImporterEvent(dict):
     def get_venue_name_for_sql(self):
         return self["venue"]["name"].replace("'","''")
 
+    def get_shout_for_sql(self):
+        shout_text = self.get('shout')
+        if shout_text:
+            shout_text = shout_text.replace("'","''")
+            return f"'{shout_text}'"
+        else:
+            return "NULL"
+
 
 def process_from_file(file_path):
     current_user = common.UserPreferences(1)

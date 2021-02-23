@@ -114,6 +114,7 @@ tzoffset INT(4) NOT NULL,
 venueid VARCHAR(32) NOT NULL,
 venuename VARCHAR(200),
 checkintime INT(11),
+shout VARCHAR(140),
 PRIMARY KEY (eventid),
 UNIQUE KEY (checkinid)
 );
