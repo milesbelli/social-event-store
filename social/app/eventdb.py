@@ -361,7 +361,10 @@ def insert_foursquare_checkins(checkins, user_prefs):
         checkin = checkins[key]
         checkin_values.append(f"('{checkin['id']}', '{checkin['type']}', '{checkin['timeZoneOffset']}',"
                               f" '{checkin['venue']['id']}', '{checkin.get_venue_name_for_sql()}',"
-                              f" '{checkin['createdAt']}', {checkin.get_shout_for_sql()})")
+                              f" '{checkin['createdAt']}', {checkin.get_shout_for_sql()},"
+                              f" {checkin.get_event_id_for_sql()}, {checkin.get_event_name_for_sql()},"
+                              f" {checkin.get_primary_category_id_and_name()['id']},"
+                              f" {checkin.get_primary_category_id_and_name()['name']})")
 
     # Insert into db in 100 entry batches
     grouped_values = group_insert_into_db(checkin_values, 100)
@@ -369,7 +372,7 @@ def insert_foursquare_checkins(checkins, user_prefs):
     for events_to_insert in grouped_values:
 
         sql_insert_checkin_data = (f"INSERT INTO foursquare_checkins (checkinid, eventtype, tzoffset, venueid,"
-                                   f" venuename, checkintime, shout)"
+                                   f" venuename, checkintime, shout, veventid, veventname, primarycatid, primarycatname)"
                                    f" VALUES {events_to_insert};")
 
         cursor.execute(sql_insert_checkin_data)

@@ -1,0 +1,38 @@
+{
+    "count": 1,
+    "items": [
+        {
+            "id": "56734679498ede817ff54e0c",
+            "createdAt": 1450395257,
+            "type": "checkin",
+            "entities": [],
+            "shout": "STAR WARS. YES.",
+            "timeZoneOffset": -300,
+            "venue": {
+                "id": "4b0586aef964a520fe6922e3",
+                "name": "Cinemaworld Lincoln Mall 16",
+                "url": "https:\/\/foursquare.com\/v\/cinemaworld-lincoln-mall-16\/4b0586aef964a520fe6922e3"
+            },
+            "event": {
+                "id": "564d4cb7498e07dce2bf96a6",
+                "name": "Star Wars: The Force Awakens 3D",
+                "categories": [
+                    {
+                        "id": "4dfb90c6bd413dd705e8f897",
+                        "name": "Movie",
+                        "pluralName": "Movies",
+                        "shortName": "Movie",
+                        "icon": {
+                            "prefix": "https:\/\/ss3.4sqi.net\/img\/categories_v2\/arts_entertainment\/movietheater_",
+                            "suffix": ".png"
+                        },
+                        "primary": true
+                    }
+                ]
+            },
+            "comments": {
+                "count": 0
+            }
+        }
+    ]
+}

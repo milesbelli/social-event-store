@@ -115,6 +115,10 @@ venueid VARCHAR(32) NOT NULL,
 venuename VARCHAR(200),
 checkintime INT(11),
 shout VARCHAR(140),
+veventid VARCHAR(32),
+veventname VARCHAR(200),
+primarycatid VARCHAR(32),
+primarycatname VARCHAR(32),
 PRIMARY KEY (eventid),
 UNIQUE KEY (checkinid)
 );

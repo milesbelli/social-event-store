@@ -54,6 +54,33 @@ class foursquareImporterEvent(dict):
         else:
             return "NULL"
 
+    def get_event_id_for_sql(self):
+        event = self.get("event")
+        event_id = event.get("id") if event else None
+        out_str = f"'{event_id}'" if event_id else "NULL"
+        return out_str
+
+    def get_event_name_for_sql(self):
+        event = self.get("event")
+        event_name = event.get("name").replace("'", "''") if event else None
+        out_str = f"'{event_name}'" if event_name else "NULL"
+        return out_str
+
+    def get_primary_category_id_and_name(self):
+        event = self.get("event")
+        event_categories = event.get("categories") if event else []
+        cat_id = None
+        cat_name = None
+        for cat in event_categories:
+            if cat["primary"]:
+                cat_id = cat["id"]
+                cat_name = cat["name"].replace("'", "''")
+                break
+        cat_id = f"'{cat_id}'" if cat_id else "NULL"
+        cat_name = f"'{cat_name}'" if cat_name else "NULL"
+
+        return {"id": cat_id, "name": cat_name}
+
 
 def process_from_file(file_path):
     current_user = common.UserPreferences(1)
