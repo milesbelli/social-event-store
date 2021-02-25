@@ -41,6 +41,9 @@ iframe.main {
     background-color: #334343;
 }
 
+.foursquare {
+    background-color: #433F33}
+
 .time {
     padding-left: 8px;
     margin-left: 2%;
@@ -117,4 +120,14 @@ input, select {
     margin:5px;
     border-radius: 4px;
     display: none;
+}
+
+.title {
+    font-weight: bold;
+    padding-bottom: 5px;
+    }
+
+.subtitle {
+    font-size: 12px;
+    font-weight: normal;
 }

@@ -467,10 +467,11 @@ def get_datetime_range(start_datetime, end_datetime, list_of_data_types):
 
     subquery_list = list()
 
+    # TODO: This is not going to scale, so come up with a better way to handle this
     # 0 : eventdate
     # 1 : eventtime
     # 2 : detailid / logid
-    # 3 : tweettext / duration
+    # 3 : tweettext / duration / shout
     # 4 : client / timezone
     # 5 : latitude
     # 6 : longitude
@@ -480,9 +481,19 @@ def get_datetime_range(start_datetime, end_datetime, list_of_data_types):
     # 10: sum(stageminutes)
     # 11: startdatetime
     # 12: replyid
+    # 13: venuename
+    # 14: venueid
+    # 15: veventid
+    # 16: veventname
+    # 17: address
+    # 18: city
+    # 19: state
+    # 20: country
+    # 21: checkinid
 
     twitter_sql_query = ("SELECT eventdate, eventtime, detailid, tweettext, client, "
-                         "latitude, longitude, eventtype, NULL, NULL, NULL, NULL, replyid "
+                         "latitude, longitude, eventtype, NULL, NULL, NULL, NULL, replyid, NULL, NULL, NULL, NULL, NULL,"
+                         "NULL, NULL, NULL, NULL "
                          "FROM tweetdetails "
                          "LEFT JOIN events "
                          "ON detailid = tweetid "
@@ -491,7 +502,8 @@ def get_datetime_range(start_datetime, end_datetime, list_of_data_types):
                          f"AND CONCAT(eventdate,' ',eventtime) <= '{end_datetime}' ")
 
     fitbit_sql_query = ("SELECT eventdate, eventtime, f.logid, f.duration, f.timezone, NULL, NULL, "
-                        "eventtype, enddatetime, f.sleepid, sum(stageminutes), startdatetime, NULL "
+                        "eventtype, enddatetime, f.sleepid, sum(stageminutes), startdatetime, NULL, NULL, NULL, NULL,"
+                        "NULL, NULL, NULL, NULL, NULL, NULL "
                         "FROM fitbit_sleep f "
                         "LEFT JOIN events "
                         "ON detailid = f.sleepid "
@@ -503,11 +515,26 @@ def get_datetime_range(start_datetime, end_datetime, list_of_data_types):
                         f"AND sleepstage NOT LIKE '%wake' AND sleepstage NOT LIKE 'restless' "
                         f"GROUP BY s.sleepid, eventdate, eventtime, f.logid, f.duration, f.timezone, f.sleepid ")
 
+    foursquare_sql_query = ("SELECT e.eventdate, e.eventtime, NULL, o.shout, NULL, v.latitude, v.longitude, e.eventtype,"
+                            "NULL, NULL, NULL, NULL, NULL, o.venuename, o.venueid, o.veventid, o.veventname, v.address,"
+                            "v.city, v.state, v.country, o.checkinid "
+                            "FROM foursquare_checkins o "
+                            "LEFT JOIN events e "
+                            "ON e.detailid = o.eventid "
+                            "LEFT JOIN foursquare_venues v "
+                            "ON o.venueid = v.venueid "
+                            "WHERE e.eventtype = 'foursquare' "
+                            f"AND CONCAT(eventdate,' ',eventtime) >= '{start_datetime}' "
+                            f"AND CONCAT(eventdate,' ',eventtime) <= '{end_datetime}' ")
+
     if 'twitter' in list_of_data_types:
         subquery_list.append(twitter_sql_query)
 
     if 'fitbit-sleep' in list_of_data_types:
         subquery_list.append(fitbit_sql_query)
+
+    if "foursquare" in list_of_data_types:
+        subquery_list.append(foursquare_sql_query)
 
     sql_query = " UNION ".join(subquery_list) + "ORDER BY eventdate ASC, eventtime ASC;"
 

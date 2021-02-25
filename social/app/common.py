@@ -117,7 +117,8 @@ def get_one_month_of_events(year, month, **kwargs):
         social_event = eventObject(event[0], event[1], event[7], event[2], body=event[3], sleep_time=event[3],
                                    rest_mins=event[10], start_time=event[11], end_time=event[8], timezone=event[4],
                                    client=event[4], sleep_id=event[9], latitude=event[5], longitude=event[6],
-                                   reply_id=event[12])
+                                   reply_id=event[12], venue_name=event[13], venue_event_name=event[16],
+                                   checkin_id=event[21])
 
         events_by_date[event[0].strftime("%Y-%m-%d")].append(social_event)
 
@@ -136,7 +137,7 @@ def get_events_for_date_range(start_date, end_date, user_prefs=None, **kwargs):
 
     # Query the db for events of given type(s) and date range
 
-    sources = kwargs.get("sources") or ["twitter", "fitbit-sleep"]
+    sources = kwargs.get("sources") or ["twitter", "fitbit-sleep", "foursquare"]
 
     if user_prefs:
         start_date, end_date = localize_date_range(start_date, end_date, timezone=user_prefs.timezone)
@@ -416,7 +417,12 @@ class eventObject:
 
         elif self.type == "foursquare":
             # Set up Swarm fields
-            pass
+            self.body = kwargs.get("body") or ""
+            self.geo = None #for now
+            self.checkin_id = kwargs.get("checkin_id")
+            self.venue_name = kwargs.get("venue_name")
+            self.venue_event_name = kwargs.get("venue_event_name")
+
         else:
             raise ValueError(f"Unsupported event type: {self.type}")
 
@@ -434,6 +440,8 @@ class eventObject:
             url = f"https://www.twitter.com/i/status/{self.id}/"
         elif self.type == "fitbit-sleep":
             url = f"https://www.fitbit.com/sleep/{self.end_time.strftime('%Y-%m-%d')}/{self.id}/"
+        elif self.type == "foursquare":
+            url = f"https://www.swarmapp.com/i/checkin/{self.checkin_id}/"
 
         return url
 
@@ -458,5 +466,17 @@ class eventObject:
     def get_edit_url(self):
         if self.type == "fitbit-sleep":
             return f"/edit-sleep/{self.sleep_id}"
+        else:
+            return None
+
+    def get_title(self):
+        if self.type == "foursquare":
+            return f"Checked in at {self.venue_name}"
+        else:
+            return None
+
+    def get_subtitle(self):
+        if self.type == "foursquare" and self.venue_event_name:
+            return f"for {self.venue_event_name}"
         else:
             return None

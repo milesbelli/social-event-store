@@ -71,7 +71,17 @@
     <button id="reply_btn_{{ event.id }}" onclick="fetch_reply('{{ event.get_reply_id() }}', '{{ event.id }}')">In reply to...</button>
     <div class="reply-embed" id="reply_{{ event.id }}"></div>
     {% endif %}
-    <div class="text">
+    {% if event.get_title() %}
+    <div class="title">
+        {{ event.get_title() }}
+        {% if event.get_subtitle() %}
+            <div class="subtitle">
+                {{ event.get_subtitle()}}
+            </div>
+        {% endif %}
+    </div>
+    {% endif %}
+    <div class="text" {% if not event.get_body() %}hidden=true{% endif %}>
         {% for textline in event.get_body().split('\n') %}
         {{ textline }}<br>
         {% endfor %}
