@@ -51,6 +51,10 @@ function get_map(map_id, latitude, longitude) {
     if(document.getElementById(map_id).style.display=="none") {
         document.getElementById(map_id).style.display="block";
 
+        if (window.innerWidth < 630) {
+            document.getElementById(map_id).style.width = (window.innerWidth-30)+"px";
+        }
+
         var map = new Microsoft.Maps.Map("#"+map_id, {
         center: new Microsoft.Maps.Location(latitude, longitude),
         zoom: 14
@@ -61,13 +65,31 @@ function get_map(map_id, latitude, longitude) {
         var pin = new Microsoft.Maps.Pushpin(center);
 
         map.entities.push(pin);
-
     }
 
     else {
         document.getElementById(map_id).style.display="none";
     }
 
+};
+
+function get_map_by_id(obj_id, source, source_id) {
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {
+            var obj = JSON.parse(this.responseText);
+            foot_id = obj_id + "_footer";
+            document.getElementById(foot_id).innerHTML = obj["city"] + ", " + obj["state"] + ", " + obj["country"];
+            map_id = obj_id + "_map";
+            get_map(map_id, obj["latitude"], obj["longitude"]);
+            button_id = obj_id + "_button";
+//            document.getElementById(button_id).onclick = "get_map('" + map_id + "', " + obj["latitude"] + ", " + obj["longitude"] + ")"
+            document.getElementById(button_id).onclick = function() {get_map(map_id, obj["latitude"], obj["longitude"]); };
+
+        };
+    };
+    xhttp.open("GET", "/get-map/" + source + "/" + source_id, true);
+    xhttp.send();
 };
 
 function fetch_reply(reply_id, status_id) {

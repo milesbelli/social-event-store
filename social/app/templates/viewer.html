@@ -76,7 +76,7 @@
         {{ event.get_title() }}
         {% if event.get_subtitle() %}
             <div class="subtitle">
-                {{ event.get_subtitle()}}
+                {{ event.get_subtitle() }}
             </div>
         {% endif %}
     </div>
@@ -86,12 +86,21 @@
         {{ textline }}<br>
         {% endfor %}
     </div>
+    {% if event.get_geo() or event.fetch_venue() %}
     {% if event.get_geo() %}
-    <div class="coordinates"><button onclick="get_map('{{ event.id }}_map', {{ event.get_geo()['latitude'] }}, {{ event.get_geo()['longitude'] }})">Map</button></div>
-    <div class="bing_map" id="{{ event.id }}_map" style="display:none">
+    <div class="coordinates"><button onclick="get_map('{{ event.type }}_{{ event.id }}_map', {{ event.get_geo()['latitude'] }}, {{ event.get_geo()['longitude'] }})">Map</button></div>
+    {% elif event.fetch_venue() %}
+    <div class="coordinates">
+        <button id="{{ event.type }}_{{ event.id }}_button"
+                onclick="get_map_by_id('{{ event.type }}_{{ event.id }}', '{{ event.type }}', '{{ event.venue_id }}')">
+            Map
+        </button>
     </div>
     {% endif %}
-    <div class="client">{{ event.get_footer() }}
+    <div class="bing_map" id="{{ event.type }}_{{ event.id }}_map" style="display:none">
+    </div>
+    {% endif %}
+    <div class="client" id="{{ event.type }}_{{ event.id }}_footer">{{ event.get_footer() }}
     {% if event.is_editable() %}
      &bull; <a href="{{ event.get_edit_url() }}">Edit</a>
     {% endif %}</div>

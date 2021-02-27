@@ -228,11 +228,21 @@ def edit_sleep(sleep_id):
         return render_template("edit-sleep.html", event=fitbit_sleep_event, timezones=pytz.all_timezones,
                                message=save_message)
 
+
 @app.route("/get-status/<status_id>", methods=["GET"])
 def get_twitter_status(status_id):
     status = twitter.get_status_from_twitter(status_id)
     if status:
         return jsonify(status)
+
+
+@app.route("/get-map/<source>/<source_id>", methods=["GET"])
+def get_map(source, source_id):
+    foursquare_api_id = "XTV2HF3BEQYNRFFSYM0IDZ4IT3ZXRHEYLOV5QQCMKDOJ55QX"
+    foursquare_api_secret = "4KKNXSED4PYXZZKWWDUBAHUWMVBOECY0OGYVO010MCOYXCTB"
+    if source == "foursquare":
+        venue = foursquare.get_venue_details(source_id, foursquare_api_id, foursquare_api_secret)
+        return jsonify(venue)
 
 
 # Running this will launch the server

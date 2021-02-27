@@ -117,8 +117,9 @@ def get_one_month_of_events(year, month, **kwargs):
         social_event = eventObject(event[0], event[1], event[7], event[2], body=event[3], sleep_time=event[3],
                                    rest_mins=event[10], start_time=event[11], end_time=event[8], timezone=event[4],
                                    client=event[4], sleep_id=event[9], latitude=event[5], longitude=event[6],
-                                   reply_id=event[12], venue_name=event[13], venue_event_name=event[16],
-                                   checkin_id=event[21])
+                                   reply_id=event[12], venue_name=event[13], venue_id=event[14], venue_event_id=event[15],
+                                   venue_event_name=event[16], address=event[17], city=event[18], state=event[19],
+                                   country=event[20], checkin_id=event[21])
 
         events_by_date[event[0].strftime("%Y-%m-%d")].append(social_event)
 
@@ -417,11 +418,18 @@ class eventObject:
 
         elif self.type == "foursquare":
             # Set up Swarm fields
+            self.id = kwargs.get("checkin_id")
             self.body = kwargs.get("body") or ""
-            self.geo = None #for now
+            self.geo = {"latitude": kwargs.get("latitude"),
+                        "longitude": kwargs.get("longitude")}
             self.checkin_id = kwargs.get("checkin_id")
             self.venue_name = kwargs.get("venue_name")
             self.venue_event_name = kwargs.get("venue_event_name")
+            self.address = kwargs.get("address")
+            self.city = kwargs.get("city")
+            self.state = kwargs.get("state")
+            self.country = kwargs.get("country")
+            self.venue_id = kwargs.get("venue_id")
 
         else:
             raise ValueError(f"Unsupported event type: {self.type}")
@@ -434,6 +442,9 @@ class eventObject:
             return f"via {self.client}"
         elif self.type == "fitbit-sleep":
             return f"in {self.timezone}"
+        elif self.type == "foursquare":
+            return f"{self.city}, {self.state}, {self.country}" if self.country \
+                else "Location unknown"
 
     def get_url(self):
         if self.type == "twitter":
@@ -454,6 +465,12 @@ class eventObject:
     def get_geo(self):
         if self.geo:
             return self.geo if self.geo["latitude"] and self.geo["longitude"] else None
+        else:
+            return None
+
+    def fetch_venue(self):
+        if self.type == "foursquare":
+            return self.venue_id
         else:
             return None
 

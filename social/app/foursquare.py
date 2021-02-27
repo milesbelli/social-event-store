@@ -3,6 +3,7 @@ import datetime as dt
 import pytz as tz
 import common, eventdb
 from pathlib import Path
+import requests as r
 
 
 class foursquareImporter:
@@ -88,3 +89,22 @@ def process_from_file(file_path):
     checkin_import = foursquareImporter(process_dir)
     checkin_import.add_to_database(current_user)
     common.cleanup(process_dir)
+
+
+def get_venue_details(venue_id, client_id, client_secret):
+    version = "20190425"
+    request_string = f"https://api.foursquare.com/v2/venues/{venue_id}?client_id=" \
+                     f"{client_id}&client_secret={client_secret}&v={version}"
+
+    response = r.get(request_string)
+
+    if response.status_code == 200:
+        venue = json.loads(response.content)["response"]
+
+        venue_particulars = {"latitude": venue["venue"]["location"]["lat"],
+                             "longitude": venue["venue"]["location"]["lng"],
+                             "address": venue["venue"]["location"].get("address"),
+                             "city": venue["venue"]["location"].get("city"),
+                             "state": venue["venue"]["location"].get("state"),
+                             "country": venue["venue"]["location"].get("country")}
+        return venue_particulars
