@@ -108,3 +108,8 @@ def get_venue_details(venue_id, client_id, client_secret):
                              "state": venue["venue"]["location"].get("state"),
                              "country": venue["venue"]["location"].get("country")}
         return venue_particulars
+    else:
+        error = json.loads(response.content)
+        error_code = error["meta"]["code"]
+        error_detail = error["meta"]["errorDetail"]
+        raise ConnectionError(f"[{error_code}] {error_detail}")

@@ -52,7 +52,8 @@ function get_map(map_id, latitude, longitude) {
         document.getElementById(map_id).style.display="block";
 
         if (window.innerWidth < 630) {
-            document.getElementById(map_id).style.width = (window.innerWidth-30)+"px";
+            document.getElementById(map_id).style.width = (window.innerWidth - 30) + "px";
+            document.getElementById(map_id).style.height = ((window.innerWidth - 30) * 0.67) + "px";
         }
 
         var map = new Microsoft.Maps.Map("#"+map_id, {
@@ -83,7 +84,6 @@ function get_map_by_id(obj_id, source, source_id) {
             map_id = obj_id + "_map";
             get_map(map_id, obj["latitude"], obj["longitude"]);
             button_id = obj_id + "_button";
-//            document.getElementById(button_id).onclick = "get_map('" + map_id + "', " + obj["latitude"] + ", " + obj["longitude"] + ")"
             document.getElementById(button_id).onclick = function() {get_map(map_id, obj["latitude"], obj["longitude"]); };
 
         };
@@ -105,7 +105,7 @@ function fetch_reply(reply_id, status_id) {
             document.getElementById("reply_btn_"+status_id).style.display = "none";
         };
     };
-    console.log("Fetching status id: " + reply_id)
+    console.log("Fetching status id: " + reply_id);
     xhttp.open("GET", "/get-status/" + reply_id, true);
     xhttp.send();
 };
