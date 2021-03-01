@@ -101,13 +101,27 @@ def get_venue_details(venue_id, client_id, client_secret):
     if response.status_code == 200:
         venue = json.loads(response.content)["response"]
 
+
         venue_particulars = {"latitude": venue["venue"]["location"]["lat"],
                              "longitude": venue["venue"]["location"]["lng"],
                              "address": venue["venue"]["location"].get("address"),
                              "city": venue["venue"]["location"].get("city"),
                              "state": venue["venue"]["location"].get("state"),
-                             "country": venue["venue"]["location"].get("country")}
+                             "country": venue["venue"]["location"].get("country"),
+                             "url": venue["venue"].get("canonicalUrl"),
+                             "name": venue["venue"].get("name"),
+                             "cc": venue["venue"]["location"].get("cc"),
+                             "postal_code": venue["venue"]["location"].get("postal_code")}
+
+
+        # try:
+        eventdb.insert_foursquare_venue(venue_id, **venue_particulars)
+        #
+        # except:
+        #     print("Could not insert for some reason")
+
         return venue_particulars
+
     else:
         error = json.loads(response.content)
         error_code = error["meta"]["code"]

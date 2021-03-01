@@ -761,6 +761,8 @@ def get_in_reply_to(tweet_id):
 
     reply = cursor.fetchone()
 
+    close_connection(cnx)
+
     if reply:
         output = {"id_str": str(reply[0]),
                   "created_date": reply[1],
@@ -769,6 +771,38 @@ def get_in_reply_to(tweet_id):
         return output
     else:
         return None
+
+
+def insert_foursquare_venue(venue_id, **kwargs):
+
+    cnx = create_connection("social")
+    cursor = cnx.cursor()
+
+    name = kwargs.get("name").replace("'","''") if kwargs.get("name") else None
+    name = f"'{name}'" if name else "NULL"
+    url = f"'{kwargs.get('url')}'" if kwargs.get("url") else "NULL"
+    address = kwargs.get("address").replace("'", "''") if kwargs.get("address") else None
+    address = f"'{address}'" if address else "NULL"
+    postal_code = f"'{kwargs.get('postal_code')}'" if kwargs.get('postal_code') else "NULL"
+    cc = f"'{kwargs.get('cc')}'" if kwargs.get('cc') else "NULL"
+    city = kwargs.get("city").replace("'", "''") if kwargs.get("city") else None
+    city = f"'{city}'" if city else "NULL"
+    state = kwargs.get("state").replace("'", "''") if kwargs.get("state") else None
+    state = f"'{state}'" if state else "NULL"
+    country = kwargs.get("country").replace("'", "''") if kwargs.get("country") else None
+    country = f"'{country}'" if country else "NULL"
+    latitude = f'{kwargs.get("latitude")}' if kwargs.get("latitude") else "NULL"
+    longitude = f'{kwargs.get("longitude")}' if kwargs.get("longitude") else "NULL"
+
+    sql_statement = (f"INSERT INTO foursquare_venues VALUES" +
+                     f" ('{venue_id}', {name}, {url}, {address}, {postal_code}, {cc}, {city}, {state}, {country}, " +
+                     f"{latitude}, {longitude})")
+
+    cursor.execute(sql_statement)
+
+    cnx.commit()
+
+    close_connection(cnx)
 
 
 def close_connection(cnx):

@@ -68,7 +68,9 @@
 <div class="time">{{ event.time }}</div>
 <div class="event {{ event.type }}">
     {% if event.get_reply_id() %}
-    <button id="reply_btn_{{ event.id }}" onclick="fetch_reply('{{ event.get_reply_id() }}', '{{ event.id }}')">In reply to...</button>
+    <button id="reply_btn_{{ event.id }}" onclick="fetch_reply('{{ event.get_reply_id() }}', '{{ event.id }}')">
+        In reply to...
+    </button>
     <div class="reply-embed" id="reply_{{ event.id }}"></div>
     {% endif %}
     {% if event.get_title() %}
@@ -88,7 +90,11 @@
     </div>
     {% if event.get_geo() or event.fetch_venue() %}
     {% if event.get_geo() %}
-    <div class="coordinates"><button onclick="get_map('{{ event.type }}_{{ event.id }}_map', {{ event.get_geo()['latitude'] }}, {{ event.get_geo()['longitude'] }})">Map</button></div>
+    <div class="coordinates">
+        <button onclick="get_map('{{ event.type }}_{{ event.id }}_map', {{ event.get_geo()['latitude'] }}, {{ event.get_geo()['longitude'] }})">
+            Map
+        </button>
+    </div>
     {% elif event.fetch_venue() %}
     <div class="coordinates">
         <button id="{{ event.type }}_{{ event.id }}_button"
