@@ -96,34 +96,38 @@ def get_venue_details(venue_id, client_id, client_secret):
     request_string = f"https://api.foursquare.com/v2/venues/{venue_id}?client_id=" \
                      f"{client_id}&client_secret={client_secret}&v={version}"
 
-    response = r.get(request_string)
-
-    if response.status_code == 200:
-        venue = json.loads(response.content)["response"]
-
-
-        venue_particulars = {"latitude": venue["venue"]["location"]["lat"],
-                             "longitude": venue["venue"]["location"]["lng"],
-                             "address": venue["venue"]["location"].get("address"),
-                             "city": venue["venue"]["location"].get("city"),
-                             "state": venue["venue"]["location"].get("state"),
-                             "country": venue["venue"]["location"].get("country"),
-                             "url": venue["venue"].get("canonicalUrl"),
-                             "name": venue["venue"].get("name"),
-                             "cc": venue["venue"]["location"].get("cc"),
-                             "postal_code": venue["venue"]["location"].get("postal_code")}
-
-
-        # try:
-        eventdb.insert_foursquare_venue(venue_id, **venue_particulars)
-        #
-        # except:
-        #     print("Could not insert for some reason")
-
-        return venue_particulars
-
+    venue_in_db = eventdb.get_foursquare_venue(venue_id)
+    if len(venue_in_db) == 1:
+        return venue_in_db[0]
     else:
-        error = json.loads(response.content)
-        error_code = error["meta"]["code"]
-        error_detail = error["meta"]["errorDetail"]
-        raise ConnectionError(f"[{error_code}] {error_detail}")
+        response = r.get(request_string)
+
+        if response.status_code == 200:
+            venue = json.loads(response.content)["response"]
+
+
+            venue_particulars = {"latitude": venue["venue"]["location"]["lat"],
+                                 "longitude": venue["venue"]["location"]["lng"],
+                                 "address": venue["venue"]["location"].get("address"),
+                                 "city": venue["venue"]["location"].get("city"),
+                                 "state": venue["venue"]["location"].get("state"),
+                                 "country": venue["venue"]["location"].get("country"),
+                                 "url": venue["venue"].get("canonicalUrl"),
+                                 "name": venue["venue"].get("name"),
+                                 "cc": venue["venue"]["location"].get("cc"),
+                                 "postal_code": venue["venue"]["location"].get("postal_code")}
+
+
+            # try:
+            eventdb.insert_foursquare_venue(venue_id, **venue_particulars)
+            #
+            # except:
+            #     print("Could not insert for some reason")
+
+            return venue_particulars
+
+        else:
+            error = json.loads(response.content)
+            error_code = error["meta"]["code"]
+            error_detail = error["meta"]["errorDetail"]
+            raise ConnectionError(f"[{error_code}] {error_detail}")

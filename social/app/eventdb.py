@@ -805,6 +805,41 @@ def insert_foursquare_venue(venue_id, **kwargs):
     close_connection(cnx)
 
 
+def get_foursquare_venue(venue_id):
+
+    cnx = create_connection("social")
+    cursor = cnx.cursor()
+
+    sql_query = f"SELECT * FROM foursquare_venues WHERE venueid = '{venue_id}'"
+
+    cursor.execute(sql_query)
+
+    try:
+        results = cursor.fetchall()
+
+        result_list = list()
+
+        for row in results:
+            result_dict = dict()
+
+            for i in range(0,len(row)):
+                result_dict[cursor.column_names[i]] = row[i]
+            result_list.append(result_dict)
+
+
+        close_connection(cnx)
+
+        return result_list
+
+    # An InterfaceError is what happens when you try to fetchall from the cursor and there's nothing to fetch
+    except mysql.connector.errors.InterfaceError:
+        print("No entries in DB found.")
+        close_connection(cnx)
+
+        return None
+
+
+
 def close_connection(cnx):
 
     return cnx.close()
