@@ -72,9 +72,10 @@ def search():
     elif request.method == "POST":
         user_prefs = common.UserPreferences(1)
         search_term = request.form["search"]
-        print("Searching for tweets containing '{}'".format(search_term))
+        print(f"Searching for tweets containing '{search_term}'")
         tweets = twitter.search_for_term(search_term)
         tweets = common.events_in_local_time(tweets, user_prefs, True)
+        tweets = common.convert_list_to_event_objs(tweets)
 
         # After setting up the calendar, reverse the order if user preferences is set.
         if user_prefs.reverse_order == 1:

@@ -828,12 +828,13 @@ def get_foursquare_venue(venue_id):
 
 
         close_connection(cnx)
+        print(f"Returning {len(result_list)} result(s)")
 
         return result_list
 
-    # An InterfaceError is what happens when you try to fetchall from the cursor and there's nothing to fetch
+    # In case of failure to get anything from fetchall
     except mysql.connector.errors.InterfaceError:
-        print("No entries in DB found.")
+        print("Could not fetch from DB.")
         close_connection(cnx)
 
         return None
