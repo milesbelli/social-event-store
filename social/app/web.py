@@ -73,6 +73,7 @@ def search():
         user_prefs = common.UserPreferences(1)
         search_term = request.form["search"]
         print(f"Searching for tweets containing '{search_term}'")
+        # This is clumsy and won't scale... this twitter function should be moved to common and made scalable
         tweets = twitter.search_for_term(search_term)
         tweets = common.events_in_local_time(tweets, user_prefs, True)
         tweets = common.convert_list_to_event_objs(tweets)

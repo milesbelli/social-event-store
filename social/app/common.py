@@ -458,7 +458,11 @@ class eventObject:
         elif self.type == "fitbit-sleep":
             return f"in {self.timezone}"
         elif self.type == "foursquare":
-            return f"{self.city}, {self.state}, {self.country}" if self.country \
+            footer_list = list()
+            for item in [self.city, self.state, self.country]:
+                if item:
+                    footer_list.append(item)
+            return ", ".join(footer_list) if footer_list != [] \
                 else "Location unknown"
 
     def get_url(self):
