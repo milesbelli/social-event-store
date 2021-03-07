@@ -54,26 +54,16 @@ def events_in_local_time(events, user_prefs, am_pm_time=False):
     output_events = list()
 
     for event in events:
-        event_dtime = datetime.datetime.combine(event[0], datetime.time()) + event[1]
+        event_dtime = datetime.datetime.combine(event["date"], datetime.time()) + event["time"]
         event_dtime = utc_to_local(event_dtime, timezone=user_prefs.timezone)
 
-        # All columns in event will be stored in this list
-        event_out = list()
-        # Append the date to the list
-        event_out.append(event_dtime.date())
+        event["date"] = event_dtime.date()
         # Handle either 24h or 12h time
         event_time = event_dtime.strftime('%I:%M:%S %p') if am_pm_time else event_dtime.time()
-        # Append the time to the list
-        event_out.append(event_time)
 
-        # Append all successive items to the list
-        for i in range(2, len(event)):
-            event_out.append(event[i])
+        event["time"] = event_time
 
-        # Append whole event to the list
-        output_events.append(event_out)
-
-    return output_events
+    return events
 
 
 def get_one_month_of_events(year, month, **kwargs):
@@ -111,17 +101,20 @@ def get_one_month_of_events(year, month, **kwargs):
     events_by_date = dict()
     for event in events:
         # Add a date as key if not already in the dict
-        if not events_by_date.get(event[0].strftime("%Y-%m-%d")):
-            events_by_date[event[0].strftime("%Y-%m-%d")] = []
+        if not events_by_date.get(event["date"].strftime("%Y-%m-%d")):
+            events_by_date[event["date"].strftime("%Y-%m-%d")] = []
 
-        social_event = eventObject(event[0], event[1], event[7], event[2], body=event[3], sleep_time=event[3],
-                                   rest_mins=event[10], start_time=event[11], end_time=event[8], timezone=event[4],
-                                   client=event[4], sleep_id=event[9], latitude=event[5], longitude=event[6],
-                                   reply_id=event[12], venue_name=event[13], venue_id=event[14], venue_event_id=event[15],
-                                   venue_event_name=event[16], address=event[17], city=event[18], state=event[19],
-                                   country=event[20], checkin_id=event[21])
+        social_event = eventObject(event["date"], event["time"], event["eventtype"], event["id"], body=event["body"],
+                                   sleep_time=event["body"], rest_mins=event["rest_mins"],
+                                   start_time=event["start_time"], end_time=event["end_time"], timezone=event["footer"],
+                                   client=event["footer"], sleep_id=event["sleep_id"], latitude=event["latitude"],
+                                   longitude=event["longitude"], reply_id=event["reply_id"],
+                                   venue_name=event["venue_name"], venue_id=event["venue_id"],
+                                   venue_event_id=event["venue_event_id"], venue_event_name=event["venue_event_name"],
+                                   address=event["address"], city=event["city"], state=event["state"],
+                                   country=event["country"], checkin_id=event["checkin_id"])
 
-        events_by_date[event[0].strftime("%Y-%m-%d")].append(social_event)
+        events_by_date[event["date"].strftime("%Y-%m-%d")].append(social_event)
 
     # Additionally store useful metadata like number of events for each day
     for day in list_of_days:

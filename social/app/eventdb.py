@@ -462,8 +462,8 @@ def get_date_range(cursor, start_date, end_date):
 
 def get_datetime_range(start_datetime, end_datetime, list_of_data_types):
 
-    cnx = create_connection("social")
-    cursor = cnx.cursor()
+    # cnx = create_connection("social")
+    # cursor = cnx.cursor()
 
     subquery_list = list()
 
@@ -491,9 +491,10 @@ def get_datetime_range(start_datetime, end_datetime, list_of_data_types):
     # 20: country
     # 21: checkinid
 
-    twitter_sql_query = ("SELECT eventdate, eventtime, detailid, tweettext, client, "
-                         "latitude, longitude, eventtype, NULL, NULL, NULL, NULL, replyid, NULL, NULL, NULL, NULL, NULL,"
-                         "NULL, NULL, NULL, NULL "
+    twitter_sql_query = ("SELECT eventdate date, eventtime time, detailid id, tweettext body, client footer, "
+                         "latitude, longitude, eventtype, NULL end_time, NULL sleep_id, NULL rest_mins, NULL start_time,"
+                         " replyid reply_id, NULL venue_name, NULL venue_id, NULL venue_event_id, NULL venue_event_name,"
+                         " NULL address, NULL city, NULL state, NULL country, NULL checkin_id "
                          "FROM tweetdetails "
                          "LEFT JOIN events "
                          "ON detailid = tweetid "
@@ -501,9 +502,11 @@ def get_datetime_range(start_datetime, end_datetime, list_of_data_types):
                          f"AND CONCAT(eventdate,' ',eventtime) >= '{start_datetime}' "
                          f"AND CONCAT(eventdate,' ',eventtime) <= '{end_datetime}' ")
 
-    fitbit_sql_query = ("SELECT eventdate, eventtime, f.logid, f.duration, f.timezone, NULL, NULL, "
-                        "eventtype, enddatetime, f.sleepid, sum(stageminutes), startdatetime, NULL, NULL, NULL, NULL,"
-                        "NULL, NULL, NULL, NULL, NULL, NULL "
+    fitbit_sql_query = ("SELECT eventdate date, eventtime time, f.logid id, f.duration body, f.timezone footer, "
+                        "NULL latitude, NULL longitude, eventtype, enddatetime end_time, f.sleepid sleep_id, "
+                        "sum(stageminutes) rest_mins, startdatetime start_time, NULL reply_id, NULL venue_name, "
+                        "NULL venue_id, NULL venue_event_id, NULL venue_event_name, NULL address, NULL city, "
+                        "NULL state, NULL country, NULL checkin_id "
                         "FROM fitbit_sleep f "
                         "LEFT JOIN events "
                         "ON detailid = f.sleepid "
@@ -515,9 +518,11 @@ def get_datetime_range(start_datetime, end_datetime, list_of_data_types):
                         f"AND sleepstage NOT LIKE '%wake' AND sleepstage NOT LIKE 'restless' "
                         f"GROUP BY s.sleepid, eventdate, eventtime, f.logid, f.duration, f.timezone, f.sleepid ")
 
-    foursquare_sql_query = ("SELECT e.eventdate, e.eventtime, NULL, o.shout, NULL, v.latitude, v.longitude, e.eventtype,"
-                            "NULL, NULL, NULL, NULL, NULL, o.venuename, o.venueid, o.veventid, o.veventname, v.address,"
-                            "v.city, v.state, v.country, o.checkinid "
+    foursquare_sql_query = ("SELECT e.eventdate date, e.eventtime time, NULL id, o.shout body, NULL footer, "
+                            "v.latitude, v.longitude, e.eventtype eventtype, NULL end_time, NULL sleep_id, "
+                            "NULL rest_mins, NULL start_time, NULL reply_id, o.venuename venue_name, "
+                            "o.venueid venue_id, o.veventid venue_event_id, o.veventname venue_event_name, "
+                            "v.address address, v.city city, v.state state, v.country country, o.checkinid checkin_id "
                             "FROM foursquare_checkins o "
                             "LEFT JOIN events e "
                             "ON e.detailid = o.eventid "
@@ -536,19 +541,21 @@ def get_datetime_range(start_datetime, end_datetime, list_of_data_types):
     if "foursquare" in list_of_data_types:
         subquery_list.append(foursquare_sql_query)
 
-    sql_query = " UNION ".join(subquery_list) + "ORDER BY eventdate ASC, eventtime ASC;"
+    sql_query = " UNION ".join(subquery_list) + "ORDER BY date ASC, time ASC;"
 
     query_start_time = datetime.datetime.now()
-    cursor.execute(sql_query)
+    # cursor.execute(sql_query)
+
+    output = get_results_for_query(sql_query)
 
     print(f'Returned query:\n{sql_query}\n in {datetime.datetime.now() - query_start_time}')
 
-    output = list()
+    # output = list()
 
-    for i in cursor:
-        output.append(i)
-
-    close_connection(cnx)
+    # for i in cursor:
+    #     output.append(i)
+    #
+    # close_connection(cnx)
 
     return output
 
@@ -814,30 +821,30 @@ def get_foursquare_venue(venue_id):
 
     cursor.execute(sql_query)
 
-    try:
-        results = cursor.fetchall()
-
-        result_list = list()
-
-        for row in results:
-            result_dict = dict()
-
-            for i in range(0,len(row)):
-                result_dict[cursor.column_names[i]] = row[i]
-            result_list.append(result_dict)
+    return get_results_for_query(sql_query)
 
 
-        close_connection(cnx)
-        print(f"Returning {len(result_list)} result(s)")
+def get_results_for_query(sql_query):
+    cnx = create_connection("social")
+    cursor = cnx.cursor()
 
-        return result_list
+    cursor.execute(sql_query)
 
-    # In case of failure to get anything from fetchall
-    except mysql.connector.errors.InterfaceError:
-        print("Could not fetch from DB.")
-        close_connection(cnx)
+    results = cursor.fetchall()
 
-        return None
+    result_list = list()
+
+    for row in results:
+        result_dict = dict()
+
+        for i in range(0, len(row)):
+            result_dict[cursor.column_names[i]] = row[i]
+        result_list.append(result_dict)
+
+    close_connection(cnx)
+    print(f"Returning {len(result_list)} result(s)")
+
+    return result_list
 
 
 
