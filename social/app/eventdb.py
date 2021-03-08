@@ -462,9 +462,6 @@ def get_date_range(cursor, start_date, end_date):
 
 def get_datetime_range(start_datetime, end_datetime, list_of_data_types):
 
-    # cnx = create_connection("social")
-    # cursor = cnx.cursor()
-
     subquery_list = list()
 
     # TODO: This is not going to scale, so come up with a better way to handle this
@@ -544,18 +541,10 @@ def get_datetime_range(start_datetime, end_datetime, list_of_data_types):
     sql_query = " UNION ".join(subquery_list) + "ORDER BY date ASC, time ASC;"
 
     query_start_time = datetime.datetime.now()
-    # cursor.execute(sql_query)
 
     output = get_results_for_query(sql_query)
 
     print(f'Returned query:\n{sql_query}\n in {datetime.datetime.now() - query_start_time}')
-
-    # output = list()
-
-    # for i in cursor:
-    #     output.append(i)
-    #
-    # close_connection(cnx)
 
     return output
 
@@ -618,9 +607,6 @@ def get_count_for_range(start_datetime, end_datetime):
 
 def get_search_term(search_term):
 
-    # cnx = create_connection("social")
-    # cursor = cnx.cursor()
-
     search_term = search_term.replace("'", "''")
     search_term = search_term.replace("\\", "\\\\")
     search_term = search_term.replace("%", "\\%")
@@ -655,7 +641,7 @@ def get_search_term(search_term):
     geo_sql = f"AND latitude IS NOT NULL AND longitude IS NOT NULL " if geo_search == "true" else \
         f"AND latitude IS NULL AND longitude IS NULL " if geo_search == "false" else str()
 
-    sql_query = ("SELECT eventdate date, eventtime time, detailid source_id, tweettext body, client footer, latitude, "
+    sql_query = ("SELECT eventdate date, eventtime time, detailid source_id, tweettext body, client, latitude, "
                  "longitude, eventtype object_type, NULL end_time, NULL sleep_id, NULL rest_mins, NULL start_time, "
                  "replyid reply_id "
                  "FROM tweetdetails "
@@ -667,15 +653,6 @@ def get_search_term(search_term):
                  "ORDER BY eventdate ASC, eventtime ASC;")
 
     output = get_results_for_query(sql_query)
-
-    # cursor.execute(sql_query)
-
-    # output = list()
-    #
-    # for i in cursor:
-    #     output.append(i)
-    #
-    # close_connection(cnx)
 
     return output
 
