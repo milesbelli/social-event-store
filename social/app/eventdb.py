@@ -618,8 +618,8 @@ def get_count_for_range(start_datetime, end_datetime):
 
 def get_search_term(search_term):
 
-    cnx = create_connection("social")
-    cursor = cnx.cursor()
+    # cnx = create_connection("social")
+    # cursor = cnx.cursor()
 
     search_term = search_term.replace("'", "''")
     search_term = search_term.replace("\\", "\\\\")
@@ -655,8 +655,9 @@ def get_search_term(search_term):
     geo_sql = f"AND latitude IS NOT NULL AND longitude IS NOT NULL " if geo_search == "true" else \
         f"AND latitude IS NULL AND longitude IS NULL " if geo_search == "false" else str()
 
-    sql_query = ("SELECT eventdate, eventtime, detailid, tweettext, client, latitude, longitude, eventtype, "
-                 "NULL, NULL, NULL, NULL, replyid "
+    sql_query = ("SELECT eventdate date, eventtime time, detailid source_id, tweettext body, client footer, latitude, "
+                 "longitude, eventtype object_type, NULL end_time, NULL sleep_id, NULL rest_mins, NULL start_time, "
+                 "replyid reply_id "
                  "FROM tweetdetails "
                  "LEFT JOIN events "
                  "ON detailid = tweetid "
@@ -665,14 +666,16 @@ def get_search_term(search_term):
                  f"{geo_sql}"
                  "ORDER BY eventdate ASC, eventtime ASC;")
 
-    cursor.execute(sql_query)
+    output = get_results_for_query(sql_query)
 
-    output = list()
+    # cursor.execute(sql_query)
 
-    for i in cursor:
-        output.append(i)
-
-    close_connection(cnx)
+    # output = list()
+    #
+    # for i in cursor:
+    #     output.append(i)
+    #
+    # close_connection(cnx)
 
     return output
 

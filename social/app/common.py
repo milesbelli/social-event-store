@@ -359,6 +359,7 @@ def word_wrap(text_to_format):
 
 # Workaround for the current seach implementation. Acts as a wrapper so that we can change the seach page template to
 # use the new eventObject.
+# No longer used. Should probably delete???
 def convert_list_to_event_objs(list_of_rows):
     output_list = list()
     for event in list_of_rows:
@@ -370,6 +371,20 @@ def convert_list_to_event_objs(list_of_rows):
         output_list.append(social_event)
 
     return output_list
+
+
+# Mama mía, that's a spicy optimization!!! The dict object created from the SQL query is imported directly into
+# the eventObject as a bunch of kwargs. We get away with this because kwargs are just a dict to begin with and all the
+# aliases map directly to those arguments. It's a thousand percent easier than before.
+def convert_dict_to_event_objs(list_of_dicts):
+    output_list = list()
+
+    for event in list_of_dicts:
+        social_event = eventObject(**event)
+        output_list.append(social_event)
+
+    return output_list
+
 
 
 class eventObject:

@@ -76,7 +76,7 @@ def search():
         # This is clumsy and won't scale... this twitter function should be moved to common and made scalable
         tweets = twitter.search_for_term(search_term)
         tweets = common.events_in_local_time(tweets, user_prefs, True)
-        tweets = common.convert_list_to_event_objs(tweets)
+        tweets = common.convert_dict_to_event_objs(tweets)
 
         # After setting up the calendar, reverse the order if user preferences is set.
         if user_prefs.reverse_order == 1:
