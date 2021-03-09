@@ -25,9 +25,9 @@
         <td><a href="/settings" target="_parent">Settings</a></td>
     </tr>
 </table>
-            <form style="float: right{% if disable %}; display: none{% endif %}" action="/search" method="post" target="_parent">
+            <form style="float: right{% if disable %}; display: none{% endif %}" action="/search" method="get" target="_parent">
                 <label for="keyword">Search:</label>
-                <input type="text" id="keyword" name="search" value="{{ default }}">
+                <input type="text" id="keyword" name="term" value="{{ default }}">
                 <input type="submit" value="Submit">
             </form>
 </body>

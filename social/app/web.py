@@ -67,22 +67,24 @@ def one_day_from_url(date):
 def search():
     if request.method == "GET":
 
-        return render_template("search.html")
+        if request.args.get("term"):
+            user_prefs = common.UserPreferences(1)
+            search_term = request.args.get("term")
+            print(f"Searching for tweets containing '{search_term}'")
+            # This is clumsy and won't scale... this twitter function should be moved to common and made scalable
+            tweets = twitter.search_for_term(search_term)
+            tweets = common.events_in_local_time(tweets, user_prefs, True)
+            tweets = common.convert_dict_to_event_objs(tweets)
 
-    elif request.method == "POST":
-        user_prefs = common.UserPreferences(1)
-        search_term = request.form["search"]
-        print(f"Searching for tweets containing '{search_term}'")
-        # This is clumsy and won't scale... this twitter function should be moved to common and made scalable
-        tweets = twitter.search_for_term(search_term)
-        tweets = common.events_in_local_time(tweets, user_prefs, True)
-        tweets = common.convert_dict_to_event_objs(tweets)
+            # After setting up the calendar, reverse the order if user preferences is set.
+            if user_prefs.reverse_order == 1:
+                tweets = twitter.reverse_events(tweets)
 
-        # After setting up the calendar, reverse the order if user preferences is set.
-        if user_prefs.reverse_order == 1:
-            tweets = twitter.reverse_events(tweets)
+            return render_template("search.html", events=tweets, default=search_term, count=len(tweets))
 
-        return render_template("search.html", events=tweets, default=search_term, count=len(tweets))
+        else:
+            return render_template("search.html")
+
 
 
 @app.route("/calendar/<date>")

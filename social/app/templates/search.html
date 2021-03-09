@@ -11,12 +11,14 @@
 <iframe class="main" src="/top"></iframe>
 <h1>Search</h1>
 <p>Search for a term to get tweets.</p>
-<form action="/search" method="post">
+<form action="/search" method="get">
     <label for="keyword">Search:</label><br>
-    <input type="text" id="keyword" name="search" value="{{ default }}">
+    <input type="text" id="keyword" name="term" value="{{ default }}">
     <input type="submit" value="Submit">
 </form>
+{% if count %}
 <p>Search returned {{ count }} result(s)</p>
+{% endif %}
 {% for event in events %}
 <div class="time">
     {{ event.date.strftime("%A, %B %d %Y") }} -
