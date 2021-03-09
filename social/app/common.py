@@ -104,15 +104,7 @@ def get_one_month_of_events(year, month, **kwargs):
         if not events_by_date.get(event["date"].strftime("%Y-%m-%d")):
             events_by_date[event["date"].strftime("%Y-%m-%d")] = []
 
-        social_event = eventObject(event["date"], event["time"], event["eventtype"], event["id"], body=event["body"],
-                                   sleep_time=event["body"], rest_mins=event["rest_mins"],
-                                   start_time=event["start_time"], end_time=event["end_time"], timezone=event["footer"],
-                                   client=event["footer"], sleep_id=event["sleep_id"], latitude=event["latitude"],
-                                   longitude=event["longitude"], reply_id=event["reply_id"],
-                                   venue_name=event["venue_name"], venue_id=event["venue_id"],
-                                   venue_event_id=event["venue_event_id"], venue_event_name=event["venue_event_name"],
-                                   address=event["address"], city=event["city"], state=event["state"],
-                                   country=event["country"], checkin_id=event["checkin_id"])
+        social_event = eventObject(**event)
 
         events_by_date[event["date"].strftime("%Y-%m-%d")].append(social_event)
 

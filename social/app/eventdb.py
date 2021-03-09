@@ -468,8 +468,8 @@ def get_datetime_range(start_datetime, end_datetime, list_of_data_types):
     # 0 : eventdate
     # 1 : eventtime
     # 2 : detailid / logid
-    # 3 : tweettext / duration / shout
-    # 4 : client / timezone
+    # 3 : tweettext / shout
+    # 4 : client
     # 5 : latitude
     # 6 : longitude
     # 7 : eventtype
@@ -487,11 +487,14 @@ def get_datetime_range(start_datetime, end_datetime, list_of_data_types):
     # 19: state
     # 20: country
     # 21: checkinid
+    # 22: sleep_time
+    # 23: timezone
 
-    twitter_sql_query = ("SELECT eventdate date, eventtime time, detailid id, tweettext body, client footer, "
-                         "latitude, longitude, eventtype, NULL end_time, NULL sleep_id, NULL rest_mins, NULL start_time,"
-                         " replyid reply_id, NULL venue_name, NULL venue_id, NULL venue_event_id, NULL venue_event_name,"
-                         " NULL address, NULL city, NULL state, NULL country, NULL checkin_id "
+    twitter_sql_query = ("SELECT eventdate date, eventtime time, detailid source_id, tweettext body, client, "
+                         "latitude, longitude, eventtype object_type, NULL end_time, NULL sleep_id, NULL rest_mins,"
+                         " NULL start_time, replyid reply_id, NULL venue_name, NULL venue_id, NULL venue_event_id,"
+                         " NULL venue_event_name, NULL address, NULL city, NULL state, NULL country, NULL checkin_id,"
+                         " NULL sleep_time, NULL timezone "
                          "FROM tweetdetails "
                          "LEFT JOIN events "
                          "ON detailid = tweetid "
@@ -499,11 +502,11 @@ def get_datetime_range(start_datetime, end_datetime, list_of_data_types):
                          f"AND CONCAT(eventdate,' ',eventtime) >= '{start_datetime}' "
                          f"AND CONCAT(eventdate,' ',eventtime) <= '{end_datetime}' ")
 
-    fitbit_sql_query = ("SELECT eventdate date, eventtime time, f.logid id, f.duration body, f.timezone footer, "
-                        "NULL latitude, NULL longitude, eventtype, enddatetime end_time, f.sleepid sleep_id, "
+    fitbit_sql_query = ("SELECT eventdate date, eventtime time, f.logid source_id, NULL body, NULL client, "
+                        "NULL latitude, NULL longitude, eventtype object_type, enddatetime end_time, f.sleepid sleep_id, "
                         "sum(stageminutes) rest_mins, startdatetime start_time, NULL reply_id, NULL venue_name, "
                         "NULL venue_id, NULL venue_event_id, NULL venue_event_name, NULL address, NULL city, "
-                        "NULL state, NULL country, NULL checkin_id "
+                        "NULL state, NULL country, NULL checkin_id, f.duration sleep_time, f.timezone timezone "
                         "FROM fitbit_sleep f "
                         "LEFT JOIN events "
                         "ON detailid = f.sleepid "
@@ -515,11 +518,12 @@ def get_datetime_range(start_datetime, end_datetime, list_of_data_types):
                         f"AND sleepstage NOT LIKE '%wake' AND sleepstage NOT LIKE 'restless' "
                         f"GROUP BY s.sleepid, eventdate, eventtime, f.logid, f.duration, f.timezone, f.sleepid ")
 
-    foursquare_sql_query = ("SELECT e.eventdate date, e.eventtime time, NULL id, o.shout body, NULL footer, "
-                            "v.latitude, v.longitude, e.eventtype eventtype, NULL end_time, NULL sleep_id, "
+    foursquare_sql_query = ("SELECT e.eventdate date, e.eventtime time, NULL source_id, o.shout body, NULL client, "
+                            "v.latitude, v.longitude, e.eventtype object_type, NULL end_time, NULL sleep_id, "
                             "NULL rest_mins, NULL start_time, NULL reply_id, o.venuename venue_name, "
                             "o.venueid venue_id, o.veventid venue_event_id, o.veventname venue_event_name, "
-                            "v.address address, v.city city, v.state state, v.country country, o.checkinid checkin_id "
+                            "v.address address, v.city city, v.state state, v.country country, o.checkinid checkin_id, "
+                            "NULL sleep_time, NULL timezone "
                             "FROM foursquare_checkins o "
                             "LEFT JOIN events e "
                             "ON e.detailid = o.eventid "
@@ -544,7 +548,7 @@ def get_datetime_range(start_datetime, end_datetime, list_of_data_types):
 
     output = get_results_for_query(sql_query)
 
-    print(f'Returned query:\n{sql_query}\n in {datetime.datetime.now() - query_start_time}')
+    print(f'Returned query in {datetime.datetime.now() - query_start_time}')
 
     return output
 
@@ -805,6 +809,9 @@ def get_foursquare_venue(venue_id):
 
 
 def get_results_for_query(sql_query):
+
+    print(f"Fetching results for query:\n{sql_query}")
+
     cnx = create_connection("social")
     cursor = cnx.cursor()
 
