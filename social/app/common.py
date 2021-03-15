@@ -104,8 +104,10 @@ def get_one_month_of_events(year, month, **kwargs):
         if not events_by_date.get(event["date"].strftime("%Y-%m-%d")):
             events_by_date[event["date"].strftime("%Y-%m-%d")] = []
 
+        # Pass in the entire event as kwargs, eventObject will know how to build it
         social_event = eventObject(**event)
 
+        # take the built eventObject and append to the day
         events_by_date[event["date"].strftime("%Y-%m-%d")].append(social_event)
 
     # Additionally store useful metadata like number of events for each day
@@ -258,50 +260,47 @@ def output_events_to_ical(list_of_events):
 
     for event in list_of_events:
 
+        social_event = eventObject(**event)
+
         # Ever wonder how to get a datetime object out of a date and a timedelta? Wonder no more!
-        start_time = datetime.datetime.combine(event[0], datetime.time()) + event[1]
+        start_time = datetime.datetime.combine(social_event.date, datetime.time()) + social_event.time
 
         # Event date and time are fairly universal by design, and that's about it
-        event_date = str(event[0]).replace('-', '')
+        event_date = str(social_event.date).replace('-', '')
         event_time = str(start_time.time()).replace(':', '')
 
         # Constructing ical event for Twitter
-        if event[7] == "twitter":
-            geocoordinates = f"GEO:{event[5]};{event[6]}\n" if event[5] else str()
+        if social_event.type == "twitter":
+            geocoordinates = f"GEO:{social_event.get_geo()['latitude']};{social_event.get_geo()['longitude']}\n"\
+                if social_event.get_geo() else str()
 
-            event_title = event[3].replace('\n', ' ').replace('\r', ' ')
-            event_body = event[3].replace('\n', '\\n').replace('\r', '\\n')
+            event_title = social_event.body.replace('\n', ' ').replace('\r', ' ')
+            event_body = social_event.body.replace('\n', '\\n').replace('\r', '\\n')
 
             ical_string += word_wrap(f"BEGIN:VEVENT\n"
-                                     f"UID:{event[2]}{time_now}@social-event-store\n"
+                                     f"UID:{social_event.id}{time_now}@social-event-store\n"
                                      f"DTSTAMP:{date_now}T{time_now}Z\n"
                                      f"DTSTART:{event_date}T{event_time}Z\n"
                                      f"DTEND:{event_date}T{event_time}Z\n"
                                      f"{geocoordinates}"
                                      f"SUMMARY:{event_title}\n"
                                      f"DESCRIPTION:{event_body}"
-                                     f"\\n\\nhttps://twitter.com/i/status/{event[2]} | via {event[4]}\n"
+                                     f"\\n\\n{social_event.get_url()} | {social_event.get_footer()}\n"
                                      f"END:VEVENT\n")
 
         # Constructing ical event for Fitbit sleep events
-        elif event[7] == "fitbit-sleep":
+        elif social_event.type == "fitbit-sleep":
 
-            sleep_time = datetime.datetime(1, 1, 1) + datetime.timedelta(0, int(event[3])/1000)
-            end_datetime = start_time + datetime.timedelta(0, int(event[3])/1000)
-            readable_time = sleep_time.strftime("%H hours, %M minutes")
-            rest_time = datetime.datetime(1, 1, 1) + datetime.timedelta(0, int(event[10]) * 60)
-            readable_rest = rest_time.strftime("%H hours, %M minutes")
+            end_datetime = start_time + datetime.timedelta(0, int(social_event.timedelta)/1000)
+            readable_rest = social_event.rest_time.strftime("%H hours, %M minutes")
             date_end = str(end_datetime.date()).replace('-', '')
             time_end = str(end_datetime.time()).replace(':', '')
 
             title_text = f"Restful time: {readable_rest}"
-            body_text = (f"Total time in bed: {readable_time}\\n"
-                         f"Restful time: {readable_rest}\\n"
-                         f"Local start time: {event[11].strftime('%B %d, at %I:%M %p')}\\n"
-                         f"Local end time: {event[8].strftime('%B %d, at %I:%M %p')}")
+            body_text = social_event.body.replace("\n","\\n")
 
             ical_string += word_wrap(f"BEGIN:VEVENT\n"
-                                     f"UID:{event[2]}{time_now}@social-event-store\n"
+                                     f"UID:{social_event.id}{time_now}@social-event-store\n"
                                      f"DTSTAMP:{date_now}T{time_now}Z\n"
                                      f"DTSTART:{event_date}T{event_time}Z\n"
                                      f"DTEND:{date_end}T{time_end}Z\n"
@@ -399,6 +398,7 @@ class eventObject:
             rest_time = kwargs.get("rest_mins")
             self.start_time = kwargs.get("start_time")
             self.end_time = kwargs.get("end_time")
+            self.timedelta = sleep_time
 
             self.timezone = kwargs.get("timezone")
             self.sleep_id = kwargs.get("sleep_id")
