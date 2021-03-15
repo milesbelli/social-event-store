@@ -274,8 +274,8 @@ def output_events_to_ical(list_of_events):
             geocoordinates = f"GEO:{social_event.get_geo()['latitude']};{social_event.get_geo()['longitude']}\n"\
                 if social_event.get_geo() else str()
 
-            event_title = social_event.body.replace('\n', ' ').replace('\r', ' ')
-            event_body = social_event.body.replace('\n', '\\n').replace('\r', '\\n')
+            event_title = social_event.ical_title()
+            event_body = social_event.ical_body()
 
             ical_string += word_wrap(f"BEGIN:VEVENT\n"
                                      f"UID:{social_event.id}{time_now}@social-event-store\n"
@@ -284,8 +284,7 @@ def output_events_to_ical(list_of_events):
                                      f"DTEND:{event_date}T{event_time}Z\n"
                                      f"{geocoordinates}"
                                      f"SUMMARY:{event_title}\n"
-                                     f"DESCRIPTION:{event_body}"
-                                     f"\\n\\n{social_event.get_url()} | {social_event.get_footer()}\n"
+                                     f"DESCRIPTION:{event_body}\n"
                                      f"END:VEVENT\n")
 
         # Constructing ical event for Fitbit sleep events
@@ -296,8 +295,8 @@ def output_events_to_ical(list_of_events):
             date_end = str(end_datetime.date()).replace('-', '')
             time_end = str(end_datetime.time()).replace(':', '')
 
-            title_text = f"Restful time: {readable_rest}"
-            body_text = social_event.body.replace("\n","\\n")
+            title_text = social_event.ical_title()
+            body_text = social_event.ical_body()
 
             ical_string += word_wrap(f"BEGIN:VEVENT\n"
                                      f"UID:{social_event.id}{time_now}@social-event-store\n"
@@ -500,3 +499,16 @@ class eventObject:
             return f"for {self.venue_event_name}"
         else:
             return None
+
+    def ical_title(self):
+        if self.type == "twitter":
+            return self.body.replace('\n', ' ').replace('\r', ' ')
+        elif self.type == "fitbit-sleep":
+            readable_rest = self.rest_time.strftime("%H hours, %M minutes")
+            return f"Restful time: {readable_rest}"
+
+    def ical_body(self):
+        output = self.body.replace('\n', '\\n').replace('\r', '\\n')
+        if self.type == "twitter":
+            output = f"{output}\\n\\n{self.get_url()} | {self.get_footer()}"
+        return output
