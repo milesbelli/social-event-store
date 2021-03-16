@@ -265,47 +265,30 @@ def output_events_to_ical(list_of_events):
         # Ever wonder how to get a datetime object out of a date and a timedelta? Wonder no more!
         start_time = datetime.datetime.combine(social_event.date, datetime.time()) + social_event.time
 
-        # Event date and time are fairly universal by design, and that's about it
+
         event_date = str(social_event.date).replace('-', '')
         event_time = str(start_time.time()).replace(':', '')
+        geocoordinates = f"GEO:{social_event.get_geo()['latitude']};{social_event.get_geo()['longitude']}\n"\
+            if social_event.get_geo() else str()
 
-        # Constructing ical event for Twitter
-        if social_event.type == "twitter":
-            geocoordinates = f"GEO:{social_event.get_geo()['latitude']};{social_event.get_geo()['longitude']}\n"\
-                if social_event.get_geo() else str()
+        location = f"LOCATION:{social_event.ical_location()}\n" if social_event.ical_location() else str()
 
-            event_title = social_event.ical_title()
-            event_body = social_event.ical_body()
+        event_title = social_event.ical_title()
+        event_body = social_event.ical_body()
 
-            ical_string += word_wrap(f"BEGIN:VEVENT\n"
-                                     f"UID:{social_event.id}{time_now}@social-event-store\n"
-                                     f"DTSTAMP:{date_now}T{time_now}Z\n"
-                                     f"DTSTART:{event_date}T{event_time}Z\n"
-                                     f"DTEND:{event_date}T{event_time}Z\n"
-                                     f"{geocoordinates}"
-                                     f"SUMMARY:{event_title}\n"
-                                     f"DESCRIPTION:{event_body}\n"
-                                     f"END:VEVENT\n")
+        end_datetime = start_time + datetime.timedelta(0, int(social_event.get_timedelta()) / 1000)
+        date_end = str(end_datetime.date()).replace('-', '')
+        time_end = str(end_datetime.time()).replace(':', '')
 
-        # Constructing ical event for Fitbit sleep events
-        elif social_event.type == "fitbit-sleep":
-
-            end_datetime = start_time + datetime.timedelta(0, int(social_event.timedelta)/1000)
-            readable_rest = social_event.rest_time.strftime("%H hours, %M minutes")
-            date_end = str(end_datetime.date()).replace('-', '')
-            time_end = str(end_datetime.time()).replace(':', '')
-
-            title_text = social_event.ical_title()
-            body_text = social_event.ical_body()
-
-            ical_string += word_wrap(f"BEGIN:VEVENT\n"
-                                     f"UID:{social_event.id}{time_now}@social-event-store\n"
-                                     f"DTSTAMP:{date_now}T{time_now}Z\n"
-                                     f"DTSTART:{event_date}T{event_time}Z\n"
-                                     f"DTEND:{date_end}T{time_end}Z\n"
-                                     f"SUMMARY:{title_text}\n"
-                                     f"DESCRIPTION:{body_text}\n"
-                                     f"END:VEVENT\n")
+        ical_string += word_wrap(f"BEGIN:VEVENT\n"
+                                 f"UID:{social_event.id}{time_now}@social-event-store\n"
+                                 f"DTSTAMP:{date_now}T{time_now}Z\n"
+                                 f"DTSTART:{event_date}T{event_time}Z\n"
+                                 f"DTEND:{date_end}T{time_end}Z\n"
+                                 f"{geocoordinates}"
+                                 f"SUMMARY:{event_title}\n"
+                                 f"DESCRIPTION:{event_body}\n"
+                                 f"END:VEVENT\n")
 
     ical_string += "END:VCALENDAR"
 
@@ -500,15 +483,29 @@ class eventObject:
         else:
             return None
 
+    def get_timedelta(self):
+        if self.type == "fitbit-sleep":
+            return self.timedelta
+        else:
+            return 0
+
     def ical_title(self):
         if self.type == "twitter":
             return self.body.replace('\n', ' ').replace('\r', ' ')
         elif self.type == "fitbit-sleep":
             readable_rest = self.rest_time.strftime("%H hours, %M minutes")
             return f"Restful time: {readable_rest}"
+        elif self.type == "foursquare":
+            return f"{self.get_title()} {self.get_subtitle() or str()}"
 
     def ical_body(self):
         output = self.body.replace('\n', '\\n').replace('\r', '\\n')
         if self.type == "twitter":
             output = f"{output}\\n\\n{self.get_url()} | {self.get_footer()}"
         return output
+
+    def ical_location(self):
+        if self.type == "foursquare":
+            return self.venue_name
+        else:
+            return None
