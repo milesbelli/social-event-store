@@ -286,6 +286,7 @@ def output_events_to_ical(list_of_events):
                                  f"DTSTART:{event_date}T{event_time}Z\n"
                                  f"DTEND:{date_end}T{time_end}Z\n"
                                  f"{geocoordinates}"
+                                 f"{location}"
                                  f"SUMMARY:{event_title}\n"
                                  f"DESCRIPTION:{event_body}\n"
                                  f"END:VEVENT\n")
@@ -506,6 +507,10 @@ class eventObject:
 
     def ical_location(self):
         if self.type == "foursquare":
-            return self.venue_name
+            address_list = list()
+            for item in [self.address, self.city, self.state, self.country]:
+                if item:
+                    address_list.append(item)
+            return f"{', '.join(address_list)}" if address_list else self.venue_name
         else:
             return None
