@@ -645,9 +645,11 @@ def get_search_term(search_term):
     geo_sql = f"AND latitude IS NOT NULL AND longitude IS NOT NULL " if geo_search == "true" else \
         f"AND latitude IS NULL AND longitude IS NULL " if geo_search == "false" else str()
 
-    sql_query = ("SELECT eventdate date, eventtime time, detailid source_id, tweettext body, client, latitude, "
-                 "longitude, eventtype object_type, NULL end_time, NULL sleep_id, NULL rest_mins, NULL start_time, "
-                 "replyid reply_id "
+    twitter_query = ("SELECT eventdate date, eventtime time, detailid source_id, tweettext body, client, "
+                         "latitude, longitude, eventtype object_type, NULL end_time, NULL sleep_id, NULL rest_mins,"
+                         " NULL start_time, replyid reply_id, NULL venue_name, NULL venue_id, NULL venue_event_id,"
+                         " NULL venue_event_name, NULL address, NULL city, NULL state, NULL country, NULL checkin_id,"
+                         " NULL sleep_time, NULL timezone "
                  "FROM tweetdetails "
                  "LEFT JOIN events "
                  "ON detailid = tweetid "
@@ -655,6 +657,15 @@ def get_search_term(search_term):
                  f"{client_sql}"
                  f"{geo_sql}"
                  "ORDER BY eventdate ASC, eventtime ASC;")
+
+    foursquare_query = ("SELECT e.eventdate date, e.eventtime time, NULL source_id, o.shout body, NULL client, "
+                            "v.latitude, v.longitude, e.eventtype object_type, NULL end_time, NULL sleep_id, "
+                            "NULL rest_mins, NULL start_time, NULL reply_id, o.venuename venue_name, "
+                            "o.venueid venue_id, o.veventid venue_event_id, o.veventname venue_event_name, "
+                            "v.address address, v.city city, v.state state, v.country country, o.checkinid checkin_id, "
+                            "NULL sleep_time, NULL timezone ")
+
+    sql_query = twitter_query
 
     output = get_results_for_query(sql_query)
 
