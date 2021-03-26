@@ -609,7 +609,26 @@ def get_count_for_range(start_datetime, end_datetime):
     return output
 
 
+def generate_search_where_clause(search_term, searchable_columns):
+    split_keywords = search_term.split(" ")
+
+    twitter_where_clause = "WHERE "
+    where_list = []
+    coalesced_columns_list = []
+    for column in searchable_columns:
+        coalesced_columns_list.append(f"coalesce({column}, '')")
+
+    coalesced_columns = "concat(" + ", ' ',".join(coalesced_columns_list) + ")"
+    for string in split_keywords:
+        where_list.append(f"({coalesced_columns} like '%{string}%')")
+    twitter_where_clause += " AND ".join(where_list)
+
+    return twitter_where_clause
+
+
 def get_search_term(search_term):
+
+    event_types = ["twitter", "foursquare"]
 
     search_term = search_term.replace("'", "''")
     search_term = search_term.replace("\\", "\\\\")
@@ -645,6 +664,8 @@ def get_search_term(search_term):
     geo_sql = f"AND latitude IS NOT NULL AND longitude IS NOT NULL " if geo_search == "true" else \
         f"AND latitude IS NULL AND longitude IS NULL " if geo_search == "false" else str()
 
+    twitter_where_clause = generate_search_where_clause(search_term,  ["tweettext"])
+
     twitter_query = ("SELECT eventdate date, eventtime time, detailid source_id, tweettext body, client, "
                          "latitude, longitude, eventtype object_type, NULL end_time, NULL sleep_id, NULL rest_mins,"
                          " NULL start_time, replyid reply_id, NULL venue_name, NULL venue_id, NULL venue_event_id,"
@@ -653,19 +674,34 @@ def get_search_term(search_term):
                  "FROM tweetdetails "
                  "LEFT JOIN events "
                  "ON detailid = tweetid "
-                 f"WHERE tweettext LIKE '%{search_term}%' "
+                 f"{twitter_where_clause} AND eventtype = 'twitter'"
                  f"{client_sql}"
-                 f"{geo_sql}"
-                 "ORDER BY eventdate ASC, eventtime ASC;")
+                 f"{geo_sql}")
+
+    fsq_where_clause = generate_search_where_clause(search_term,  ["o.shout", "o.venuename", "v.city", "v.state", "v.country"])
 
     foursquare_query = ("SELECT e.eventdate date, e.eventtime time, NULL source_id, o.shout body, NULL client, "
                             "v.latitude, v.longitude, e.eventtype object_type, NULL end_time, NULL sleep_id, "
                             "NULL rest_mins, NULL start_time, NULL reply_id, o.venuename venue_name, "
                             "o.venueid venue_id, o.veventid venue_event_id, o.veventname venue_event_name, "
                             "v.address address, v.city city, v.state state, v.country country, o.checkinid checkin_id, "
-                            "NULL sleep_time, NULL timezone ")
+                            "NULL sleep_time, NULL timezone "
+                        "FROM foursquare_checkins o "
+                        "LEFT JOIN events e "
+                        "ON e.detailid = o.eventid "
+                        "LEFT JOIN foursquare_venues v "
+                        "ON o.venueid = v.venueid "
+                        f"{fsq_where_clause} AND e.eventtype = 'foursquare'")
 
-    sql_query = twitter_query
+    subqueries_list = []
+
+    if "twitter" in event_types:
+        subqueries_list.append(twitter_query)
+
+    if "foursquare" in event_types:
+        subqueries_list.append(foursquare_query)
+
+    sql_query = " UNION ".join(subqueries_list) + "ORDER BY date ASC, time ASC;"
 
     output = get_results_for_query(sql_query)
 
