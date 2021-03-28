@@ -157,13 +157,6 @@ def process_from_file(file_path):
     process_dir = common.unpack_and_store_files(file_path, "output")
     process_directory(process_dir)
 
-    
-def get_one_tweet(tweetid):
-
-    output = eventdb.get_tweet(tweetid)
-
-    return output
-
 
 def get_count_for_date_range(start_date, end_date):
 
@@ -206,7 +199,7 @@ def calendar_grid(date_in_month, **kwargs):
                 else str()
             # either get from DB or use existing count from tweets
             curr_day["count"] = (tweets[cal_month.day - 1]["count"] if tweets else
-                                 get_count_for_date_range(str(cal_month), str(cal_month))[0][0]) if \
+                                 get_count_for_date_range(str(cal_month), str(cal_month))[0]["count"]) if \
                 curr_day["day"] else -1
             curr_day["full_date"] = cal_month.strftime('%Y-%m-%d') if curr_day["day"] else str()
             week_list.append(curr_day)

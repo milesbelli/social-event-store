@@ -62,16 +62,17 @@ class FitbitSleepImporter(FitbitImporter):
 
 class FitbitSleepEvent:
     def __init__(self, sleep_id):
-        data = eventdb.get_fitbit_sleep_event(sleep_id)
+        # Query will retrieve one entry, so just grab first result and store it in this object
+        data = eventdb.get_fitbit_sleep_event(sleep_id)[0]
         if data:
-            self.datetime = datetime.datetime.combine(data[0], datetime.time(0, 0, 0)) + data[1]
-            self.sleep_id = data[2]
-            self.log_id = data[3]
-            self.start_time = data[4]
-            self.end_time = data[5]
-            self.timezone = data[6]
-            self.duration = data[7]
-            self.main_sleep = data[8]
+            self.datetime = datetime.datetime.combine(data["eventdate"], datetime.time(0, 0, 0)) + data["eventtime"]
+            self.sleep_id = data["sleepid"]
+            self.log_id = data["logid"]
+            self.start_time = data["startdatetime"]
+            self.end_time = data["enddatetime"]
+            self.timezone = data["timezone"]
+            self.duration = data["duration"]
+            self.main_sleep = data["mainsleep"]
         else:
             raise ValueError('Event id not found in database')
 

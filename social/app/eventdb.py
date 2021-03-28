@@ -291,19 +291,12 @@ def insert_fitbit_sleep(sleep, user_prefs):
 
 def get_fitbit_sleep_event(sleep_id):
 
-    cnx = create_connection("social")
-    cursor = cnx.cursor()
-
     sql_fitbit_sleep = ("SELECT eventdate, eventtime, sleepid, logid, startdatetime, enddatetime, timezone,"
                         " duration, mainsleep FROM events e LEFT JOIN fitbit_sleep f"
                         " ON e.detailid = f.sleepid"
                         f" WHERE f.sleepid = {sleep_id} AND e.eventtype = 'fitbit-sleep'")
 
-    cursor.execute(sql_fitbit_sleep)
-
-    output = cursor.fetchone()
-
-    close_connection(cnx)
+    output = get_results_for_query(sql_fitbit_sleep)
 
     return output
 
@@ -325,6 +318,7 @@ def update_fitbit_sleep_timezone(sleep_id, event_date, event_time, timezone):
 
     cnx.commit()
     close_connection(cnx)
+
 
 def insert_foursquare_checkins(checkins, user_prefs):
 
@@ -421,43 +415,6 @@ def get_existing_tweets(cursor):
         output.append(str(i[0]))
     
     return output
-
-
-def get_tweet(tweet_id):
-
-    cnx = create_connection('social')
-    cursor = cnx.cursor()
-
-    sql_tweet = ("SELECT eventdate, eventtime, tweetdetails.* "
-                 "FROM tweetdetails "
-                 "LEFT JOIN events "
-                 "ON detailid = tweetid "
-                 "WHERE tweetid = '{}' AND events.eventtype='twitter';".format(tweet_id))
-    
-    cursor.execute(sql_tweet)
-
-    output = list()
-
-    for i in cursor:
-        output.append(i)
-
-    close_connection(cnx)
-
-    return output
-
-
-def get_date_range(cursor, start_date, end_date):
-
-    sql_query = ("SELECT eventdate, eventtime, detailid, tweettext, client, latitude, longitude "
-                 "FROM tweetdetails "
-                 "LEFT JOIN events "
-                 "ON detailid = tweetid "
-                 "WHERE eventdate >= '{}' AND eventdate <='{}'"
-                 " AND events.eventtype='twitter';".format(start_date, end_date))
-
-    cursor.execute(sql_query)
-
-    return cursor
 
 
 def get_datetime_range(start_datetime, end_datetime, list_of_data_types):
@@ -587,43 +544,42 @@ def group_insert_into_db(list_of_rows, group_size):
 
 def get_count_for_range(start_datetime, end_datetime):
 
-    cnx = create_connection("social")
-    cursor = cnx.cursor()
-
-    sql_query = ("SELECT COUNT(*) "
+    sql_query = ("SELECT COUNT(*) count "
                  "FROM tweetdetails "
                  "LEFT JOIN events "
                  "ON detailid = tweetid "
                  "WHERE CONCAT(eventdate,' ',eventtime) >= '{}' "
                  "AND CONCAT(eventdate,' ',eventtime) <= '{}';".format(start_datetime, end_datetime))
 
-    cursor.execute(sql_query)
-
-    output = list()
-
-    for i in cursor:
-        output.append(i)
-
-    close_connection(cnx)
+    output = get_results_for_query(sql_query)
 
     return output
 
 
-def generate_search_where_clause(search_term, searchable_columns):
-    split_keywords = search_term.split(" ")
+def generate_search_where_clause(search_list, searchable_columns):
+    # Used by get_search_term. This generates the rather complicated where clause to
+    # search for ALL search terms across ALL searchable columns. searchable_columns is
+    # passed in as a list of all columns to coalesce into one searchable string
 
-    twitter_where_clause = "WHERE "
+    where_clause = "WHERE "
     where_list = []
     coalesced_columns_list = []
+
+    # The coalesce is a SQL way of converting NULL fields into blanks if they don't exist
     for column in searchable_columns:
         coalesced_columns_list.append(f"coalesce({column}, '')")
 
+    # Coalesced columns can all be concatenated, even if one column is NULL. If these
+    # weren't coalesced then one NULL would be make the whole thing NULL
     coalesced_columns = "concat(" + ", ' ',".join(coalesced_columns_list) + ")"
-    for string in split_keywords:
-        where_list.append(f"({coalesced_columns} like '%{string}%')")
-    twitter_where_clause += " AND ".join(where_list)
 
-    return twitter_where_clause
+    # Each keyword needs to be evaluated separately and joined by ANDs because all keywords
+    # must be contained somewhere in the searchable event data.
+    for string in search_list:
+        where_list.append(f"({coalesced_columns} like '%{string}%')")
+    where_clause += " AND ".join(where_list)
+
+    return where_clause
 
 
 def get_search_term(search_term):
@@ -664,28 +620,35 @@ def get_search_term(search_term):
     geo_sql = f"AND latitude IS NOT NULL AND longitude IS NOT NULL " if geo_search == "true" else \
         f"AND latitude IS NULL AND longitude IS NULL " if geo_search == "false" else str()
 
-    twitter_where_clause = generate_search_where_clause(search_term,  ["tweettext"])
+    search_list = search_term.split(" ")
+
+    # The only searchable field in Twitter events is the text
+    twitter_searchable = ["tweettext"]
+    twitter_where_clause = generate_search_where_clause(search_list,  twitter_searchable)
 
     twitter_query = ("SELECT eventdate date, eventtime time, detailid source_id, tweettext body, client, "
-                         "latitude, longitude, eventtype object_type, NULL end_time, NULL sleep_id, NULL rest_mins,"
-                         " NULL start_time, replyid reply_id, NULL venue_name, NULL venue_id, NULL venue_event_id,"
-                         " NULL venue_event_name, NULL address, NULL city, NULL state, NULL country, NULL checkin_id,"
-                         " NULL sleep_time, NULL timezone "
-                 "FROM tweetdetails "
-                 "LEFT JOIN events "
-                 "ON detailid = tweetid "
-                 f"{twitter_where_clause} AND eventtype = 'twitter'"
-                 f"{client_sql}"
-                 f"{geo_sql}")
+                     "latitude, longitude, eventtype object_type, NULL end_time, NULL sleep_id, NULL rest_mins,"
+                     " NULL start_time, replyid reply_id, NULL venue_name, NULL venue_id, NULL venue_event_id,"
+                     " NULL venue_event_name, NULL address, NULL city, NULL state, NULL country, NULL checkin_id,"
+                     " NULL sleep_time, NULL timezone "
+                     "FROM tweetdetails "
+                     "LEFT JOIN events "
+                     "ON detailid = tweetid "
+                     f"{twitter_where_clause} AND eventtype = 'twitter'"
+                     f"{client_sql}"
+                     f"{geo_sql}")
 
-    fsq_where_clause = generate_search_where_clause(search_term,  ["o.shout", "o.venuename", "v.city", "v.state", "v.country"])
+    # Quite a lot searchable for foursquare, including the "shout," the location, the venue, event name. A lot
+    # of these would be NULL
+    fsq_searchable = ["o.shout", "o.venuename", "o.veventname", "v.city", "v.state", "v.country"]
+    fsq_where_clause = generate_search_where_clause(search_list,  fsq_searchable)
 
     foursquare_query = ("SELECT e.eventdate date, e.eventtime time, NULL source_id, o.shout body, NULL client, "
-                            "v.latitude, v.longitude, e.eventtype object_type, NULL end_time, NULL sleep_id, "
-                            "NULL rest_mins, NULL start_time, NULL reply_id, o.venuename venue_name, "
-                            "o.venueid venue_id, o.veventid venue_event_id, o.veventname venue_event_name, "
-                            "v.address address, v.city city, v.state state, v.country country, o.checkinid checkin_id, "
-                            "NULL sleep_time, NULL timezone "
+                        "v.latitude, v.longitude, e.eventtype object_type, NULL end_time, NULL sleep_id, "
+                        "NULL rest_mins, NULL start_time, NULL reply_id, o.venuename venue_name, "
+                        "o.venueid venue_id, o.veventid venue_event_id, o.veventname venue_event_name, "
+                        "v.address address, v.city city, v.state state, v.country country, o.checkinid checkin_id, "
+                        "NULL sleep_time, NULL timezone "
                         "FROM foursquare_checkins o "
                         "LEFT JOIN events e "
                         "ON e.detailid = o.eventid "
@@ -698,7 +661,7 @@ def get_search_term(search_term):
     if "twitter" in event_types:
         subqueries_list.append(twitter_query)
 
-    if "foursquare" in event_types:
+    if "foursquare" in event_types and search_list != ['']:
         subqueries_list.append(foursquare_query)
 
     sql_query = " UNION ".join(subqueries_list) + "ORDER BY date ASC, time ASC;"
@@ -728,20 +691,14 @@ def get_years_with_data():
 
 def get_user_preferences(user_id):
 
-    cnx = create_connection("social")
-    cursor = cnx.cursor()
-
     sql_query = f"SELECT preference_key, preference_value FROM user_preference WHERE userid = {user_id};"
-    cursor.execute(sql_query)
 
-    print(sql_query)
+    results = get_results_for_query(sql_query)
 
     preferences = dict()
 
-    for i in cursor:
-        preferences[i[0]] = i[1]
-
-    close_connection(cnx)
+    for result in results:
+        preferences[result["preference_key"]] = result["preference_value"]
 
     return preferences
 
@@ -790,22 +747,15 @@ def insert_in_reply_to(tweet_id, create_date, user_name, in_reply_to_status, in_
 
 def get_in_reply_to(tweet_id):
 
-    cnx = create_connection("social")
-    cursor = cnx.cursor()
-
     sql_query = (f"SELECT tweetid, createdate, username, statustext FROM tweet_in_reply where tweetid = {tweet_id};")
 
-    cursor.execute(sql_query)
+    reply = get_results_for_query(sql_query)
 
-    reply = cursor.fetchone()
-
-    close_connection(cnx)
-
-    if reply:
-        output = {"id_str": str(reply[0]),
-                  "created_date": reply[1],
-                  "user": {"screen_name": reply[2]},
-                  "text": reply[3]}
+    for result in reply:
+        output = {"id_str": str(result["tweetid"]),
+                  "created_date": result["createdate"],
+                  "user": {"screen_name": result["username"]},
+                  "text": result["statustext"]}
         return output
     else:
         return None
@@ -845,12 +795,7 @@ def insert_foursquare_venue(venue_id, **kwargs):
 
 def get_foursquare_venue(venue_id):
 
-    cnx = create_connection("social")
-    cursor = cnx.cursor()
-
     sql_query = f"SELECT * FROM foursquare_venues WHERE venueid = '{venue_id}'"
-
-    cursor.execute(sql_query)
 
     return get_results_for_query(sql_query)
 
@@ -879,7 +824,6 @@ def get_results_for_query(sql_query):
     print(f"Returning {len(result_list)} result(s)")
 
     return result_list
-
 
 
 def close_connection(cnx):

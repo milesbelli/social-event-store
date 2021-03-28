@@ -30,39 +30,6 @@ def top():
     return render_template("top.html", disable=disable)
 
 
-@app.route("/tweet/<tweetid>")
-def one_tweet(tweetid=None):
-    tweet = twitter.get_one_tweet(tweetid)
-
-    return render_template("tweet.html", events=tweet)
-
-
-@app.route("/day", methods=["GET", "POST"])
-def one_day():
-    if request.method == "GET":
-
-        return render_template("day.html")
-
-    elif request.method == "POST":
-        user_prefs = common.UserPreferences(1)
-        date = request.form['tweetday'] or datetime.datetime.today().strftime("%Y-%m-%d")
-        print("Getting tweets for {}.".format(date))
-        tweets = common.get_events_for_date_range(date, date)
-        tweets = common.events_in_local_time(tweets, user_prefs, True)
-
-        return render_template("day.html", events=tweets, default=date)
-
-
-@app.route("/day/<date>", methods=["GET"])
-def one_day_from_url(date):
-    user_pref = common.UserPreferences(1)
-    print("Getting tweets for {}.".format(date))
-    tweets = common.get_events_for_date_range(date, date)
-    tweets = common.events_in_local_time(tweets, user_pref, True)
-
-    return render_template("day.html", events=tweets, default=date)
-
-
 @app.route("/search", methods=["GET", "POST"])
 def search():
     if request.method == "GET":
@@ -84,7 +51,6 @@ def search():
 
         else:
             return render_template("search.html")
-
 
 
 @app.route("/calendar/<date>")
