@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, send_file, jsonify
+from flask import Flask, render_template, request, redirect, send_file, jsonify, url_for
 import datetime
 import pytz
 import fitbit, common, twitter, foursquare
@@ -100,8 +100,12 @@ def viewer(year, month):
 
     pickers = twitter.build_date_pickers()
 
+    date_values = {"year": year,
+                   "month": month}
+
     return render_template("viewer.html", month=month_of_events, calendar=output_calendar,
-                           header=cal_header, nav=navigation, pickers=pickers)
+                           header=cal_header, nav=navigation, pickers=pickers, date_values=date_values,
+                           prefs=user_prefs)
 
 
 @app.route("/viewer")
@@ -109,7 +113,26 @@ def viewer_select():
     month = request.args.get("month", type=int) or datetime.datetime.now().month
     year = request.args.get("year", type=int) or datetime.datetime.now().year
 
-    return redirect(f"/viewer/{year}/{month}")
+    return redirect(url_for("viewer", year=year, month=month))
+
+
+@app.route("/filter", methods=["POST"])
+def event_filter():
+
+    user_id = 1
+
+    preferences = common.UserPreferences(user_id)
+
+    filter_prefs = dict()
+
+    event_types = ["twitter", "fitbit-sleep", "foursquare"]
+
+    for event_type in event_types:
+        filter_prefs[f"show_{event_type}"] = 1 if request.form.get(f"show_{event_type}") else 0
+
+    preferences.save_filters(**filter_prefs)
+
+    return redirect(url_for("viewer", year=request.form.get("year"), month=request.form.get("month")))
 
 
 @app.route("/upload", methods=["GET", "POST"])

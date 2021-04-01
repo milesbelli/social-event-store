@@ -13,6 +13,9 @@ class UserPreferences:
         db_prefs = eventdb.get_user_preferences(self.user_id)
         self.timezone = db_prefs.get('timezone') or 'UTC'
         self.reverse_order = int(db_prefs.get('reverse_order') or 0)
+        self.show_twitter = int(db_prefs.get("show_twitter") or 1)
+        self.show_fitbit_sleep = int(db_prefs.get("show_fitbit-sleep") or 1)
+        self.show_foursquare = int(db_prefs.get("show_foursquare") or 1)
 
     def update(self, **kwargs):
         # Update the items provided
@@ -21,6 +24,23 @@ class UserPreferences:
         eventdb.set_user_preferences(1,
                                      timezone=self.timezone,
                                      reverse_order=self.reverse_order)
+
+    def save_filters(self, **kwargs):
+        eventdb.set_user_source_preferences(self.user_id, **kwargs)
+
+    def get_filters(self):
+        list_of_filters = list()
+
+        if self.show_twitter == 1:
+            list_of_filters.append("twitter")
+        if self.show_fitbit_sleep == 1:
+            list_of_filters.append("fitbit-sleep")
+        if self.show_foursquare == 1:
+            list_of_filters.append("foursquare")
+
+        return list_of_filters
+
+
 
 
 def utc_to_local(source_dt, **kwargs):
@@ -125,7 +145,7 @@ def get_events_for_date_range(start_date, end_date, user_prefs=None, **kwargs):
 
     # Query the db for events of given type(s) and date range
 
-    sources = kwargs.get("sources") or ["twitter", "fitbit-sleep", "foursquare"]
+    sources = user_prefs.get_filters() or ["twitter", "fitbit-sleep", "foursquare"]
 
     if user_prefs:
         start_date, end_date = localize_date_range(start_date, end_date, timezone=user_prefs.timezone)

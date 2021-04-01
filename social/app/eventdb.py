@@ -720,6 +720,24 @@ def set_user_preferences(user_id, **kwargs):
     close_connection(cnx)
 
 
+def set_user_source_preferences(user_id, **kwargs):
+    cnx = create_connection("social")
+    cursor = cnx.cursor()
+
+    sql_query = (f"INSERT INTO user_preference VALUES ('{user_id}', 'show_twitter', '{kwargs.get('show_twitter')}'),"
+                 f" ('{user_id}', 'show_foursquare', '{kwargs.get('show_foursquare')}'), ('{user_id}', "
+                 f"'show_fitbit-sleep', '{kwargs.get('show_fitbit-sleep')}')"
+                 " ON DUPLICATE KEY UPDATE preference_value=CASE"
+                 f" WHEN preference_key = 'show_twitter' THEN '{kwargs.get('show_twitter')}'"
+                 f" WHEN preference_key = 'show_foursquare' THEN '{kwargs.get('show_foursquare')}'"
+                 f" WHEN preference_key = 'show_fitbit-sleep' THEN '{kwargs.get('show_fitbit-sleep')}'"
+                 f" ELSE NULL END;")
+
+    cursor.execute(sql_query)
+    cnx.commit()
+    close_connection(cnx)
+
+
 def insert_in_reply_to(tweet_id, create_date, user_name, in_reply_to_status, in_reply_to_user, status_text, user_id, lang):
     cnx = create_connection("social")
     cursor = cnx.cursor()
@@ -734,7 +752,6 @@ def insert_in_reply_to(tweet_id, create_date, user_name, in_reply_to_status, in_
     # format single quotes in status
     status_text = status_text.replace("'", "''")
 
-
     sql_query = ("INSERT INTO tweet_in_reply VALUES" +
                  f"({tweet_id}, '{create_date}', '{user_name}', {user_id}," +
                  f" {in_reply_to_status}, {in_reply_to_user}, '{status_text}', '{lang}');")
@@ -747,7 +764,7 @@ def insert_in_reply_to(tweet_id, create_date, user_name, in_reply_to_status, in_
 
 def get_in_reply_to(tweet_id):
 
-    sql_query = (f"SELECT tweetid, createdate, username, statustext FROM tweet_in_reply where tweetid = {tweet_id};")
+    sql_query = f"SELECT tweetid, createdate, username, statustext FROM tweet_in_reply where tweetid = {tweet_id};"
 
     reply = get_results_for_query(sql_query)
 
