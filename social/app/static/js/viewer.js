@@ -109,3 +109,8 @@ function fetch_reply(reply_id, status_id) {
     xhttp.open("GET", "/get-status/" + reply_id, true);
     xhttp.send();
 };
+
+function show_filters() {
+    document.getElementById("filter-menu").style.display = "block";
+    document.getElementById("filter-button").style.display = "none";
+}

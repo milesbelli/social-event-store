@@ -582,9 +582,7 @@ def generate_search_where_clause(search_list, searchable_columns):
     return where_clause
 
 
-def get_search_term(search_term):
-
-    event_types = ["twitter", "foursquare"]
+def get_search_term(search_term, event_types):
 
     search_term = search_term.replace("'", "''")
     search_term = search_term.replace("\\", "\\\\")

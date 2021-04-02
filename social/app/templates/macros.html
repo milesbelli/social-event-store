@@ -1,10 +1,36 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>$Title$</title>
-</head>
-<body>
-$END$
-</body>
-</html>
+{% macro filters(destination, month, year, prefs) %}
+<div class="menu">
+    <button id="filter-button" style="display: block" onclick="show_filters()">Filters</button>
+    <div id="filter-menu" style="display: none;">
+    <form id="set-filters" action="/filter" method="POST">
+        <input type="hidden" id="form-month" name="month" form="set-filters" value="{{ month }}">
+        <input type="hidden" id="form-year" name="year" form="set-filters" value="{{ year }}">
+        <input type="hidden" id="form-dest" name="dest" form="set-filters" value="{{ destination }}">
+        <div>
+        <input type="checkbox" id="show-twitter" name="show_twitter" form="set-filters"
+               {% if "twitter" in prefs.get_filters() %}
+               checked="checked"
+                {% endif %}
+            value="true">
+            <label for="show-twitter">Twitter</label>
+            </div>
+        <div>
+        <input type="checkbox" id="show-fitbit-sleep" name="show_fitbit-sleep" form="set-filters"
+               {% if "fitbit-sleep" in prefs.get_filters() %}
+                checked="checked"
+                {% endif %}
+                value="true">
+            <label for="show-fitbit-sleep">Fitbit Sleep</label>
+            </div>
+        <div>
+        <input type="checkbox" id="show-foursquare" name="show_foursquare" form="set-filters"
+               {% if "foursquare" in prefs.get_filters() %}
+               checked="checked"
+                {% endif %}
+                value="true">
+            <label for="show-foursquare">Foursquare</label></div>
+        <input type="submit" value="Save">
+    </form>
+    </div>
+</div>
+{% endmacro %}

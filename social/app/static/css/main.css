@@ -131,3 +131,10 @@ input, select {
     font-size: 12px;
     font-weight: normal;
 }
+
+.menu {
+    background-color: #555555;
+    border: 10px solid #555555;
+    border-radius: 4px;
+    display: inline-block;
+}

@@ -167,9 +167,11 @@ def get_count_for_date_range(start_date, end_date):
     return output
 
 
-def search_for_term(search_term):
+def search_for_term(search_term, user_prefs):
 
-    output = eventdb.get_search_term(search_term)
+    filters = user_prefs.get_filters()
+
+    output = eventdb.get_search_term(search_term, filters)
 
     return output
 

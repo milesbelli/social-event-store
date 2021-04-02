@@ -1,3 +1,4 @@
+{% from "macros.html" import filters %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -60,31 +61,7 @@
     </tr>
     {% endfor %}
 </table>
-<div class="menu">
-    <form id="set-filters" action="/filter" method="POST">
-        <input type="hidden" id="form-month" name="month" form="set-filters" value="{{ date_values['month'] }}">
-        <input type="hidden" id="form-year" name="year" form="set-filters" value="{{ date_values['year'] }}">
-        <input type="checkbox" id="show-twitter" name="show_twitter" form="set-filters"
-               {% if "twitter" in prefs.get_filters() %}
-               checked="checked"
-                {% endif %}
-            value="true">
-            <label for="show-twitter">Twitter</label>
-        <input type="checkbox" id="show-fitbit-sleep" name="show_fitbit-sleep" form="set-filters"
-               {% if "fitbit-sleep" in prefs.get_filters() %}
-                checked="checked"
-                {% endif %}
-                value="true">
-            <label for="show-fitbit-sleep">Fitbit Sleep</label>
-        <input type="checkbox" id="show-foursquare" name="show_foursquare" form="set-filters"
-               {% if "foursquare" in prefs.get_filters() %}
-               checked="checked"
-                {% endif %}
-                value="true">
-            <label for="show-foursquare">Foursquare</label>
-        <input type="submit" value="Save">
-    </form>
-</div>
+{{ filters("viewer", date_values["month"], date_values["year"], prefs) }}
 {% for day in month %}
 {% if day["count"] != 0 %}
 <h2 id="{{ day['date_day'] }}">{{ day["date_human"] }}</h2>

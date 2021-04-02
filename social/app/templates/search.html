@@ -1,5 +1,8 @@
-<html>
+{% from "macros.html" import filters %}
+<!DOCTYPE html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Search</title>
@@ -11,11 +14,13 @@
 <iframe class="main" src="/top"></iframe>
 <h1>Search</h1>
 <p>Search for a term to get tweets.</p>
-<form action="/search" method="get">
+<p><form action="/search" method="get">
     <label for="keyword">Search:</label><br>
     <input type="text" id="keyword" name="term" value="{{ default }}">
     <input type="submit" value="Submit">
 </form>
+</p>
+{{ filters("search", 0, 0, prefs) }}
 {% if count %}
 <p>Search returned {{ count }} result(s)</p>
 {% endif %}

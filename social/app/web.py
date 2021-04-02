@@ -33,13 +33,13 @@ def top():
 @app.route("/search", methods=["GET", "POST"])
 def search():
     if request.method == "GET":
+        user_prefs = common.UserPreferences(1)
 
         if request.args.get("term"):
-            user_prefs = common.UserPreferences(1)
             search_term = request.args.get("term")
             print(f"Searching for tweets containing '{search_term}'")
             # This is clumsy and won't scale... this twitter function should be moved to common and made scalable
-            tweets = twitter.search_for_term(search_term)
+            tweets = twitter.search_for_term(search_term, user_prefs)
             tweets = common.events_in_local_time(tweets, user_prefs, True)
             tweets = common.convert_dict_to_event_objs(tweets)
 
@@ -47,10 +47,11 @@ def search():
             if user_prefs.reverse_order == 1:
                 tweets = twitter.reverse_events(tweets)
 
-            return render_template("search.html", events=tweets, default=search_term, count=len(tweets))
+            return render_template("search.html", events=tweets, default=search_term, count=len(tweets),
+                                   prefs=user_prefs)
 
         else:
-            return render_template("search.html")
+            return render_template("search.html", prefs=user_prefs)
 
 
 @app.route("/calendar/<date>")
@@ -117,7 +118,7 @@ def viewer_select():
 
 
 @app.route("/filter", methods=["POST"])
-def event_filter():
+def event_filter_viewer():
 
     user_id = 1
 
@@ -132,7 +133,7 @@ def event_filter():
 
     preferences.save_filters(**filter_prefs)
 
-    return redirect(url_for("viewer", year=request.form.get("year"), month=request.form.get("month")))
+    return redirect(url_for(request.form.get("dest"), year=request.form.get("year"), month=request.form.get("month")))
 
 
 @app.route("/upload", methods=["GET", "POST"])
