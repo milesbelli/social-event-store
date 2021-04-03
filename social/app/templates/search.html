@@ -20,7 +20,7 @@
     <input type="submit" value="Submit">
 </form>
 </p>
-{{ filters("search", 0, 0, prefs) }}
+{{ filters("search", 0, 0, prefs, default) }}
 {% if count %}
 <p>Search returned {{ count }} result(s)</p>
 {% endif %}

@@ -133,7 +133,8 @@ def event_filter_viewer():
 
     preferences.save_filters(**filter_prefs)
 
-    return redirect(url_for(request.form.get("dest"), year=request.form.get("year"), month=request.form.get("month")))
+    return redirect(url_for(request.form.get("dest"), year=request.form.get("year"), month=request.form.get("month"),
+                            term=request.form.get("search")))
 
 
 @app.route("/upload", methods=["GET", "POST"])

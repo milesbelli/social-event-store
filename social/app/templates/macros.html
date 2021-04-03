@@ -1,8 +1,9 @@
-{% macro filters(destination, month, year, prefs) %}
+{% macro filters(destination, month, year, prefs, search) %}
 <div class="menu">
     <button id="filter-button" style="display: block" onclick="show_filters()">Filters</button>
     <div id="filter-menu" style="display: none;">
     <form id="set-filters" action="/filter" method="POST">
+        <input type="hidden" id="form-search" name="search" form="set-filters" value="{{ search }}">
         <input type="hidden" id="form-month" name="month" form="set-filters" value="{{ month }}">
         <input type="hidden" id="form-year" name="year" form="set-filters" value="{{ year }}">
         <input type="hidden" id="form-dest" name="dest" form="set-filters" value="{{ destination }}">
