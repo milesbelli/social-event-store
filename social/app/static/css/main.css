@@ -41,6 +41,9 @@ iframe.main {
     background-color: #334343;
 }
 
+.foursquare {
+    background-color: #433F33}
+
 .time {
     padding-left: 8px;
     margin-left: 2%;
@@ -109,4 +112,29 @@ input, select {
     font-weight: bold;
     margin-top: -8px;
     z-index: 200;
+}
+
+.reply-embed {
+    border: 1px solid #535A63;
+    padding: 5px;
+    margin:5px;
+    border-radius: 4px;
+    display: none;
+}
+
+.title {
+    font-weight: bold;
+    padding-bottom: 5px;
+    }
+
+.subtitle {
+    font-size: 12px;
+    font-weight: normal;
+}
+
+.menu {
+    background-color: #555555;
+    border: 10px solid #555555;
+    border-radius: 4px;
+    display: inline-block;
 }

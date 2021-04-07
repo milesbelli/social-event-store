@@ -3,6 +3,7 @@ import json
 import datetime
 import common, eventdb
 from pathlib import Path
+import requests
 
 
 def retrieve_from_twitter(post_id):
@@ -156,13 +157,6 @@ def process_from_file(file_path):
     process_dir = common.unpack_and_store_files(file_path, "output")
     process_directory(process_dir)
 
-    
-def get_one_tweet(tweetid):
-
-    output = eventdb.get_tweet(tweetid)
-
-    return output
-
 
 def get_count_for_date_range(start_date, end_date):
 
@@ -173,9 +167,11 @@ def get_count_for_date_range(start_date, end_date):
     return output
 
 
-def search_for_term(search_term):
+def search_for_term(search_term, user_prefs):
 
-    output = eventdb.get_search_term(search_term)
+    filters = user_prefs.get_filters()
+
+    output = eventdb.get_search_term(search_term, filters)
 
     return output
 
@@ -205,7 +201,7 @@ def calendar_grid(date_in_month, **kwargs):
                 else str()
             # either get from DB or use existing count from tweets
             curr_day["count"] = (tweets[cal_month.day - 1]["count"] if tweets else
-                                 get_count_for_date_range(str(cal_month), str(cal_month))[0][0]) if \
+                                 get_count_for_date_range(str(cal_month), str(cal_month))[0]["count"]) if \
                 curr_day["day"] else -1
             curr_day["full_date"] = cal_month.strftime('%Y-%m-%d') if curr_day["day"] else str()
             week_list.append(curr_day)
@@ -321,6 +317,37 @@ def database_running():
 
     except:
         return False
+
+def get_status_from_twitter(status_id):
+
+    reply_to = eventdb.get_in_reply_to(status_id)
+
+    if not reply_to:
+        request_string = (f"https://cdn.syndication.twimg.com/tweet?id={status_id}&lang=en")
+        response = requests.get(request_string)
+        if response.status_code == 200:
+            output_status = json.loads(response.content)
+
+            eventdb.insert_in_reply_to(output_status["id_str"],
+                                       output_status["created_at"],
+                                       output_status["user"]["screen_name"],
+                                       output_status.get("in_reply_to_status_id_str"),
+                                       output_status.get("in_reply_to_user_id_str"),
+                                       output_status["text"],
+                                       output_status["user"]["id_str"],
+                                       output_status["lang"])
+
+            output_status["text"] = (output_status["text"] +
+                                     f" <a class='view_link' target='_blank' href='https://twitter.com/i/status/{status_id}'>View Online</a>")
+            return output_status
+        else:
+            output_status = {"user": {"screen_name":""},
+                             "text": f"<a style='font-size:14px' target='_blank' href='https://twitter.com/i/status/{status_id}'>View Online</a>"}
+            return output_status
+    else:
+        reply_to["text"] = (reply_to["text"] +
+                            f" <a class='view_link' target='_blank' href='https://twitter.com/i/status/{status_id}'>View Online</a>")
+        return reply_to
 
 
 if __name__ == '__main__':

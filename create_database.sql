@@ -93,4 +93,47 @@ sleepid BIGINT(15) NOT NULL,
 sleepdatetime DATETIME NOT NULL,
 sleepstage VARCHAR(16),
 seconds INT(5),
-PRIMARY KEY(sleepid, sleepdatetime))
+PRIMARY KEY(sleepid, sleepdatetime));
+
+CREATE TABLE IF NOT EXISTS tweet_in_reply (
+tweetid BIGINT(20) NOT NULL,
+createdate DATETIME,
+username VARCHAR(16),
+userid BIGINT(20),
+inreplytouser BIGINT(20),
+inreplytoid BIGINT(20),
+statustext VARCHAR(280),
+lang VARCHAR(4),
+PRIMARY KEY(tweetid));
+
+CREATE TABLE IF NOT EXISTS foursquare_checkins (
+eventid BIGINT(15) NOT NULL AUTO_INCREMENT,
+checkinid VARCHAR(32) NOT NULL,
+eventtype VARCHAR(16),
+tzoffset INT(4) NOT NULL,
+venueid VARCHAR(32) NOT NULL,
+venuename VARCHAR(200),
+checkintime INT(11),
+shout VARCHAR(140),
+veventid VARCHAR(32),
+veventname VARCHAR(200),
+primarycatid VARCHAR(32),
+primarycatname VARCHAR(32),
+PRIMARY KEY (eventid),
+UNIQUE KEY (checkinid)
+);
+
+CREATE TABLE IF NOT EXISTS foursquare_venues (
+venueid VARCHAR(32) NOT NULL,
+name VARCHAR(200),
+url VARCHAR(4000),
+address VARCHAR(200),
+postalcode INT(5),
+cc VARCHAR(4),
+city VARCHAR(50),
+state VARCHAR(50),
+country VARCHAR(50),
+latitude DOUBLE(10,8),
+longitude DOUBLE(11,8),
+PRIMARY KEY (venueid)
+);

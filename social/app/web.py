@@ -1,7 +1,7 @@
-from flask import Flask, render_template, request, redirect, send_file
+from flask import Flask, render_template, request, redirect, send_file, jsonify, url_for
 import datetime
 import pytz
-import fitbit, common, twitter
+import fitbit, common, twitter, foursquare
 from multiprocessing import Process
 
 app = Flask(__name__)
@@ -30,57 +30,28 @@ def top():
     return render_template("top.html", disable=disable)
 
 
-@app.route("/tweet/<tweetid>")
-def one_tweet(tweetid=None):
-    tweet = twitter.get_one_tweet(tweetid)
-
-    return render_template("tweet.html", events=tweet)
-
-
-@app.route("/day", methods=["GET", "POST"])
-def one_day():
-    if request.method == "GET":
-
-        return render_template("day.html")
-
-    elif request.method == "POST":
-        user_prefs = common.UserPreferences(1)
-        date = request.form['tweetday'] or datetime.datetime.today().strftime("%Y-%m-%d")
-        print("Getting tweets for {}.".format(date))
-        tweets = common.get_events_for_date_range(date, date)
-        tweets = common.events_in_local_time(tweets, user_prefs, True)
-
-        return render_template("day.html", events=tweets, default=date)
-
-
-@app.route("/day/<date>", methods=["GET"])
-def one_day_from_url(date):
-    user_pref = common.UserPreferences(1)
-    print("Getting tweets for {}.".format(date))
-    tweets = common.get_events_for_date_range(date, date)
-    tweets = common.events_in_local_time(tweets, user_pref, True)
-
-    return render_template("day.html", events=tweets, default=date)
-
-
 @app.route("/search", methods=["GET", "POST"])
 def search():
     if request.method == "GET":
-
-        return render_template("search.html")
-
-    elif request.method == "POST":
         user_prefs = common.UserPreferences(1)
-        search_term = request.form["search"]
-        print("Searching for tweets containing '{}'".format(search_term))
-        tweets = twitter.search_for_term(search_term)
-        tweets = common.events_in_local_time(tweets, user_prefs, True)
 
-        # After setting up the calendar, reverse the order if user preferences is set.
-        if user_prefs.reverse_order == 1:
-            tweets = twitter.reverse_events(tweets)
+        if request.args.get("term"):
+            search_term = request.args.get("term")
+            print(f"Searching for tweets containing '{search_term}'")
+            # This is clumsy and won't scale... this twitter function should be moved to common and made scalable
+            tweets = twitter.search_for_term(search_term, user_prefs)
+            tweets = common.events_in_local_time(tweets, user_prefs, True)
+            tweets = common.convert_dict_to_event_objs(tweets)
 
-        return render_template("search.html", events=tweets, default=search_term, count=len(tweets))
+            # After setting up the calendar, reverse the order if user preferences is set.
+            if user_prefs.reverse_order == 1:
+                tweets = twitter.reverse_events(tweets)
+
+            return render_template("search.html", events=tweets, default=search_term, count=len(tweets),
+                                   prefs=user_prefs)
+
+        else:
+            return render_template("search.html", prefs=user_prefs)
 
 
 @app.route("/calendar/<date>")
@@ -130,8 +101,12 @@ def viewer(year, month):
 
     pickers = twitter.build_date_pickers()
 
+    date_values = {"year": year,
+                   "month": month}
+
     return render_template("viewer.html", month=month_of_events, calendar=output_calendar,
-                           header=cal_header, nav=navigation, pickers=pickers)
+                           header=cal_header, nav=navigation, pickers=pickers, date_values=date_values,
+                           prefs=user_prefs)
 
 
 @app.route("/viewer")
@@ -139,7 +114,27 @@ def viewer_select():
     month = request.args.get("month", type=int) or datetime.datetime.now().month
     year = request.args.get("year", type=int) or datetime.datetime.now().year
 
-    return redirect(f"/viewer/{year}/{month}")
+    return redirect(url_for("viewer", year=year, month=month))
+
+
+@app.route("/filter", methods=["POST"])
+def event_filter_viewer():
+
+    user_id = 1
+
+    preferences = common.UserPreferences(user_id)
+
+    filter_prefs = dict()
+
+    event_types = ["twitter", "fitbit-sleep", "foursquare"]
+
+    for event_type in event_types:
+        filter_prefs[f"show_{event_type}"] = 1 if request.form.get(f"show_{event_type}") else 0
+
+    preferences.save_filters(**filter_prefs)
+
+    return redirect(url_for(request.form.get("dest"), year=request.form.get("year"), month=request.form.get("month"),
+                            term=request.form.get("search")))
 
 
 @app.route("/upload", methods=["GET", "POST"])
@@ -158,6 +153,9 @@ def upload_data():
             file_proc_bkg.start()
         elif request.form["source"] == "fitbit-sleep":
             file_proc_bkg = Process(target=fitbit.process_from_file, args=(file_path,), daemon=True)
+            file_proc_bkg.start()
+        elif request.form["source"] == "foursquare":
+            file_proc_bkg = Process(target=foursquare.process_from_file, args=(file_path,), daemon=True)
             file_proc_bkg.start()
 
         return render_template("upload.html", status_message=f"The file {file.filename} has been successfully uploaded.")
@@ -224,6 +222,23 @@ def edit_sleep(sleep_id):
         save_message = f"Timezone changed from {old_timezone} to {fitbit_sleep_event.timezone}."
         return render_template("edit-sleep.html", event=fitbit_sleep_event, timezones=pytz.all_timezones,
                                message=save_message)
+
+
+@app.route("/get-status/<status_id>", methods=["GET"])
+def get_twitter_status(status_id):
+    status = twitter.get_status_from_twitter(status_id)
+    if status:
+        return jsonify(status)
+
+
+@app.route("/get-map/<source>/<source_id>", methods=["GET"])
+def get_map(source, source_id):
+    foursquare_api_id = "XTV2HF3BEQYNRFFSYM0IDZ4IT3ZXRHEYLOV5QQCMKDOJ55QX"
+    foursquare_api_secret = "YVYAX05SKW1F2N4CWFYJDII2NPW3PRPJ51RXNNI4OB3ZI5YC"
+    if source == "foursquare":
+        venue = foursquare.get_venue_details(source_id, foursquare_api_id, foursquare_api_secret)
+        return jsonify(venue)
+
 
 # Running this will launch the server
 if __name__ == "__main__":

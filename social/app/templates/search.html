@@ -1,78 +1,81 @@
-<html>
+{% from "macros.html" import filters %}
+<!DOCTYPE html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Search</title>
-    <script type="text/javascript">
-        function show_hide_map(map_id) {
-            if(document.getElementById(map_id).style.display=="none"){
-                document.getElementById(map_id).style.display="block";
-            }
-            else {
-                document.getElementById(map_id).style.display="none";
-            }
-        }
-    </script>
     <script type='text/javascript' src='http://www.bing.com/api/maps/mapcontrol?callback=GetMap&key=AkHjJGDqUeq04-lIEphg6sWsiAjtfIyb3MgcVLNR9gpLhWFICvl78R-HHV4Y2Dna' async defer></script>
-    <script type="text/javascript">
-        function get_map(map_id, latitude, longitude) {
-            console.log("#"+map_id)
-            console.log(latitude+", "+longitude);
-
-            if(document.getElementById(map_id).style.display=="none") {
-                document.getElementById(map_id).style.display="block";
-
-                var map = new Microsoft.Maps.Map("#"+map_id, {
-                center: new Microsoft.Maps.Location(latitude, longitude),
-                zoom: 14
-                });
-
-                var center = map.getCenter();
-
-                var pin = new Microsoft.Maps.Pushpin(center);
-
-                map.entities.push(pin);
-
-            }
-
-            else {
-                document.getElementById(map_id).style.display="none";
-            }
-
-        }
-    </script>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/viewer.js') }}"></script>
 
 </head>
 <body>
 <iframe class="main" src="/top"></iframe>
 <h1>Search</h1>
 <p>Search for a term to get tweets.</p>
-<form action="/search" method="post">
+<p><form action="/search" method="get">
     <label for="keyword">Search:</label><br>
-    <input type="text" id="keyword" name="search" value="{{ default }}">
+    <input type="text" id="keyword" name="term" value="{{ default }}">
     <input type="submit" value="Submit">
 </form>
+</p>
+{{ filters("search", 0, 0, prefs, default) }}
+{% if count %}
 <p>Search returned {{ count }} result(s)</p>
-{% for row in events %}
+{% endif %}
+{% for event in events %}
 <div class="time">
-    {{ row[0].strftime("%A, %B %d %Y") }} -
-    <a href="/viewer/{{ row[0].year }}/{{ row[0].month }}#{{row[0].day }}">
-        {{ row[1] }}
+    {{ event.date.strftime("%A, %B %d %Y") }} -
+    <a href="/viewer/{{ event.date.year }}/{{ event.date.month }}#{{ event.date.day }}">
+        {{ event.time }}
     </a>
 </div>
-<div class="event {{ row[7] }}">
-    <div class="text">
-        {% for textline in row[3].split('\n') %}
+<div class="event {{ event.type }}">
+    {% if event.get_reply_id() %}
+    <button id="reply_btn_{{ event.id }}" onclick="fetch_reply('{{ event.get_reply_id() }}', '{{ event.id }}')">
+        In reply to...
+    </button>
+    <div class="reply-embed" id="reply_{{ event.id }}"></div>
+    {% endif %}
+    {% if event.get_title() %}
+    <div class="title">
+        {{ event.get_title() }}
+        {% if event.get_subtitle() %}
+            <div class="subtitle">
+                {{ event.get_subtitle() }}
+            </div>
+        {% endif %}
+    </div>
+    {% endif %}
+    <div class="text" {% if not event.get_body() %}hidden=true{% endif %}>
+        {% for textline in event.get_body().split('\n') %}
         {{ textline }}<br>
         {% endfor %}
     </div>
-    {% if row[5] and row[6] %}
-    <div class="coordinates"><button onclick="get_map('{{ row[2] }}_map', {{ row[5] }}, {{ row[6] }})">Map</button></div>
-    <div class="bing_map" id="{{ row[2] }}_map" style="display:none">
+    {% if event.get_geo() or event.fetch_venue() %}
+    {% if event.get_geo() %}
+    <div class="coordinates">
+        <button onclick="get_map('{{ event.type }}_{{ event.id }}_map', {{ event.get_geo()['latitude'] }}, {{ event.get_geo()['longitude'] }})">
+            Map
+        </button>
+    </div>
+    {% elif event.fetch_venue() %}
+    <div class="coordinates">
+        <button id="{{ event.type }}_{{ event.id }}_button"
+                onclick="get_map_by_id('{{ event.type }}_{{ event.id }}', '{{ event.type }}', '{{ event.venue_id }}')">
+            Map
+        </button>
     </div>
     {% endif %}
-    <div class="client">via {{ row[4] }}</div>
-    <div class="view_link"><a target="_blank" rel="noopener noreferrer" href="https://www.twitter.com/i/status/{{ row[2] }}/">View on Twitter</a></div>
+    <div class="bing_map" id="{{ event.type }}_{{ event.id }}_map" style="display:none">
+    </div>
+    {% endif %}
+    <div class="client" id="{{ event.type }}_{{ event.id }}_footer">{{ event.get_footer() }}
+    {% if event.is_editable() %}
+     &bull; <a href="{{ event.get_edit_url() }}">Edit</a>
+    {% endif %}</div>
+    <div class="view_link"><a target="_blank" rel="noopener noreferrer" href="{{ event.get_url() }}">View Online</a></div>
 </div>
 {% endfor %}
 </body>
