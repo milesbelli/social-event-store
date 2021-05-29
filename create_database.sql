@@ -137,3 +137,16 @@ latitude DOUBLE(10,8),
 longitude DOUBLE(11,8),
 PRIMARY KEY (venueid)
 );
+
+CREATE TABLE IF NOT EXISTS sms_messages (
+smsid BIGINT(15) NOT NULL AUTO_INCREMENT,
+userid INT(11) NOT NULL,
+fingerprint VARCHAR(40) NOT NULL,
+type VARCHAR(3),
+conversation VARCHAR(500),
+contact_num VARCHAR(20),
+body VARCHAR(4000),
+folder VARCHAR(6),
+PRIMARY KEY (smsid),
+UNIQUE KEY (userid, fingerprint)
+);

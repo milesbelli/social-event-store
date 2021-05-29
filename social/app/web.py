@@ -126,7 +126,7 @@ def event_filter_viewer():
 
     filter_prefs = dict()
 
-    event_types = ["twitter", "fitbit-sleep", "foursquare"]
+    event_types = ["twitter", "fitbit-sleep", "foursquare", "sms"]
 
     for event_type in event_types:
         filter_prefs[f"show_{event_type}"] = 1 if request.form.get(f"show_{event_type}") else 0

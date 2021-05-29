@@ -30,6 +30,13 @@
                 {% endif %}
                 value="true">
             <label for="show-foursquare">Foursquare</label></div>
+                <div>
+        <input type="checkbox" id="show-sms" name="show_sms" form="set-filters"
+               {% if "sms" in prefs.get_filters() %}
+               checked="checked"
+                {% endif %}
+                value="true">
+            <label for="show-sms">SMS</label></div>
         <input type="submit" value="Save">
     </form>
     </div>

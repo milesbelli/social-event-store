@@ -16,6 +16,7 @@ class UserPreferences:
         self.show_twitter = int(db_prefs.get("show_twitter") or 1)
         self.show_fitbit_sleep = int(db_prefs.get("show_fitbit-sleep") or 1)
         self.show_foursquare = int(db_prefs.get("show_foursquare") or 1)
+        self.show_sms = int(db_prefs.get("show_sms") or 1)
 
     def update(self, **kwargs):
         # Update the items provided
@@ -37,6 +38,8 @@ class UserPreferences:
             list_of_filters.append("fitbit-sleep")
         if self.show_foursquare == 1:
             list_of_filters.append("foursquare")
+        if self.show_sms == 1:
+            list_of_filters.append("sms")
 
         return list_of_filters
 
@@ -145,12 +148,12 @@ def get_events_for_date_range(start_date, end_date, user_prefs=None, **kwargs):
 
     # Query the db for events of given type(s) and date range
 
-    sources = user_prefs.get_filters() or ["twitter", "fitbit-sleep", "foursquare"]
+    sources = user_prefs.get_filters() or ["twitter", "fitbit-sleep", "foursquare", "sms"]
 
     if user_prefs:
         start_date, end_date = localize_date_range(start_date, end_date, timezone=user_prefs.timezone)
 
-    output = eventdb.get_datetime_range(start_date, end_date, sources)
+    output = eventdb.get_datetime_range(start_date, end_date, sources, user_prefs)
 
     return output
 
@@ -433,6 +436,13 @@ class eventObject:
             self.country = kwargs.get("country")
             self.venue_id = kwargs.get("venue_id")
 
+        elif self.type == "sms":
+            self.body = kwargs.get("body") or str()
+            self.geo = None
+            self.conversation = kwargs.get("conversation")
+            self.contact = kwargs.get("contact_num")
+            self.folder = kwargs.get("folder")
+
         else:
             raise ValueError(f"Unsupported event type: {self.type}")
 
@@ -451,6 +461,8 @@ class eventObject:
                     footer_list.append(item)
             return ", ".join(footer_list) if footer_list != [] \
                 else "Location unknown"
+        elif self.type == "sms":
+            return f"from me" if self.folder == "outbox" else f"from {self.contact}"
 
     def get_url(self):
         if self.type == "twitter":
@@ -459,6 +471,8 @@ class eventObject:
             url = f"https://www.fitbit.com/sleep/{self.end_time.strftime('%Y-%m-%d')}/{self.id}/"
         elif self.type == "foursquare":
             url = f"https://www.swarmapp.com/i/checkin/{self.checkin_id}/"
+        else:
+            url = "#"
 
         return url
 
@@ -495,6 +509,8 @@ class eventObject:
     def get_title(self):
         if self.type == "foursquare":
             return f"Checked in at {self.venue_name}"
+        elif self.type == "sms":
+            return f"Conversation with {self.conversation or self.contact}"
         else:
             return None
 

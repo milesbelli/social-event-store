@@ -24,6 +24,7 @@ class foursquareImporter:
     def add_to_database(self, user_prefs):
         eventdb.insert_foursquare_checkins(self.checkins, user_prefs)
 
+
 # A tiny "enhanced" dict class that extends dict and adds a useful utility for converting timestamps
 class foursquareImporterEvent(dict):
     def __init__(self, **kwargs):
