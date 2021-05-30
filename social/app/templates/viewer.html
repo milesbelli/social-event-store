@@ -10,7 +10,7 @@
     <script type="text/javascript" src="{{ url_for('static', filename='js/viewer.js') }}"></script>
 </head>
 <body>
-<div class="date-header" id="floating-date-header"></div>
+<div class="date-header" id="floating-date-header"><a href="#" id="floating-header-url"></a></div>
 <iframe class="main" src="/top"></iframe>
 <form id="get-date" action="/viewer" method="get">
     <select id="month" name="month" form="get-date">
@@ -64,7 +64,7 @@
 {{ filters("viewer", date_values["month"], date_values["year"], prefs) }}
 {% for day in month %}
 {% if day["count"] != 0 %}
-<h2 id="{{ day['date_day'] }}">{{ day["date_human"] }}</h2>
+<h2 id="{{ day['date_day'] }}"><a class="header" href="#{{ day['date_day'] }}">{{ day["date_human"] }}</a></h2>
 <p>{{ day["count"] }} event{% if day["count"] > 1 %}s{% endif %} <a href="#">Top</a></p>
 {% for event in day["events"] %}
 <div class="time">{{ event.time }}</div>
