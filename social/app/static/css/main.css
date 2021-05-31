@@ -147,3 +147,11 @@ input, select {
 .sms {
     background-color: #434343;
 }
+
+.txtout {
+    border-left: solid 4px deepskyblue;
+}
+
+.txtin {
+    border-left: solid 4px greenyellow;
+}

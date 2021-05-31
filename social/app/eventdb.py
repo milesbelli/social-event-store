@@ -525,7 +525,7 @@ def get_datetime_range(start_datetime, end_datetime, list_of_data_types, user_pr
                          " NULL start_time, replyid reply_id, NULL venue_name, NULL venue_id, NULL venue_event_id,"
                          " NULL venue_event_name, NULL address, NULL city, NULL state, NULL country, NULL checkin_id,"
                          " NULL sleep_time, NULL timezone, NULL conversation, NULL contact_num, NULL folder, "
-                         "NULL fingerprint "
+                         "NULL fingerprint, NULL contact_name "
                          "FROM events "
                          "LEFT JOIN tweetdetails "
                          "ON detailid = tweetid "
@@ -539,7 +539,7 @@ def get_datetime_range(start_datetime, end_datetime, list_of_data_types, user_pr
                         "sum(stageminutes) rest_mins, startdatetime start_time, NULL reply_id, NULL venue_name, "
                         "NULL venue_id, NULL venue_event_id, NULL venue_event_name, NULL address, NULL city, "
                         "NULL state, NULL country, NULL checkin_id, f.duration sleep_time, f.timezone timezone, "
-                        " NULL conversation, NULL contact_num,  NULL folder, NULL fingerprint "
+                        " NULL conversation, NULL contact_num,  NULL folder, NULL fingerprint, NULL contact_name "
                         "FROM events "
                         "LEFT JOIN fitbit_sleep f "
                         "ON detailid = f.sleepid "
@@ -558,7 +558,7 @@ def get_datetime_range(start_datetime, end_datetime, list_of_data_types, user_pr
                             "o.venueid venue_id, o.veventid venue_event_id, o.veventname venue_event_name, "
                             "v.address address, v.city city, v.state state, v.country country, o.checkinid checkin_id, "
                             "NULL sleep_time, NULL timezone, NULL conversation, NULL contact_num, NULL folder, "
-                            "NULL fingerprint "
+                            "NULL fingerprint, NULL contact_name "
                             "FROM events e "
                             "LEFT JOIN foursquare_checkins o "
                             "ON e.detailid = o.eventid "
@@ -575,10 +575,12 @@ def get_datetime_range(start_datetime, end_datetime, list_of_data_types, user_pr
                      "NULL venue_id, NULL venue_event_id, NULL venue_event_name, "
                      "NULL address, NULL city, NULL state, NULL country, NULL checkin_id, "
                      "NULL sleep_time, NULL timezone, s.conversation conversation, s.contact_num contact_num, "
-                     "s.folder folder, s.fingerprint fingerprint "
+                     "s.folder folder, s.fingerprint fingerprint, c.contact_name contact_name "
                      "FROM events e "
                      "lEFT JOIN sms_messages s "
                      "ON e.detailid = s.smsid "
+                     "LEFT JOIN sms_contacts c "
+                     "ON s.contact_num = c.contact_num AND s.userid = c.userid "
                      "WHERE e.eventtype = 'sms' "
                      f"AND eventdt >= '{start_datetime}' "
                      f"AND eventdt <= '{end_datetime}' "
@@ -679,7 +681,7 @@ def generate_search_where_clause(search_list, searchable_columns):
     return where_clause
 
 
-def get_search_term(search_term, event_types):
+def get_search_term(search_term, user_id, event_types):
 
     search_term = search_term.replace("'", "''")
     search_term = search_term.replace("\\", "\\\\")
@@ -721,15 +723,16 @@ def get_search_term(search_term, event_types):
     twitter_searchable = ["tweettext"]
     twitter_where_clause = generate_search_where_clause(search_list,  twitter_searchable)
 
-    twitter_query = ("SELECT eventdate date, eventtime time, detailid source_id, tweettext body, client, "
-                     "latitude, longitude, eventtype object_type, NULL end_time, NULL sleep_id, NULL rest_mins,"
+    twitter_query = ("SELECT e.eventdate date, e.eventtime time, e.detailid source_id, tweettext body, client, "
+                     "latitude, longitude, e.eventtype object_type, NULL end_time, NULL sleep_id, NULL rest_mins,"
                      " NULL start_time, replyid reply_id, NULL venue_name, NULL venue_id, NULL venue_event_id,"
                      " NULL venue_event_name, NULL address, NULL city, NULL state, NULL country, NULL checkin_id,"
-                     " NULL sleep_time, NULL timezone "
+                     " NULL sleep_time, NULL timezone, NULL conversation, NULL contact_num, "
+                     "NULL folder, NULL fingerprint, NULL contact_name "
                      "FROM tweetdetails "
-                     "LEFT JOIN events "
+                     "LEFT JOIN events e "
                      "ON detailid = tweetid "
-                     f"{twitter_where_clause} AND eventtype = 'twitter'"
+                     f"{twitter_where_clause} AND eventtype = 'twitter' AND e.userid = '{user_id}'"
                      f"{client_sql}"
                      f"{geo_sql}")
 
@@ -743,21 +746,42 @@ def get_search_term(search_term, event_types):
                         "NULL rest_mins, NULL start_time, NULL reply_id, o.venuename venue_name, "
                         "o.venueid venue_id, o.veventid venue_event_id, o.veventname venue_event_name, "
                         "v.address address, v.city city, v.state state, v.country country, o.checkinid checkin_id, "
-                        "NULL sleep_time, NULL timezone "
+                        "NULL sleep_time, NULL timezone, NULL conversation, NULL contact_num, "
+                        "NULL folder, NULL fingerprint, NULL contact_name "
                         "FROM foursquare_checkins o "
                         "LEFT JOIN events e "
                         "ON e.detailid = o.eventid "
                         "LEFT JOIN foursquare_venues v "
                         "ON o.venueid = v.venueid "
-                        f"{fsq_where_clause} AND e.eventtype = 'foursquare'")
+                        f"{fsq_where_clause} AND e.eventtype = 'foursquare' AND e.userid = '{user_id}'")
+
+    sms_searchable = ["s.body"]
+    sms_where_clause = generate_search_where_clause(search_list, sms_searchable)
+
+    sms_query = ("SELECT e.eventdate date, e.eventtime time, NULL source_id, s.body body, NULL client, "
+                 "NULL latitude, NULL longitude, e.eventtype object_type, NULL end_time, NULL sleep_id, "
+                 "NULL rest_mins, NULL start_time, NULL reply_id, NULL venue_name, "
+                 "NULL venue_id, NULL venue_event_id, NULL venue_event_name, "
+                 "NULL address, NULL city, NULL state, NULL country, NULL checkin_id, "
+                 "NULL sleep_time, NULL timezone, s.conversation conversation, s.contact_num contact_num, "
+                 "s.folder folder, s.fingerprint fingerprint, c.contact_name contact_name "
+                 "FROM sms_messages s "
+                 "LEFT JOIN events e "
+                 "ON e.detailid = s.smsid "
+                 "LEFT JOIN sms_contacts c "
+                 "ON c.contact_num = s.contact_num AND s.userid = c.userid "
+                 f"{sms_where_clause} AND e.eventtype = 'sms' AND e.userid = '{user_id}'")
 
     subqueries_list = []
 
     if "twitter" in event_types:
         subqueries_list.append(twitter_query)
 
-    if "foursquare" in event_types and search_list != ['']:
+    if "foursquare" in event_types and search_list != [""]:
         subqueries_list.append(foursquare_query)
+
+    if "sms" in event_types and search_list != [""]:
+        subqueries_list.append(sms_query)
 
     sql_query = " UNION ".join(subqueries_list) + "ORDER BY date ASC, time ASC;"
 

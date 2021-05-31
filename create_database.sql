@@ -150,3 +150,10 @@ folder VARCHAR(6),
 PRIMARY KEY (smsid),
 UNIQUE KEY (userid, fingerprint)
 );
+
+CREATE TABLE IF NOT EXISTS sms_contacts (
+userid INT(11) NOT NULL,
+contact_num VARCHAR(20) NOT NULL,
+contact_name VARCHAR(200) NOT NULL,
+PRIMARY KEY (userid, contact_num)
+);

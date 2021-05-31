@@ -442,6 +442,7 @@ class eventObject:
             self.conversation = kwargs.get("conversation")
             self.contact = kwargs.get("contact_num")
             self.folder = kwargs.get("folder")
+            self.contact_nm = kwargs.get("contact_name")
 
         else:
             raise ValueError(f"Unsupported event type: {self.type}")
@@ -462,7 +463,7 @@ class eventObject:
             return ", ".join(footer_list) if footer_list != [] \
                 else "Location unknown"
         elif self.type == "sms":
-            return f"from me" if self.folder == "outbox" else f"from {self.contact}"
+            return f"from me" if self.folder == "outbox" else f"from {self.contact_nm or self.contact}"
 
     def get_url(self):
         if self.type == "twitter":
@@ -510,7 +511,7 @@ class eventObject:
         if self.type == "foursquare":
             return f"Checked in at {self.venue_name}"
         elif self.type == "sms":
-            return f"Conversation with {self.conversation or self.contact}"
+            return f"Conversation with {self.conversation or self.contact_nm or self.contact}"
         else:
             return None
 
@@ -525,6 +526,12 @@ class eventObject:
             return self.timedelta
         else:
             return 0
+
+    def get_type(self):
+        if self.type == "sms":
+            return f"{self.type} {'txtin' if self.folder == 'inbox' else 'txtout'}"
+        else:
+            return self.type
 
     def ical_title(self):
         if self.type == "twitter":
