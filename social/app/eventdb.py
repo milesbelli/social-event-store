@@ -424,6 +424,8 @@ def insert_sms_into_db(sms_messages, user_prefs):
 
     sql_values = list()
 
+    contacts_dict = {}
+
     for key in sms_messages:
         message = sms_messages[key]
 
@@ -431,6 +433,12 @@ def insert_sms_into_db(sms_messages, user_prefs):
                    f"{message.get_sql('contact_num')}, {message.sql_body()}, {message.get_sql('folder')})")
 
         sql_values.append(sql_row)
+
+        if message.get_sql("contact_name") \
+                and message.get_sql("contact_name") != "None" \
+                and message.get_sql("contact_num") \
+                and not contacts_dict.get(message.get("contact_num")):
+            contacts_dict[message.get("contact_num")] = message.get("contact_name")
 
     grouped_values = group_insert_into_db(sql_values, 100)
 
@@ -460,16 +468,47 @@ def insert_sms_into_db(sms_messages, user_prefs):
         message = sms_messages[key]
         sms_id = event_id_dict[key]
 
-        event_values.append(f"('{user_id}', '{message['date']}', '{message['time']}', 'sms', {sms_id})")
+        event_values.append(f"('{user_id}', '{message['date']}', '{message['time']}', "
+                            f"'{message['date']} {message['time']}', 'sms', {sms_id})")
 
     grouped_event_values = group_insert_into_db(event_values, 100)
 
     for events_to_insert in grouped_event_values:
 
-        sql_insert_event_data = ("INSERT INTO events (userid, eventdate, eventtime, eventtype, detailid) "
+        sql_insert_event_data = ("INSERT INTO events (userid, eventdate, eventtime, eventdt, eventtype, detailid) "
                                 f"VALUES {events_to_insert};")
 
         cursor.execute(sql_insert_event_data)
+
+    # Add in contacts based on the option contact_name key
+
+    sql_contacts_extant = ("SELECT contact_num FROM sms_contacts "
+                           f"WHERE userid = {user_id}")
+
+    cursor.execute(sql_contacts_extant)
+
+    existing_contacts = list()
+
+    for i in cursor:
+        existing_contacts.append(i[0])
+
+    for contact in existing_contacts:
+        if contacts_dict.get(contact):
+            contacts_dict.pop(contact)
+
+    contacts_values = list()
+
+    for key in contacts_dict:
+        contact = contacts_dict[key]
+
+        contacts_values.append(f"('{user_id}', '{key}', '{contact}')")
+
+    grouped_contacts_values = group_insert_into_db(contacts_values, 100)
+
+    for contacts_to_insert in grouped_contacts_values:
+        sql_insert_contacts = ("INSERT INTO sms_contacts (userid, contact_num, contact_name) "
+                               f"VALUES {contacts_to_insert}")
+        cursor.execute(sql_insert_contacts)
 
     cnx.commit()
 

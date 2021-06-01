@@ -31,7 +31,7 @@
         {{ event.time }}
     </a>
 </div>
-<div class="event {{ event.type }}">
+<div class="event {{ event.get_type() }}">
     {% if event.get_reply_id() %}
     <button id="reply_btn_{{ event.id }}" onclick="fetch_reply('{{ event.get_reply_id() }}', '{{ event.id }}')">
         In reply to...
