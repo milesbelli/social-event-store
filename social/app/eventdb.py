@@ -434,11 +434,10 @@ def insert_sms_into_db(sms_messages, user_prefs):
 
         sql_values.append(sql_row)
 
-        if message.get_sql("contact_name") \
-                and message.get_sql("contact_name") != "None" \
+        if message.get("contact_name") \
                 and message.get_sql("contact_num") \
                 and not contacts_dict.get(message.get("contact_num")):
-            contacts_dict[message.get("contact_num")] = message.get("contact_name")
+            contacts_dict[message.get("contact_num")] = message.get_sql("contact_name")
 
     grouped_values = group_insert_into_db(sql_values, 100)
 
@@ -501,7 +500,7 @@ def insert_sms_into_db(sms_messages, user_prefs):
     for key in contacts_dict:
         contact = contacts_dict[key]
 
-        contacts_values.append(f"('{user_id}', '{key}', '{contact}')")
+        contacts_values.append(f"('{user_id}', '{key}', {contact})")
 
     grouped_contacts_values = group_insert_into_db(contacts_values, 100)
 

@@ -78,7 +78,7 @@ def process_single_sms(raw_text):
     finalized_entry["time"] = dt.datetime.fromtimestamp(datesec, tz=dt.timezone.utc).strftime("%H:%M:%S")
     finalized_entry["id"] = generate_id([finalized_entry["date"], finalized_entry["time"],
                                          finalized_entry["contact_num"], finalized_entry["body"]])
-    finalized_entry["contact_name"] = kvp["contact_name"]
+    finalized_entry["contact_name"] = kvp["contact_name"] if kvp["contact_name"] != "(Unknown)" else None
 
     return finalized_entry
 

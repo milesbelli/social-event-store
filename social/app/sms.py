@@ -35,6 +35,8 @@ class SmsMessage(dict):
 
     def get_sql(self, key):
         value = self.get(key)
+        if value == "":
+            value = None
         return f"'{value}'" if value else "NULL"
 
 
