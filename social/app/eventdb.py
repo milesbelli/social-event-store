@@ -51,11 +51,12 @@ def insert_tweets(list_of_tweets, cnx):
                                                             list_of_tweets[i]["client_name"],
                                                             list_of_tweets[i]["rt_id"]))
             
-            value_to_append = "('{}','{}','{}','{}','{}')"
+            value_to_append = "('{}','{}','{}','{}','{}','{}')"
             
             values_events += "".join(value_to_append.format("1",                                       #Replace hardcoding here too
                                                             list_of_tweets[i]["sql_date"],
                                                             list_of_tweets[i]["sql_time"],
+                                                            f"{list_of_tweets[i]['sql_date']} {list_of_tweets[i]['sql_time']}",
                                                             "twitter",
                                                             tweet_id))
             
@@ -85,7 +86,7 @@ def insert_tweets(list_of_tweets, cnx):
     if len(values_events) > 0:
     
         sql_insert_events = ("INSERT INTO events"
-                             "(userid, eventdate, eventtime, eventtype, detailid)"
+                             "(userid, eventdate, eventtime, eventdt, eventtype, detailid)"
                              "VALUES {}".format(values_events))
         
         cursor.execute(sql_insert_events)
@@ -276,9 +277,9 @@ def insert_fitbit_sleep(sleep, user_prefs):
             event_time = common.local_to_utc(event[1], timezone=timezone).strftime("%H:%M:%S")
             event_id = event[2]
 
-            event_values += f"('{user_id}', '{event_date}', '{event_time}', 'fitbit-sleep', '{event_id}')"
+            event_values += f"('{user_id}', '{event_date}', '{event_time}', '{event_date} {event_time}', 'fitbit-sleep', '{event_id}')"
 
-        sql_add_new_to_events_utc = ("INSERT INTO events (userid, eventdate, eventtime, eventtype, detailid) "
+        sql_add_new_to_events_utc = ("INSERT INTO events (userid, eventdate, eventtime, eventdt, eventtype, detailid) "
                                      f"VALUES {event_values};")
 
         cursor.execute(sql_add_new_to_events_utc)
@@ -306,7 +307,8 @@ def update_fitbit_sleep_timezone(sleep_id, event_date, event_time, timezone):
     cnx = create_connection("social")
     cursor = cnx.cursor()
 
-    sql_event_update = (f"UPDATE events SET eventdate = '{event_date}', eventtime = '{event_time}'"
+    sql_event_update = (f"UPDATE events SET eventdate = '{event_date}', eventtime = '{event_time}', "
+                        f"eventdt = '{event_date} {event_time}'"
                         f" WHERE detailid = {sleep_id} and eventtype = 'fitbit-sleep'")
 
     cursor.execute(sql_event_update)
@@ -385,7 +387,8 @@ def insert_foursquare_checkins(checkins, user_prefs):
     for key in checkins:
         checkin = checkins[key]
         event_id = event_id_dict[checkin["id"]]
-        event_values.append(f"('{user_id}', '{checkin.get_date_str()}', '{checkin.get_time_str()}', 'foursquare',"
+        event_values.append(f"('{user_id}', '{checkin.get_date_str()}', '{checkin.get_time_str()}',"
+                            f" '{checkin.get_date_str()} {checkin.get_time_str()}', 'foursquare',"
                             f" '{event_id}')")
 
     grouped_event_values = group_insert_into_db(event_values, 100)
@@ -420,7 +423,8 @@ def insert_sms_into_db(sms_messages, user_prefs):
     # Pop entries from the dict which are already in the db
 
     for entry in already_in_db:
-        sms_messages.pop(entry)
+        if sms_messages.get(entry):
+            sms_messages.pop(entry)
 
     sql_values = list()
 
@@ -439,7 +443,7 @@ def insert_sms_into_db(sms_messages, user_prefs):
                 and not contacts_dict.get(message.get("contact_num")):
             contacts_dict[message.get("contact_num")] = message.get_sql("contact_name")
 
-    grouped_values = group_insert_into_db(sql_values, 100)
+    grouped_values = group_insert_into_db(sql_values, 500)
 
     for events_to_insert in grouped_values:
 

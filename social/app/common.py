@@ -179,7 +179,7 @@ def localize_date_range(start_date, end_date, **kwargs):
     return start_date, end_date
 
 
-def unpack_and_store_files(zipfile_path, parent_directory):
+def unpack_and_store_files(zipfile_path, parent_directory, type=None):
     # Returns the temporary directory for the files that were extracted
 
     if not Path(parent_directory).exists():
@@ -223,6 +223,12 @@ def unpack_and_store_files(zipfile_path, parent_directory):
                     checkin_file_to_save = zipfile_to_process.read(entry)
                     output_file = open(f"{output_path}/{entry.split('/')[-1]}", "wb")
                     output_file.write(checkin_file_to_save)
+                    output_file.close()
+
+                elif type == "sms":
+                    sms_file_to_save = zipfile_to_process.read(entry)
+                    output_file = open(f"{output_path}/{entry.split('/')[-1]}", "wb")
+                    output_file.write(sms_file_to_save)
                     output_file.close()
 
         cleanup(zipfile_path)
