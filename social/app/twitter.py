@@ -22,7 +22,7 @@ def retrieve_from_twitter(post_id):
 
 def parse_js_text(text, acct=0):
 
-    tweets_text = text[text.index('[ {'):]
+    tweets_text = text[text.index('['):]
     list_of_tweets = json.loads(tweets_text)
 
     # Twitter has once again changed how tweet.js is structured, so first check if we have to "unwrap" the tweet
@@ -65,7 +65,7 @@ def get_account_id(file_path):
     with open(file_path) as acct:
 
         acct = acct.read()
-        acct_text = acct[acct.index('[ {'):]
+        acct_text = acct[acct.index('['):]
         acct_json = json.loads(acct_text)
 
         return acct_json[0]['account']['accountId']

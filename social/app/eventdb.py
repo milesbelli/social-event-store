@@ -395,7 +395,7 @@ def insert_foursquare_checkins(checkins, user_prefs):
 
     for events_to_insert in grouped_event_values:
 
-        sql_insert_event_data = ("INSERT INTO events (userid, eventdate, eventtime, eventtype, detailid) "
+        sql_insert_event_data = ("INSERT INTO events (userid, eventdate, eventtime, eventdt, eventtype, detailid) "
                                 f"VALUES {events_to_insert};")
 
         cursor.execute(sql_insert_event_data)

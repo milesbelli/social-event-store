@@ -50,6 +50,25 @@ def number_formatting(contact_num, regex):
     return contact_num
 
 
+def decode_xml(text):
+    text = text.replace("&quot;", "\"")
+    text = text.replace("&apos;", "\'")
+
+    while text.find("&#") != -1:
+        start = text.find("&#")
+        end = text.find(";", start)
+
+        amp_text = text[start:end+1]
+        amp_num = int(text[start+2:end])
+
+        text = text.replace(amp_text, chr(amp_num))
+
+
+    text = text.replace("&amp;", "&")
+
+    return text
+
+
 def process_single_sms(raw_text):
     # Process sms
     process_text = raw_text
@@ -73,7 +92,7 @@ def process_single_sms(raw_text):
     finalized_entry["type"] = "sms"
     finalized_entry["contact_num"] = contact_num
     finalized_entry["folder"] = "outbox" if kvp["type"] == "2" else "inbox"
-    finalized_entry["body"] = kvp["body"]
+    finalized_entry["body"] = decode_xml(kvp["body"])
     finalized_entry["date"] = dt.datetime.fromtimestamp(datesec, tz=dt.timezone.utc).date().strftime("%Y-%m-%d")
     finalized_entry["time"] = dt.datetime.fromtimestamp(datesec, tz=dt.timezone.utc).strftime("%H:%M:%S")
     finalized_entry["id"] = generate_id([finalized_entry["date"], finalized_entry["time"],
@@ -146,7 +165,7 @@ def process_single_mms(raw_text):
     # print(sender)
 
     finalized_entry["contact_num"] = sender
-    finalized_entry["body"] = "\n".join(list_of_items)
+    finalized_entry["body"] = decode_xml("\n".join(list_of_items))
     finalized_entry["id"] = generate_id([finalized_entry["date"], finalized_entry["time"],
                                          finalized_entry["conversation"], finalized_entry["body"]])
 
