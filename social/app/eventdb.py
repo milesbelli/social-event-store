@@ -1015,6 +1015,51 @@ def get_results_for_query(sql_query):
     return result_list
 
 
+def edit_contact(contact_info, user_prefs):
+        cnx = create_connection("social")
+        cursor = cnx.cursor()
+
+        user_id = user_prefs.user_id
+        contact_num = contact_info.get("contact_num")
+        new_name = contact_info.get("contact_name")
+
+        update_sql = f"UPDATE sms_contacts SET contact_name = '{new_name}' WHERE userid = '{user_id}' " \
+                     f"AND contact_num = {contact_num}"
+
+        new_save_sql = f"INSERT INTO sms_contacts VALUES ('{user_id}', '{contact_num}', '{new_name}');"
+
+        already_existing_sql = f"SELECT count(*) contact_ct FROM sms_contacts WHERE userid = '{user_id}' AND " \
+                               f"contact_num = '{contact_num}';"
+
+        check = get_results_for_query(already_existing_sql)
+
+        # If it exists, run update query, else run insert
+        if check[0].get("contact_ct") == 1:
+            cursor.execute(update_sql)
+
+        else:
+            cursor.execute(new_save_sql)
+
+        cnx.commit()
+        close_connection(cnx)
+
+
+def edit_timestamp_for_event(event_id, event_type, time, date, user_prefs, connection=None):
+
+    cnx = connection or create_connection("social")
+    cursor = cnx.cursor()
+
+    user_id = user_prefs.user_id
+
+    update_time_sql = f"UPDATE events SET eventdate = '{date}', eventtime = '{time}', eventdt = '{date} {time}'" \
+                      f" WHERE detailid = '{event_id}' AND eventtype = '{event_type}' AND userid = '{user_id}';"
+
+    cursor.execute(update_time_sql)
+
+    if not connection:
+        close_connection(cnx)
+
+
 def close_connection(cnx):
 
     return cnx.close()
