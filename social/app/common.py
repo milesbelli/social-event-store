@@ -22,7 +22,7 @@ class UserPreferences:
         # Update the items provided
         self.timezone = kwargs.get('timezone') or self.timezone
         self.reverse_order = kwargs.get('reverse_order')
-        eventdb.set_user_preferences(1,
+        eventdb.set_user_preferences(self.user_id,
                                      timezone=self.timezone,
                                      reverse_order=self.reverse_order)
 

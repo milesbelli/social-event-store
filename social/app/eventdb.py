@@ -160,7 +160,7 @@ def insert_fitbit_sleep(sleep, user_prefs):
 
     cnx = create_connection('social')
     cursor = cnx.cursor()
-    user_id = 1                                # Static for now
+    user_id = user_prefs.user_id
     values_list = str()
 
     # Establish list of existing sleep events to eliminate duplicates
@@ -1058,6 +1058,39 @@ def edit_timestamp_for_event(event_id, event_type, time, date, user_prefs, conne
 
     if not connection:
         close_connection(cnx)
+
+
+def delete_item_from_db(item_id, item_type):
+    type_dict = {"sms": {"sms_messages": "smsid"},
+                 "twitter": {"tweetdetails": "tweetid",
+                             "tweetconflicts": "tweetid",
+                             "tweethashtags": "tweetid",
+                             "tweetmedia": "tweetid",
+                             "tweeturls": "tweetid"},
+                 "foursquare": {"foursquare_checkins": "eventid"},
+                 "fitbit-sleep": {"fitbit_sleep": "sleepid",
+                                  "fitbit_sleep_data": "sleepid",
+                                  "fitbit_sleep_stages": "sleepid"}}
+
+    list_of_sqls = list()
+
+    tables = type_dict[item_type]
+    for table in tables:
+        list_of_sqls.append(
+            f"DELETE FROM {table} WHERE {tables[table]} = '{item_id}';"
+        )
+
+    list_of_sqls.append(
+        f"DELETE FROM events WHERE detailid = '{item_id}' and eventtype = '{item_type}';"
+    )
+
+    cnx = create_connection("social")
+    cursor = cnx.cursor()
+
+    for sql in list_of_sqls:
+        cursor.execute(sql)
+
+    cnx.commit()
 
 
 def close_connection(cnx):
