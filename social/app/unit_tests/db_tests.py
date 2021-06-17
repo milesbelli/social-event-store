@@ -1,6 +1,7 @@
 import unittest
 import eventdb as db
 import common as c
+import sms as s
 import json
 
 
@@ -32,8 +33,11 @@ class MyTestCase(unittest.TestCase):
     #
     #     db.edit_timestamp_for_event(event_id, event_type, newer_time, newer_date, user_prefs)
 
-    def test_insert_and_delete_fitbit_data(self):
+    def test_1_insert_fitbit_data(self):
         # User 0 is for the Test User, so we can store stuff in here without harming real user data
+
+        print("Performing TEST 1")
+
         user_prefs = c.UserPreferences(0)
 
         # Open sample file, contains one entry
@@ -52,6 +56,16 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0]["logid"], 32332925893)
 
+    def test_2_delete_fitbit_data(self):
+
+        print("Performing TEST 2")
+
+        user_prefs = c.UserPreferences(0)
+        insert_check_sql = f"SELECT sleepid, logid FROM fitbit_sleep WHERE logid = 32332925893" \
+                           f" AND userid = {user_prefs.user_id};"
+
+        results = db.get_results_for_query(insert_check_sql)
+
         id_to_delete = results[0]["sleepid"]
 
         db.delete_item_from_db(id_to_delete, "fitbit-sleep")
@@ -59,6 +73,28 @@ class MyTestCase(unittest.TestCase):
         results = db.get_results_for_query(insert_check_sql)
 
         self.assertEqual(len(results), 0)
+
+    def test_3_insert_sms(self):
+
+        print("Performing TEST 3")
+
+        user_prefs = c.UserPreferences(0)
+
+        smsfile = open("unit_tests/sample_data/sms.json")
+        sms_data = json.loads(smsfile.read())
+        smsfile.close()
+
+        sms_dict = dict()
+
+        for sms in sms_data:
+            sms_dict[sms["id"]] = s.SmsMessage(**sms)
+
+        db.insert_sms_into_db(sms_dict, user_prefs)
+
+        sms_sql = f"SELECT * FROM sms_messages WHERE userid = {user_prefs.user_id};"
+        results = db.get_results_for_query(sms_sql)
+
+        self.assertEqual(len(results), 4)
 
 
 if __name__ == '__main__':

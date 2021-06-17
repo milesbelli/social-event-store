@@ -1,0 +1,42 @@
+[
+    {
+        "type": "sms",
+        "contact_num": "22000",
+        "folder": "inbox",
+        "body": "G-766755 is your Google verification code.",
+        "date": "2011-05-26",
+        "time": "22:36:52",
+        "id": "55fdad5c88eaa94ee8c399c20290853ebb93061b",
+        "contact_name": null
+    },
+    {
+        "type": "sms",
+        "contact_num": "+12015551337",
+        "folder": "outbox",
+        "body": "I've had movies on my mind grapes recently. Wanna catch a film later?",
+        "date": "2016-11-05",
+        "time": "13:13:22",
+        "id": "3de0e92167b09fc5f4d499f7b209bbbc87f763fd",
+        "contact_name": "Liz Lemon"
+    },
+    {
+        "type": "sms",
+        "contact_num": "+12015551337",
+        "folder": "inbox",
+        "body": "A film? I want to go to there!",
+        "date": "2016-11-05",
+        "time": "13:51:24",
+        "id": "49a1d7fa2baf51225d8ac5f6ff6d2d8a421d8d93",
+        "contact_name": "Liz Lemon"
+    },
+    {
+        "type": "mms",
+        "conversation": "+16175551212~+12015551337",
+        "folder": "inbox",
+        "date": "2019-04-03",
+        "time": "11:20:52",
+        "contact_num": "+12015551337",
+        "body": "How do you do, fellow kids?",
+        "id": "05dfba83b9a2629dbb297c5279a3b4d211ade7b1"
+    }
+]
