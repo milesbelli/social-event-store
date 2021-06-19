@@ -1056,6 +1056,8 @@ def edit_timestamp_for_event(event_id, event_type, time, date, user_prefs, conne
 
     cursor.execute(update_time_sql)
 
+    cnx.commit()
+
     if not connection:
         close_connection(cnx)
 

@@ -97,14 +97,34 @@ class MyTestCase(unittest.TestCase):
         old_dt = str(results[0]["eventdate"])
         old_tm = str(results[0]["eventtime"])
 
-        db.edit_timestamp_for_event(results[0]["smsid"], "sms", "13:25:49", "2015-05-26", user_prefs)
+        db.edit_timestamp_for_event(str(results[0]["smsid"]), "sms", "13:25:49", "2015-05-26", user_prefs)
 
         results = db.get_results_for_query(sms_sql)
 
-        self.assertNotEqual(old_tm, results[0]["eventtime"])
-        self.assertNotEqual(old_dt, results[0]["eventdate"])
+        self.assertNotEqual(old_tm, str(results[0]["eventtime"]))
+        self.assertNotEqual(old_dt, str(results[0]["eventdate"]))
 
-        self.assertEqual(results[0]["eventtime"], "13:25:49")
+        self.assertEqual(str(results[0]["eventtime"]), "13:25:49")
+
+    def test_5_delete_several_sms(self):
+
+        print("Performing TEST 5")
+        user_prefs = c.UserPreferences(0)
+
+        sms_sql = f"SELECT smsid FROM sms_messages " \
+                  f"WHERE userid = '{user_prefs.user_id}'"
+
+        all_sms_ids = db.get_results_for_query(sms_sql)
+
+        for sms_id in all_sms_ids:
+            db.delete_item_from_db(sms_id["smsid"], "sms")
+
+        count_sql = f"SELECT count(*) FROM sms_messages " \
+                    f"WHERE userid = '{user_prefs.user_id}'"
+
+        count = db.get_results_for_query(count_sql)
+
+        self.assertEqual(count[0]["count(*)"], 0)
 
 
 if __name__ == '__main__':
