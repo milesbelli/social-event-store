@@ -19,20 +19,6 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0]["contact_name"], "test")
 
-    # def test_change_time(self):
-    #     user_prefs = c.UserPreferences(1)
-    #     event_id = "7572"
-    #     new_date = "1970-06-01"
-    #     new_time = "12:30:59"
-    #     event_type = "sms"
-    #
-    #     db.edit_timestamp_for_event(event_id, event_type, new_time, new_date, user_prefs)
-    #
-    #     newer_date = "1970-12-31"
-    #     newer_time = "23:59:59"
-    #
-    #     db.edit_timestamp_for_event(event_id, event_type, newer_time, newer_date, user_prefs)
-
     def test_1_insert_fitbit_data(self):
         # User 0 is for the Test User, so we can store stuff in here without harming real user data
 
@@ -95,6 +81,30 @@ class MyTestCase(unittest.TestCase):
         results = db.get_results_for_query(sms_sql)
 
         self.assertEqual(len(results), 4)
+
+    def test_4_change_sms_time(self):
+
+        print("Performing TEST 4")
+
+        user_prefs = c.UserPreferences(0)
+
+        sms_sql = f"SELECT * FROM sms_messages s " \
+                  f"LEFT JOIN events e ON e.detailid = s.smsid " \
+                  f"WHERE e.userid = {user_prefs.user_id} AND " \
+                  f"fingerprint = '05dfba83b9a2629dbb297c5279a3b4d211ade7b1';"
+        results = db.get_results_for_query(sms_sql)
+
+        old_dt = str(results[0]["eventdate"])
+        old_tm = str(results[0]["eventtime"])
+
+        db.edit_timestamp_for_event(results[0]["smsid"], "sms", "13:25:49", "2015-05-26", user_prefs)
+
+        results = db.get_results_for_query(sms_sql)
+
+        self.assertNotEqual(old_tm, results[0]["eventtime"])
+        self.assertNotEqual(old_dt, results[0]["eventdate"])
+
+        self.assertEqual(results[0]["eventtime"], "13:25:49")
 
 
 if __name__ == '__main__':
