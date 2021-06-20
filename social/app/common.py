@@ -21,12 +21,16 @@ class UserPreferences:
     def update(self, **kwargs):
         # Update the items provided
         self.timezone = kwargs.get('timezone') or self.timezone
-        self.reverse_order = kwargs.get('reverse_order')
+        self.reverse_order = int(kwargs.get('reverse_order') or self.reverse_order)
         eventdb.set_user_preferences(self.user_id,
                                      timezone=self.timezone,
                                      reverse_order=self.reverse_order)
 
     def save_filters(self, **kwargs):
+        self.show_twitter = kwargs.get("show_twitter") or self.show_twitter
+        self.show_fitbit_sleep = kwargs.get("show_fitbit-sleep") or self.show_fitbit_sleep
+        self.show_foursquare = kwargs.get("show_foursquare") or self.show_foursquare
+        self.show_sms = kwargs.get("show_sms") or self.show_sms
         eventdb.set_user_source_preferences(self.user_id, **kwargs)
 
     def get_filters(self):
