@@ -1,3 +1,4 @@
+{% from "macros.html" import top %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,7 +8,8 @@
     <title>Edit Sleep Event</title>
 </head>
 <body>
-<iframe class="main" src="/top"></iframe>
+<!--<iframe class="main" src="/top"></iframe>-->
+{{ top() }}
 <h1>Edit Sleep Event</h1>
 <a href="/viewer/{{ event.datetime.strftime('%Y') }}/{{ event.datetime.strftime('%m') }}#{{ event.datetime.strftime('%d') }}">
     Go to Viewer

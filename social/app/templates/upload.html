@@ -1,3 +1,4 @@
+{% from "macros.html" import top %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,7 +8,8 @@
     <title>Upload An Archive File</title>
 </head>
 <body>
-<iframe class="main" src="/top"></iframe>
+<!--<iframe class="main" src="/top"></iframe>-->
+{{ top() }}
 <h1>Upload a File</h1>
 <p>Select a zipped archive to add to the database.</p>
     <form id="upload_data" action="/upload" method="POST" enctype="multipart/form-data">

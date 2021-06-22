@@ -1,3 +1,4 @@
+{% from "macros.html" import top %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,7 +8,8 @@
     <title>Social Event Archive Viewer</title>
 </head>
 <body>
-<iframe class="main" src="/top{% if warn %}?disable=True{% endif %}"></iframe>
+<!--<iframe class="main" src="/top{% if warn %}?disable=True{% endif %}"></iframe>-->
+{{ top(warn) }}
 <h1>Social Event Store</h1>
 <p>Select from the options above.</p>
 <p class="warning">{{ warn }}</p>

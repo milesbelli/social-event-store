@@ -42,3 +42,25 @@
     </div>
 </div>
 {% endmacro %}
+{% macro top(warn) %}
+<div style="overflow: hidden; height: 48px; padding: 8px">
+<table style="float: left{% if warn %}; display: none{% endif %};">
+    <tr>
+        <td><a href="/viewer" target="_parent">Viewer</a></td>
+        <td>&bull;</td>
+        <td><a href="/search" target="_parent">Search</a></td>
+        <td>&bull;</td>
+        <td><a href="/upload" target="_parent">Upload</a></td>
+        <td>&bull;</td>
+        <td><a href="/export" target="_parent">Export</a></td>
+        <td>&bull;</td>
+        <td><a href="/settings" target="_parent">Settings</a></td>
+    </tr>
+</table>
+            <form style="float: right{% if disable %}; display: none{% endif %}" action="/search" method="get" target="_parent">
+                <label for="keyword">Search:</label>
+                <input type="text" id="keyword" name="term" value="{{ default }}">
+                <input type="submit" value="Submit">
+            </form>
+</div>
+{% endmacro %}

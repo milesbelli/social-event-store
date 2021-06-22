@@ -1,4 +1,5 @@
 {% from "macros.html" import filters %}
+{% from "macros.html" import top %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -11,7 +12,8 @@
 </head>
 <body>
 <div class="date-header" id="floating-date-header"><a href="#" id="floating-header-url"></a></div>
-<iframe class="main" src="/top"></iframe>
+<!--<iframe class="main" src="/top"></iframe>-->
+{{ top() }}
 <form id="get-date" action="/viewer" method="get">
     <select id="month" name="month" form="get-date">
         {% for month in pickers["months"] %}
