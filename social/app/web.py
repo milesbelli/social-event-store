@@ -243,6 +243,11 @@ def get_map(source, source_id):
         return jsonify(venue)
 
 
+@app.route("/edit-sms/<sms_id>", methods=["GET"])
+def edit_sms(sms_id):
+    return render_template("edit-sms.html")
+
+
 # Running this will launch the server
 if __name__ == "__main__":
     app.run(host="0.0.0.0")

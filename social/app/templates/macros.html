@@ -46,21 +46,25 @@
 <div style="overflow: hidden; height: 48px; padding: 8px">
 <table style="float: left{% if warn %}; display: none{% endif %};">
     <tr>
-        <td><a href="/viewer" target="_parent">Viewer</a></td>
+        <td><a href="/viewer">Viewer</a></td>
         <td>&bull;</td>
-        <td><a href="/search" target="_parent">Search</a></td>
+        <td><a href="/search">Search</a></td>
         <td>&bull;</td>
-        <td><a href="/upload" target="_parent">Upload</a></td>
+        <td><a href="/upload">Upload</a></td>
         <td>&bull;</td>
-        <td><a href="/export" target="_parent">Export</a></td>
+        <td><a href="/export">Export</a></td>
         <td>&bull;</td>
-        <td><a href="/settings" target="_parent">Settings</a></td>
+        <td><a href="/settings">Settings</a></td>
     </tr>
 </table>
-            <form style="float: right{% if disable %}; display: none{% endif %}" action="/search" method="get" target="_parent">
+            <form style="float: right{% if disable %}; display: none{% endif %}" action="/search" method="get">
                 <label for="keyword">Search:</label>
                 <input type="text" id="keyword" name="term" value="{{ default }}">
                 <input type="submit" value="Submit">
             </form>
 </div>
+{% endmacro %}
+{% macro usual_head() %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 {% endmacro %}

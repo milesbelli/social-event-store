@@ -1,11 +1,11 @@
 {% from "macros.html" import filters %}
 {% from "macros.html" import top %}
+{% from "macros.html" import usual_head %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {{ usual_head() }}
     <title>Archive View</title>
     <script type='text/javascript' src='http://www.bing.com/api/maps/mapcontrol?callback=GetMap&key=AkHjJGDqUeq04-lIEphg6sWsiAjtfIyb3MgcVLNR9gpLhWFICvl78R-HHV4Y2Dna' async defer></script>
     <script type="text/javascript" src="{{ url_for('static', filename='js/viewer.js') }}"></script>
