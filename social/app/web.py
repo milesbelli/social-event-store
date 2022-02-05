@@ -3,6 +3,7 @@ import datetime
 import pytz
 import fitbit, common, twitter, foursquare, sms
 from multiprocessing import Process
+import os
 
 app = Flask(__name__)
 
@@ -236,8 +237,8 @@ def get_twitter_status(status_id):
 
 @app.route("/get-map/<source>/<source_id>", methods=["GET"])
 def get_map(source, source_id):
-    foursquare_api_id = "XTV2HF3BEQYNRFFSYM0IDZ4IT3ZXRHEYLOV5QQCMKDOJ55QX"
-    foursquare_api_secret = "YVYAX05SKW1F2N4CWFYJDII2NPW3PRPJ51RXNNI4OB3ZI5YC"
+    foursquare_api_id = os.getenv("FSQ_KEY")
+    foursquare_api_secret = os.getenv("FSQ_SECRET")
     if source == "foursquare":
         venue = foursquare.get_venue_details(source_id, foursquare_api_id, foursquare_api_secret)
         return jsonify(venue)

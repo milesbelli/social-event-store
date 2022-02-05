@@ -1,21 +1,19 @@
 import mysql.connector
 import datetime
-import common, secure
+import common
+import os
 
 
 def create_connection(dbname):
 
-    db_host = secure.host() or "127.0.0.1"
+    db_host = os.getenv("DB_HOST") or "127.0.0.1"
     
-    cnx = mysql.connector.connect(user=secure.username(),
-                                  password=secure.password(),
-                                  host=db_host)
+    cnx = mysql.connector.connect(user=os.getenv("DB_USER"),
+                                  password=os.getenv("DB_PASS"),
+                                  host=db_host,
+                                  db=dbname)
     cnx.set_charset_collation("utf8mb4", "utf8mb4_general_ci")
-    
-    cursor = cnx.cursor()
-    cursor.execute('CREATE DATABASE IF NOT EXISTS {}'.format(dbname))
-    cnx.database = dbname
-    
+
     return cnx
 
 

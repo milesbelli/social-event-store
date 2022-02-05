@@ -9,18 +9,19 @@ The goal of this project is to bring data archives from disparate sources togeth
 * Twitter
 * Fitbit Sleep
 * Foursquare
+* SMS/text messages
 
 ### Planned
 
 * Instagram
 * Mastodon
 * Swarm/Foursquare
-* SMS/text messages
 * Last.fm scrobbles (via API)
 * Steam achievements (via API)
 * Mint transactions
 * Peach???
 * Facebook if I have to
+* PSN Trophies (via API)
 
 ## Roadmap
 
@@ -53,8 +54,15 @@ The goal of this project is to bring data archives from disparate sources togeth
 * Preparing backend for multiple user logins
 * User login
 * Experimental SMS support
+* Docker integration for production
 
 ## Setup
+
+There are two ways to set up this program to run locally on your computer. You can either follow the instructions for local development and testing to run the actual Python code (requires a bunch of stuff to be installed and configured), or you can follow the instructions for Docker setup (which just requires Docker* to be installed).
+
+*If running on Windows 10 or higher, you should also have WSL2 installed
+
+### For Local Development or Testing
 
 *Requires Python 3 and pip installed, and requires MySQL running with root access*
 
@@ -68,8 +76,14 @@ The goal of this project is to bring data archives from disparate sources togeth
     ```
 4. Confirm queries execute OK
 5. Exit out of MySQL
-6. In the social-event-store directory, edit the file, `secure.py`
-7. Change username and password to be whatever was set in `create_database.sql`
+6. You will need to set up some environment variables to whatever was set in `create_database.sql`:
+
+    ```
+    DB_HOST=social_mysql
+    DB_USER=socialuser
+    DB_PASS=resetme
+    ```
+
 8. Host should be the IP address of your MySQL DB (if running locally, it'll be 127.0.0.1 or localhost)
 9. It is recommended that you create a virtual environment for installing the required packages. Follow directions for creating one according to your OS.
 10. Once running your virtual environment, while inside the `social-event-store/social` directory you can run:
@@ -86,9 +100,32 @@ The goal of this project is to bring data archives from disparate sources togeth
 12. At this point in time you should be running the Flask dev server and should be able to point your browser to `localhost:5000`.
 13. You should see the web UI. Use the links to navigate to different features.
 
+### Using Docker
+
+1. Install [Docker](https://www.docker.com/get-started), following the instructions for whatever OS you're using
+2. If on Windows 10, I recommend following [these setup instructions](https://docs.docker.com/desktop/windows/wsl/) to configure WSL2 (the containers might run without it but I've not tried and can't guarantee the results)
+3. Download the latest source code and extract it somewhere
+4. Open a command prompt and navigate to that directory using a command like this (on Windows):
+
+    ```
+    cd "C:/path/to/that/directory/"
+    ```
+
+5. Make sure you are in the directory where the file `prod.docker-compose.yml` is located
+6. Run the below command
+
+    ```
+    docker-compose -f prod.docker-compose.yml up -d
+    ```
+
+7. It will download the containers and launch them. Once complete, you may need to wait a few moments for the containers to fully start (the database takes a minute to run its setup the first time)
+8. Point your browser to [http://localhost](http://localhost) to test to see if the application is now running
+
 ## Adding Data
 
 *Currently only Twitter archives, Fitbit sleep archives, and Foursquare checkin archives are supported*
+
+*For these instructions, if you're running via Docker, ignore the :5000 in the URLs*
 
 1. With the web UI running, click on `Upload` or point your address bar to `http://localhost:5000/upload`
 2. Choose Twitter, Fitbit Sleep, or Foursquare from the dropdown and then select the zip file you wish to load into the system.

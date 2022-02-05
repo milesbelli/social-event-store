@@ -1,5 +1,5 @@
 # Using Python 3
-FROM python:3.7.9-stretch
+FROM python:3.8.12
 
 # Set working directory for setup
 WORKDIR /social

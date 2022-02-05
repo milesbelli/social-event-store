@@ -1,0 +1,3 @@
+local.docker-compose.yml
+social/env/
+social/app/__pycache__
