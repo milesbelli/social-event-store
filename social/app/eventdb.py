@@ -7,7 +7,7 @@ import os
 def create_connection(dbname):
 
     db_host = os.getenv("DB_HOST") or "127.0.0.1"
-    
+
     cnx = mysql.connector.connect(user=os.getenv("DB_USER"),
                                   password=os.getenv("DB_PASS"),
                                   host=db_host,
@@ -18,60 +18,65 @@ def create_connection(dbname):
 
 
 def insert_tweets(list_of_tweets, cnx):
-    
+
     tweets_total = len(list_of_tweets)
     values_tweets = values_events = values_hashtags = values_duplicates = ""
-    
+
     cursor = cnx.cursor()
-    
+
     tweets_in_db = get_existing_tweets(cursor)
 
     duplicate_dict = dict()
 
     for i in range(tweets_total):
-        
+
         tweet_id = str(list_of_tweets[i]["id"])
-        
+
         if tweet_id not in tweets_in_db:
             if len(values_tweets) > 0:
                 values_tweets += ","
                 values_events += ","
 
-            value_to_append = "('{}','{}','{}','{}',{},{},{},'{}',{})"
+            tweet_text = list_of_tweets[i]["text"].replace("'", "''")
+            user_id = list_of_tweets[i]['user']['id']
+            lat = list_of_tweets[i]["latitude"]
+            lon = list_of_tweets[i]["longitude"]
+            reply_id = list_of_tweets[i]["in_reply_to_status_id"]
+            client = list_of_tweets[i]["client_name"]
+            rt_id = list_of_tweets[i]["rt_id"]
 
-            values_tweets += "".join(value_to_append.format(tweet_id,
-                                                            "1",                                       # This is hardcoded and will need to change
-                                                            list_of_tweets[i]["text"].replace("'", "''"),  # Escape character for apostrophes
-                                                            list_of_tweets[i]["user"]["id"],
-                                                            list_of_tweets[i]["latitude"],
-                                                            list_of_tweets[i]["longitude"],
-                                                            list_of_tweets[i]["in_reply_to_status_id"],
-                                                            list_of_tweets[i]["client_name"],
-                                                            list_of_tweets[i]["rt_id"]))
-            
-            value_to_append = "('{}','{}','{}','{}','{}','{}')"
-            
-            values_events += "".join(value_to_append.format("1",                                       #Replace hardcoding here too
-                                                            list_of_tweets[i]["sql_date"],
-                                                            list_of_tweets[i]["sql_time"],
-                                                            f"{list_of_tweets[i]['sql_date']} {list_of_tweets[i]['sql_time']}",
-                                                            "twitter",
-                                                            tweet_id))
-            
-            value_to_append = "('{}','{}','{}')"
-            
+            value_to_append = (f"('{tweet_id}','{'1'}','{tweet_text}'"
+                               f",'{user_id}',{lat},{lon},{reply_id},"
+                               f"'{client}',{rt_id})")
+
+            values_tweets += value_to_append
+
+            sql_date = list_of_tweets[i]["sql_date"]
+            sql_time = list_of_tweets[i]["sql_time"]
+
+            value_to_append = (f"('{'1'}','{sql_date}','{sql_time}',"
+                               f"'{sql_date + ' ' + sql_time}','twitter',"
+                               f"'{tweet_id}')")
+
+            values_events += value_to_append
+
             for hashtag in list_of_tweets[i]["entities"]["hashtags"]:
-                
+
+                start_idx = hashtag["indices"][0]
+                tag_text = hashtag["text"]
+
+                value_to_append = f"('{tweet_id}','{start_idx}','{tag_text}')"
+
                 if len(values_hashtags) > 0:
                     values_hashtags += ","
-            
-                values_hashtags += "".join(value_to_append.format(tweet_id,
-                                                                hashtag["indices"][0],
-                                                                hashtag["text"]))
+
+                values_hashtags += value_to_append
+
         else:
             # Tweet is in db, so add to duplicate list for checking
             duplicate_dict[str(list_of_tweets[i]["id"])] = list_of_tweets[i]
-            values_duplicates = tweet_id if len(values_duplicates) == 0 else values_duplicates + ", " + tweet_id
+            values_duplicates = tweet_id if len(values_duplicates) == 0 else \
+                values_duplicates + ", " + tweet_id
 
     if len(values_tweets) > 0:
     
