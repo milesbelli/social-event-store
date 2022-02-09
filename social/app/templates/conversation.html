@@ -1,0 +1,42 @@
+{% from "macros.html" import top %}
+{% from "macros.html" import usual_head %}
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        {{ usual_head() }}
+        <title>Conversation with {{ conversation }}</title>
+        <script type="text/javascript" src="{{ url_for('static', filename='js/viewer.js') }}"></script>
+    </head>
+    <body>
+{{ top() }}
+{% for day in days_list %}
+<h2 class="header">{{ day["date_human"] }}</h2>
+{% for message in day["messages"] %}
+<div class="time">{{ message.time }}</div>
+<div class="event {{ message.get_type() }}">
+    {% if message.get_title() %}
+    <div class="title">
+        {{ message.get_title() }}
+        {% if message.get_subtitle() %}
+            <div class="subtitle">
+                {{ message.get_subtitle() }}
+            </div>
+        {% endif %}
+    </div>
+    {% endif %}
+    <div class="text" {% if not message.get_body() %}hidden=true{% endif %}>
+        {% for textline in message.get_body().split('\n') %}
+        {{ textline }}<br>
+        {% endfor %}
+    </div>
+    <div class="client" id="{{ message.type }}_{{ message.id }}_footer">{{ message.get_footer() }}
+    {% if message.is_editable() %}
+     &bull; <a href="{{ message.get_edit_url() }}">Edit</a>
+    {% endif %}</div>
+</div>
+    {% endfor %}
+{% endfor %}
+
+    </body>
+</html>

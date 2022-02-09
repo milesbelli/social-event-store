@@ -249,6 +249,21 @@ def edit_sms(sms_id):
     return render_template("edit-sms.html")
 
 
+@app.route("/conversation/<convo_id>", methods=["GET"])
+def view_convo(convo_id):
+    user_id = 1
+    user_prefs = common.UserPreferences(user_id)
+
+    start = request.args.get("start")
+
+    size = int(request.args.get("size")) or 50
+
+    messages, next = common.get_conversation_page(convo_id, size, start,
+                                                  preferences=user_prefs)
+
+    return render_template("conversation.html", days_list=messages, next=next)
+
+
 # Running this will launch the server
 if __name__ == "__main__":
     app.run(host="0.0.0.0")

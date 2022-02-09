@@ -1,3 +1,4 @@
+from tracemalloc import start
 import eventdb
 import pytz
 import datetime
@@ -46,8 +47,6 @@ class UserPreferences:
             list_of_filters.append("sms")
 
         return list_of_filters
-
-
 
 
 def utc_to_local(source_dt, **kwargs):
@@ -160,6 +159,56 @@ def get_events_for_date_range(start_date, end_date, user_prefs=None, **kwargs):
     output = eventdb.get_datetime_range(start_date, end_date, sources, user_prefs)
 
     return output
+
+
+def get_conversation_page(conversation, page_size, start_dt=None, **kwargs):
+
+    user_prefs = kwargs.get("preferences")
+
+    # Start date is specified if we don't want to start at the top
+    if not start_dt:
+        start_dt = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    # Increase size by 1 for next page
+    page_size += 1
+
+    # get SMS messages for the given conversation and convert to 
+    messages = events_in_local_time(eventdb.get_conversation(conversation,
+                                    start_dt, page_size, user_prefs),
+                                    user_prefs, True)
+
+    # Track what days we've seen so far
+    messages_by_date = dict()
+    # Dict of messages and metadata for single day
+    day_messages = dict()
+    # List of all day dicts, in the proper order
+    days_in_order = list()
+
+    # Undo back to UTC again for next page if exists
+    if len(messages) == page_size:
+        msg_dt = messages[-1]["date"].strftime("%Y-%m-%d") +\
+                " " + messages[-1]["time"]
+        next_dt = datetime.datetime.strptime(msg_dt, "%Y-%m-%d %I:%M:%S %p")
+        next_dt = local_to_utc(next_dt, timezone=user_prefs.timezone)
+        messages.pop()
+    else:
+        next_dt = None
+
+    # Build all the above
+    for message in messages:
+        date_key = message["date"].strftime("%Y-%m-%d")
+        if not messages_by_date.get(date_key):
+            messages_by_date[date_key] = 1
+            day_messages = dict()
+            day_messages["messages"] = list()
+            day_messages["date"] = date_key
+            day_messages["date_human"] = \
+                message["date"].strftime("%A, %B %d %Y")
+            days_in_order.append(day_messages)
+
+        days_in_order[-1]["messages"].append(eventObject(**message))
+
+    return days_in_order, next_dt
 
 
 def localize_date_range(start_date, end_date, **kwargs):
