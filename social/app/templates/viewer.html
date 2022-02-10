@@ -114,7 +114,7 @@
     {% if event.is_editable() %}
      &bull; <a href="{{ event.get_edit_url() }}">Edit</a>
     {% endif %}</div>
-    <div class="view_link"><a target="_blank" rel="noopener noreferrer" href="{{ event.get_url() }}">View Online</a></div>
+    <div class="view_link"><a target="_blank" rel="noopener noreferrer" href="{{ event.get_url() }}">{{ event.get_viewtext() }}</a></div>
 </div>
     {% endfor %}
 {% endif %}

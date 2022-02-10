@@ -256,12 +256,15 @@ def view_convo(convo_id):
 
     start = request.args.get("start")
 
-    size = int(request.args.get("size")) or 50
+    size = int(request.args.get("size") or 50)
 
     messages, next = common.get_conversation_page(convo_id, size, start,
                                                   preferences=user_prefs)
 
-    return render_template("conversation.html", days_list=messages, next=next)
+    prev = common.get_previous_sms(convo_id, start, size, user_prefs)
+
+    return render_template("conversation.html", days_list=messages, next=next,
+                           prev=prev, size=size)
 
 
 # Running this will launch the server

@@ -190,6 +190,7 @@ def get_conversation_page(conversation, page_size, start_dt=None, **kwargs):
                 " " + messages[-1]["time"]
         next_dt = datetime.datetime.strptime(msg_dt, "%Y-%m-%d %I:%M:%S %p")
         next_dt = local_to_utc(next_dt, timezone=user_prefs.timezone)
+        next_dt = next_dt.strftime("%Y-%m-%d %H:%M:%S")
         messages.pop()
     else:
         next_dt = None
@@ -426,6 +427,16 @@ def convert_dict_to_event_objs(list_of_dicts):
     return output_list
 
 
+def get_previous_sms(conversation, start, length, user_prefs):
+
+    prev = eventdb.get_previous_conversation(conversation, start, length,
+                                             user_prefs)
+
+    prev = prev[0]["eventdt"].strftime("%Y-%m-%d %H:%M:%S") if len(prev) > 0 \
+        else None
+
+    return prev
+
 
 class eventObject:
     '''
@@ -531,6 +542,8 @@ class eventObject:
             url = f"https://www.fitbit.com/sleep/{self.end_time.strftime('%Y-%m-%d')}/{self.id}/"
         elif self.type == "foursquare":
             url = f"https://www.swarmapp.com/i/checkin/{self.checkin_id}/"
+        elif self.type == "sms":
+            url = f"/conversation/{self.conversation or self.contact}"
         else:
             url = "#"
 
@@ -616,3 +629,9 @@ class eventObject:
             return f"{', '.join(address_list)}" if address_list else self.venue_name
         else:
             return None
+
+    def get_viewtext(self):
+        if self.type == "sms":
+            return "View Conversation"
+        else:
+            return "View Online"

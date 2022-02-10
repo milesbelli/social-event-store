@@ -1108,12 +1108,12 @@ def get_conversation(conversation, start, length, user_prefs):
                  "s.folder folder, s.fingerprint fingerprint, "
                  "c.contact_name contact_name, NULL source_id "
                  "FROM events e "
-                 "lEFT JOIN sms_messages s "
+                 "LEFT JOIN sms_messages s "
                  "ON e.detailid = s.smsid "
                  "LEFT JOIN sms_contacts c "
                  "ON s.contact_num = c.contact_num AND s.userid = c.userid "
                  "WHERE e.eventtype = 'sms' "
-                 f"AND eventdt < '{start}' "
+                 f"AND eventdt <= '{start}' "
                  f"AND e.userid = '{user_id}' "
                  f"AND (s.conversation = '{conversation}' "
                  f"OR (s.conversation IS NULL and s.contact_num = '{conversation}')) "
@@ -1124,6 +1124,25 @@ def get_conversation(conversation, start, length, user_prefs):
 
     return output
 
+def get_previous_conversation(conversation, start, length, user_prefs):
+    user_id = user_prefs.user_id
+
+    sms_query = ("SELECT s.eventdt eventdt FROM "
+                "(SELECT e.eventdt eventdt "
+                "FROM events e LEFT JOIN sms_messages s "
+                "ON e.detailid = s.smsid "
+                "WHERE e.eventtype = 'sms' "
+                 f"AND eventdt > '{start}' "
+                 f"AND e.userid = '{user_id}' "
+                 f"AND (s.conversation = '{conversation}' "
+                 f"OR (s.conversation IS NULL and s.contact_num = '{conversation}')) "
+                 "ORDER BY eventdt ASC "
+                 f"LIMIT {length}) s "
+                 "ORDER BY s.eventdt DESC LIMIT 1")
+
+    output = get_results_for_query(sms_query)
+
+    return output
 
 def close_connection(cnx):
 
