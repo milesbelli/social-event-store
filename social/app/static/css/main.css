@@ -119,6 +119,10 @@ input, select {
     z-index: 200;
 }
 
+.navigation {
+    padding: 8px;
+}
+
 .reply-embed {
     border: 1px solid #535A63;
     padding: 5px;

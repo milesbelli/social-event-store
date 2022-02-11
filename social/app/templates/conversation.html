@@ -12,6 +12,7 @@
     <div class="date-header" id="floating-date-header"><a href="#" id="floating-header-url"></a></div>
 {{ top() }}
 <h1>{{ days_list[0]['messages'][0].get_title() }}</h1>
+<div class="navigation">
 {% if prev %}
 <a href="?start={{ prev }}&size={{ size }}">Previous</a>
 {% endif %}
@@ -21,6 +22,7 @@
 {% if next %}
 <a href="?start={{ next }}&size={{ size }}">Next</a>
 {% endif %}
+</div>
 {% for day in days_list %}
 <h2 id="{{ day['date'] }}" class="header">{{ day["date_human"] }}</h2>
 {% for message in day["messages"] %}
@@ -39,6 +41,7 @@
     {% endfor %}
 {% endfor %}
 
+<div class="navigation">
 {% if prev %}
 <a href="?start={{ prev }}&size={{ size }}">Previous</a>
 {% endif %}
@@ -48,6 +51,6 @@
 {% if next %}
 <a href="?start={{ next }}&size={{ size }}">Next</a>
 {% endif %}
-
+</div>
     </body>
 </html>
