@@ -2,55 +2,58 @@
 {% from "macros.html" import usual_head %}
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        {{ usual_head() }}
-        <title>{{ days_list[0]['messages'][0].get_title() }}</title>
-        <script type="text/javascript" src="{{ url_for('static', filename='js/viewer.js') }}"></script>
-    </head>
-    <body>
-    <div class="date-header" id="floating-date-header"><a href="#" id="floating-header-url"></a></div>
-{{ top() }}
-<h1>{{ days_list[0]['messages'][0].get_title() }}</h1>
-<div class="navigation">
-{% if prev %}
-<a href="?start={{ prev }}&size={{ size }}">Previous</a>
-{% endif %}
-{% if prev and next %}
- - 
- {% endif %}
-{% if next %}
-<a href="?start={{ next }}&size={{ size }}">Next</a>
-{% endif %}
-</div>
-{% for day in days_list %}
-<h2 id="{{ day['date'] }}" class="header">{{ day["date_human"] }}</h2>
-{% for message in day["messages"] %}
-<div class="time">{{ message.time }}</div>
-<div class="event {{ message.get_type() }}">
-    <div class="text" {% if not message.get_body() %}hidden=true{% endif %}>
-        {% for textline in message.get_body().split('\n') %}
-        {{ textline }}<br>
-        {% endfor %}
-    </div>
-    <div class="client" id="{{ message.type }}_{{ message.id }}_footer">{{ message.get_footer() }}
-    {% if message.is_editable() %}
-     &bull; <a href="{{ message.get_edit_url() }}">Edit</a>
-    {% endif %}</div>
-</div>
-    {% endfor %}
-{% endfor %}
 
-<div class="navigation">
-{% if prev %}
-<a href="?start={{ prev }}&size={{ size }}">Previous</a>
-{% endif %}
-{% if prev and next %}
- - 
- {% endif %}
-{% if next %}
-<a href="?start={{ next }}&size={{ size }}">Next</a>
-{% endif %}
-</div>
-    </body>
+<head>
+    <meta charset="UTF-8">
+    {{ usual_head() }}
+    <title>{{ conv_name }}</title>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/viewer.js') }}"></script>
+</head>
+
+<body>
+    <div class="date-header" id="floating-date-header"><a href="#" id="floating-header-url"></a></div>
+    {{ top() }}
+    <h1>{{ conv_name }}</h1>
+    <div class="navigation">
+        {% if prev %}
+        <a href="?start={{ prev }}&size={{ size }}">Previous</a>
+        {% endif %}
+        {% if prev and next %}
+        -
+        {% endif %}
+        {% if next %}
+        <a href="?start={{ next }}&size={{ size }}">Next</a>
+        {% endif %}
+    </div>
+    {% for day in days_list %}
+    <h2 id="{{ day['date'] }}" class="header">{{ day["date_human"] }}</h2>
+    {% for message in day["messages"] %}
+    <div class="time">{{ message.time }}</div>
+    <div class="event {{ message.get_type() }}">
+        <div class="text" {% if not message.get_body() %}hidden=true{% endif %}>
+            {% for textline in message.get_body().split('\n') %}
+            {{ textline }}<br>
+            {% endfor %}
+        </div>
+        <div class="client" id="{{ message.type }}_{{ message.id }}_footer">{{ message.get_footer() }}
+            {% if message.is_editable() %}
+            &bull; <a href="{{ message.get_edit_url() }}">Edit</a>
+            {% endif %}</div>
+    </div>
+    {% endfor %}
+    {% endfor %}
+
+    <div class="navigation">
+        {% if prev %}
+        <a href="?start={{ prev }}&size={{ size }}">Previous</a>
+        {% endif %}
+        {% if prev and next %}
+        -
+        {% endif %}
+        {% if next %}
+        <a href="?start={{ next }}&size={{ size }}">Next</a>
+        {% endif %}
+    </div>
+</body>
+
 </html>

@@ -131,7 +131,7 @@ def get_one_month_of_events(year, month, **kwargs):
             events_by_date[event["date"].strftime("%Y-%m-%d")] = []
 
         # Pass in the entire event as kwargs, eventObject will know how to build it
-        social_event = eventObject(**event)
+        social_event = eventObject(**event, user_prefs=user_prefs)
 
         # take the built eventObject and append to the day
         events_by_date[event["date"].strftime("%Y-%m-%d")].append(social_event)
@@ -207,9 +207,17 @@ def get_conversation_page(conversation, page_size, start_dt=None, **kwargs):
                 message["date"].strftime("%A, %B %d %Y")
             days_in_order.append(day_messages)
 
-        days_in_order[-1]["messages"].append(eventObject(**message))
+        days_in_order[-1]["messages"].append(eventObject(**message,
+                                             user_prefs=user_prefs))
 
-    return days_in_order, next_dt
+    # To avoid making another SQL query, we grab the title from the first
+    # message in the list. But in edge cases where no number is found, we need
+    # something to display
+
+    conv_name = days_in_order[0]['messages'][0].get_title() if \
+        len(days_in_order) > 0 else "No conversation found"
+
+    return days_in_order, next_dt, conv_name
 
 
 def localize_date_range(start_date, end_date, **kwargs):
@@ -447,12 +455,14 @@ class eventObject:
         * body - main body of the event, should generally contain the most information with some exceptions
         * source_id - a unique id for the event from the source service, used if a view link is available
     '''
-    def __init__(self, date, time, object_type, source_id, **kwargs):
+    def __init__(self, date, time, object_type, source_id,
+                 user_prefs=None, **kwargs):
 
         self.type = object_type
         self.id = source_id
         self.date = date
         self.time = time
+        self.prefs = user_prefs
 
         if self.type == "twitter":
             # set up Twitter fields
@@ -544,6 +554,12 @@ class eventObject:
             url = f"https://www.swarmapp.com/i/checkin/{self.checkin_id}/"
         elif self.type == "sms":
             url = f"/conversation/{self.conversation or self.contact}"
+            if self.prefs is not None:
+                local_dt = self.date.strftime("%Y-%m-%d") + " " + self.time
+                utc_dt = datetime.datetime.strptime(local_dt,
+                                                    "%Y-%m-%d %I:%M:%S %p")
+                utc_dt = local_to_utc(utc_dt, timezone=self.prefs.timezone)
+                url += f"?start={utc_dt}"
         else:
             url = "#"
 
