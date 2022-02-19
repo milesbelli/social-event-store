@@ -40,7 +40,8 @@ def double_quote_shuffle(process_text, attribute=" body="):
 
 
 def number_formatting(contact_num, regex):
-    contact_num = regex.sub("", contact_num)
+    contact_num = regex.sub("", contact_num) if "@" not in contact_num \
+        else contact_num
 
     if len(contact_num) == 10 and contact_num[0] != "+":
         contact_num = "+1" + contact_num
@@ -59,7 +60,12 @@ def decode_xml(text):
         end = text.find(";", start)
 
         amp_text = text[start:end+1]
-        amp_num = int(text[start+2:end])
+        if text[start+2] == "x":
+            swap_dict = {"A": 10,
+                         "D": 13}
+            amp_num = swap_dict[text[start+3]]
+        else:
+            amp_num = int(text[start+2:end])
 
         text = text.replace(amp_text, chr(amp_num))
 
@@ -123,6 +129,7 @@ def process_single_mms(raw_text):
     conversation_list = []
     for addr in address_list:
         conversation_list.append(number_formatting(addr or "999999999", regex))
+    conversation_list.sort()
     conversation = "~".join(conversation_list)
 
     finalized_entry["type"] = "mms"
