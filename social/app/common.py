@@ -425,11 +425,11 @@ def word_wrap(text_to_format):
 # Mama mía, that's a spicy optimization!!! The dict object created from the SQL query is imported directly into
 # the eventObject as a bunch of kwargs. We get away with this because kwargs are just a dict to begin with and all the
 # aliases map directly to those arguments. It's a thousand percent easier than before.
-def convert_dict_to_event_objs(list_of_dicts):
+def convert_dict_to_event_objs(list_of_dicts, user_prefs):
     output_list = list()
 
     for event in list_of_dicts:
-        social_event = eventObject(**event)
+        social_event = eventObject(**event, user_prefs=user_prefs)
         output_list.append(social_event)
 
     return output_list
