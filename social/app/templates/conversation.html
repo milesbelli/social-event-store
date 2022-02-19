@@ -16,13 +16,13 @@
     <h1>{{ conv_name }}</h1>
     <div class="navigation">
         {% if prev %}
-        <a href="?start={{ prev }}&size={{ size }}">Previous</a>
+        <a href="?start={{ prev }}&size={{ size }}">Newer</a>
         {% endif %}
         {% if prev and next %}
         -
         {% endif %}
         {% if next %}
-        <a href="?start={{ next }}&size={{ size }}">Next</a>
+        <a href="?start={{ next }}&size={{ size }}">Older</a>
         {% endif %}
     </div>
     {% for day in days_list %}
