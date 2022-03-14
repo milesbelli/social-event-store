@@ -98,7 +98,7 @@ class MyTestCase(unittest.TestCase):
 
         user_prefs = c.UserPreferences(0)
 
-        results = db.get_search_term("film", user_prefs.user_id, ["sms"])
+        results = db.get_search_term("film", user_prefs, ["sms"])
 
         list_of_ids = list()
 

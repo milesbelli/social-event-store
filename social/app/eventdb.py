@@ -726,7 +726,9 @@ def generate_search_where_clause(search_list, searchable_columns):
     return where_clause
 
 
-def get_search_term(search_term, user_id, event_types):
+def get_search_term(search_term, user_prefs, event_types):
+
+    user_id = user_prefs.user_id
 
     search_term = search_term.replace("'", "''")
     search_term = search_term.replace("\\", "\\\\")

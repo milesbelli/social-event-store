@@ -599,7 +599,10 @@ class eventObject:
         if self.type == "foursquare":
             return f"Checked in at {self.venue_name}"
         elif self.type == "sms":
-            return f"Conversation with {self.conversation or self.contact_nm or self.contact}"
+            conversation = None
+            if self.conversation:
+                conversation = self.conversation.replace("~", ", ")
+            return f"Conversation with {conversation or self.contact_nm or self.contact}"
         else:
             return None
 

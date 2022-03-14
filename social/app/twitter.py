@@ -171,7 +171,7 @@ def search_for_term(search_term, user_prefs):
 
     filters = user_prefs.get_filters()
 
-    output = eventdb.get_search_term(search_term, user_prefs.user_id, filters)
+    output = eventdb.get_search_term(search_term, user_prefs, filters)
 
     return output
 
