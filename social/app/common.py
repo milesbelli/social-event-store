@@ -151,7 +151,7 @@ def get_events_for_date_range(start_date, end_date, user_prefs=None, **kwargs):
 
     # Query the db for events of given type(s) and date range
 
-    sources = user_prefs.get_filters() or ["twitter", "fitbit-sleep", "foursquare", "sms"]
+    sources = kwargs.get("sources") or user_prefs.get_filters() or ["twitter", "fitbit-sleep", "foursquare", "sms"]
 
     if user_prefs:
         start_date, end_date = localize_date_range(start_date, end_date, timezone=user_prefs.timezone)
