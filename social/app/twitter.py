@@ -154,7 +154,7 @@ def process_directory(dir_path, acct=None):
 
 def process_from_file(file_path):
 
-    process_dir = common.unpack_and_store_files(file_path, "output")
+    process_dir = common.unpack_and_store_files(file_path)
     process_directory(process_dir)
 
 

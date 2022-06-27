@@ -42,7 +42,7 @@ class SmsMessage(dict):
 
 def process_from_file(directory):
     current_user = common.UserPreferences(1)
-    process_dir = common.unpack_and_store_files(directory, "output", "sms")
+    process_dir = common.unpack_and_store_files(directory, None, "sms")
     sms_import = SmsImporter(process_dir)
     sms_import.add_to_database(current_user)
     common.cleanup(process_dir)

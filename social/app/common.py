@@ -5,6 +5,7 @@ import datetime
 import zipfile
 import time
 from pathlib import Path
+import os
 
 
 class UserPreferences:
@@ -241,11 +242,11 @@ def localize_date_range(start_date, end_date, **kwargs):
     return start_date, end_date
 
 
-def unpack_and_store_files(zipfile_path, parent_directory, type=None):
+def unpack_and_store_files(zipfile_path, parent_directory=None, type=None):
     # Returns the temporary directory for the files that were extracted
 
-    if not Path(parent_directory).exists():
-        Path.mkdir(Path(parent_directory))
+    parent_directory = parent_directory or os.getenv("PATH_OUTPUT") or "output"
+    create_directory(parent_directory)
 
     if zipfile.is_zipfile(zipfile_path):
 
@@ -259,15 +260,18 @@ def unpack_and_store_files(zipfile_path, parent_directory, type=None):
         with zipfile.ZipFile(zipfile_path) as zipfile_to_process:
             for entry in zipfile_to_process.namelist():
 
+                filename = entry.split("/")[-1]
+
                 # Twitter tweet file
-                if ("data/js/tweets" in entry and ".js" in entry) or ("tweet.js" in entry):
+                if ("data/js/tweets" in entry and ".js" in entry) \
+                   or (filename == "tweet.js"):
                     js_file_to_save = zipfile_to_process.read(entry)
                     output_file = open(f"{output_path}/{entry.split('/')[-1]}", "wb")
                     output_file.write(js_file_to_save)
                     output_file.close()
 
                 # Twitter account file
-                elif "account.js" in entry:
+                elif filename == "account.js":
                     account_js = zipfile_to_process.read(entry)
                     Path.mkdir(Path(f"{output_path}/acct"))
                     output_acct = open(f"{output_path}/acct/account.js", "wb")
@@ -356,7 +360,6 @@ def output_events_to_ical(list_of_events):
         # Ever wonder how to get a datetime object out of a date and a timedelta? Wonder no more!
         start_time = datetime.datetime.combine(social_event.date, datetime.time()) + social_event.time
 
-
         event_date = str(social_event.date).replace('-', '')
         event_time = str(start_time.time()).replace(':', '')
         geocoordinates = f"GEO:{social_event.get_geo()['latitude']};{social_event.get_geo()['longitude']}\n"\
@@ -387,14 +390,27 @@ def output_events_to_ical(list_of_events):
     return ical_string
 
 
+def create_directory(output_dir):
+
+    directory_list = output_dir.split("/")
+    directory_path = str()
+    for i in range(0, len(directory_list)):
+
+        directory_path += directory_list[i]
+
+        if not Path(directory_path).exists():
+            Path.mkdir(Path(directory_path))
+            directory_path += "/"
+
+
 def export_ical(events):
 
     # Output folder must be created, check for this
-    if not Path("output").exists():
-        Path.mkdir(Path("output"))
+    output_dir = os.getenv("PATH_OUTPUT") or "output"
+    create_directory(output_dir)
 
     ical_text = output_events_to_ical(events)
-    output_path = f"output/export_{datetime.datetime.now().strftime('%Y%m%d%H%M%S%f')}.ics"
+    output_path = f"{output_dir}/export_{datetime.datetime.now().strftime('%Y%m%d%H%M%S%f')}.ics"
 
     with open(output_path, "w", encoding="utf8") as ics_file:
         ics_file.write(ical_text)
