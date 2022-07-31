@@ -53,7 +53,7 @@ def search():
                 tweets = twitter.reverse_events(tweets)
 
             return render_template("search.html", events=tweets, default=search_term, count=len(tweets),
-                                   prefs=user_prefs)
+                                   prefs=user_prefs, maps=maps_key)
 
         else:
             return render_template("search.html", prefs=user_prefs,
