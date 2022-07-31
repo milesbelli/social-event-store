@@ -1,3 +1,4 @@
+from re import M
 from flask import Flask, render_template, request, redirect, send_file, jsonify, url_for
 import datetime
 import pytz
@@ -34,6 +35,9 @@ def top():
 @app.route("/search", methods=["GET", "POST"])
 def search():
     if request.method == "GET":
+
+        maps_key = os.getenv("MAPS_KEY")
+
         user_prefs = common.UserPreferences(1)
 
         if request.args.get("term"):
@@ -52,7 +56,8 @@ def search():
                                    prefs=user_prefs)
 
         else:
-            return render_template("search.html", prefs=user_prefs)
+            return render_template("search.html", prefs=user_prefs,
+                                   maps=maps_key)
 
 
 @app.route("/calendar/<date>")
@@ -77,6 +82,8 @@ def calendar(date):
 
 @app.route("/viewer/<year>/<month>")
 def viewer(year, month):
+
+    maps_key = os.getenv("MAPS_KEY")
 
     user_prefs = common.UserPreferences(1)
 
@@ -107,7 +114,7 @@ def viewer(year, month):
 
     return render_template("viewer.html", month=month_of_events, calendar=output_calendar,
                            header=cal_header, nav=navigation, pickers=pickers, date_values=date_values,
-                           prefs=user_prefs)
+                           prefs=user_prefs, maps=maps_key)
 
 
 @app.route("/viewer")

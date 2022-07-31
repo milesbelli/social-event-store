@@ -7,7 +7,7 @@
     <meta charset="UTF-8">
     {{ usual_head() }}
     <title>Search</title>
-    <script type='text/javascript' src='http://www.bing.com/api/maps/mapcontrol?callback=GetMap&key=AkHjJGDqUeq04-lIEphg6sWsiAjtfIyb3MgcVLNR9gpLhWFICvl78R-HHV4Y2Dna' async defer></script>
+    <script type='text/javascript' src='http://www.bing.com/api/maps/mapcontrol?callback=GetMap&key={{ maps }}' async defer></script>
     <script type="text/javascript" src="{{ url_for('static', filename='js/viewer.js') }}"></script>
 
 </head>

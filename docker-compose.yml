@@ -16,6 +16,8 @@ services:
       # Uncomment the below and input your Foursquare API credentials if using
       # - FSQ_KEY=YOUR_API_ID=
       # - FSQ_SECRET=YOUR_API_SECRET=
+      # Uncomment the below and input your Bing Maps key if using
+      # - MAPS_KEY=
       # Uncomment the below when setting custom paths for folders
       # - PATH_OUTPUT=
       # - PATH_INPUT=
