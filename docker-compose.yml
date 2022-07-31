@@ -32,6 +32,7 @@ services:
   mysql-server:
     image: mysql/mysql-server:5.7
     container_name: social_mysql
+    restart: always
     volumes:
         # This is the path to the DB setup scripts
         - ./mysql/database/:/docker-entrypoint-initdb.d/
