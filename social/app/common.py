@@ -1,9 +1,11 @@
+from tracemalloc import start
 import eventdb
 import pytz
 import datetime
 import zipfile
 import time
 from pathlib import Path
+import os
 
 
 class UserPreferences:
@@ -16,16 +18,21 @@ class UserPreferences:
         self.show_twitter = int(db_prefs.get("show_twitter") or 1)
         self.show_fitbit_sleep = int(db_prefs.get("show_fitbit-sleep") or 1)
         self.show_foursquare = int(db_prefs.get("show_foursquare") or 1)
+        self.show_sms = int(db_prefs.get("show_sms") or 1)
 
     def update(self, **kwargs):
         # Update the items provided
         self.timezone = kwargs.get('timezone') or self.timezone
-        self.reverse_order = kwargs.get('reverse_order')
-        eventdb.set_user_preferences(1,
+        self.reverse_order = int(kwargs.get('reverse_order') or self.reverse_order)
+        eventdb.set_user_preferences(self.user_id,
                                      timezone=self.timezone,
                                      reverse_order=self.reverse_order)
 
     def save_filters(self, **kwargs):
+        self.show_twitter = kwargs.get("show_twitter") or self.show_twitter
+        self.show_fitbit_sleep = kwargs.get("show_fitbit-sleep") or self.show_fitbit_sleep
+        self.show_foursquare = kwargs.get("show_foursquare") or self.show_foursquare
+        self.show_sms = kwargs.get("show_sms") or self.show_sms
         eventdb.set_user_source_preferences(self.user_id, **kwargs)
 
     def get_filters(self):
@@ -37,10 +44,10 @@ class UserPreferences:
             list_of_filters.append("fitbit-sleep")
         if self.show_foursquare == 1:
             list_of_filters.append("foursquare")
+        if self.show_sms == 1:
+            list_of_filters.append("sms")
 
         return list_of_filters
-
-
 
 
 def utc_to_local(source_dt, **kwargs):
@@ -125,7 +132,7 @@ def get_one_month_of_events(year, month, **kwargs):
             events_by_date[event["date"].strftime("%Y-%m-%d")] = []
 
         # Pass in the entire event as kwargs, eventObject will know how to build it
-        social_event = eventObject(**event)
+        social_event = eventObject(**event, user_prefs=user_prefs)
 
         # take the built eventObject and append to the day
         events_by_date[event["date"].strftime("%Y-%m-%d")].append(social_event)
@@ -145,14 +152,73 @@ def get_events_for_date_range(start_date, end_date, user_prefs=None, **kwargs):
 
     # Query the db for events of given type(s) and date range
 
-    sources = user_prefs.get_filters() or ["twitter", "fitbit-sleep", "foursquare"]
+    sources = kwargs.get("sources") or user_prefs.get_filters() or ["twitter", "fitbit-sleep", "foursquare", "sms"]
 
     if user_prefs:
         start_date, end_date = localize_date_range(start_date, end_date, timezone=user_prefs.timezone)
 
-    output = eventdb.get_datetime_range(start_date, end_date, sources)
+    output = eventdb.get_datetime_range(start_date, end_date, sources, user_prefs)
 
     return output
+
+
+def get_conversation_page(conversation, page_size, start_dt=None, **kwargs):
+
+    user_prefs = kwargs.get("preferences")
+
+    # Start date is specified if we don't want to start at the top
+    if not start_dt:
+        start_dt = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    # Increase size by 1 for next page
+    page_size += 1
+
+    # get SMS messages for the given conversation and convert to 
+    messages = events_in_local_time(eventdb.get_conversation(conversation,
+                                    start_dt, page_size, user_prefs),
+                                    user_prefs, True)
+
+    # Track what days we've seen so far
+    messages_by_date = dict()
+    # Dict of messages and metadata for single day
+    day_messages = dict()
+    # List of all day dicts, in the proper order
+    days_in_order = list()
+
+    # Undo back to UTC again for next page if exists
+    if len(messages) == page_size:
+        msg_dt = messages[-1]["date"].strftime("%Y-%m-%d") +\
+                " " + messages[-1]["time"]
+        next_dt = datetime.datetime.strptime(msg_dt, "%Y-%m-%d %I:%M:%S %p")
+        next_dt = local_to_utc(next_dt, timezone=user_prefs.timezone)
+        next_dt = next_dt.strftime("%Y-%m-%d %H:%M:%S")
+        messages.pop()
+    else:
+        next_dt = None
+
+    # Build all the above
+    for message in messages:
+        date_key = message["date"].strftime("%Y-%m-%d")
+        if not messages_by_date.get(date_key):
+            messages_by_date[date_key] = 1
+            day_messages = dict()
+            day_messages["messages"] = list()
+            day_messages["date"] = date_key
+            day_messages["date_human"] = \
+                message["date"].strftime("%A, %B %d %Y")
+            days_in_order.append(day_messages)
+
+        days_in_order[-1]["messages"].append(eventObject(**message,
+                                             user_prefs=user_prefs))
+
+    # To avoid making another SQL query, we grab the title from the first
+    # message in the list. But in edge cases where no number is found, we need
+    # something to display
+
+    conv_name = days_in_order[0]['messages'][0].get_title() if \
+        len(days_in_order) > 0 else "No conversation found"
+
+    return days_in_order, next_dt, conv_name
 
 
 def localize_date_range(start_date, end_date, **kwargs):
@@ -176,11 +242,11 @@ def localize_date_range(start_date, end_date, **kwargs):
     return start_date, end_date
 
 
-def unpack_and_store_files(zipfile_path, parent_directory):
+def unpack_and_store_files(zipfile_path, parent_directory=None, type=None):
     # Returns the temporary directory for the files that were extracted
 
-    if not Path(parent_directory).exists():
-        Path.mkdir(Path(parent_directory))
+    parent_directory = parent_directory or os.getenv("PATH_OUTPUT") or "output"
+    create_directory(parent_directory)
 
     if zipfile.is_zipfile(zipfile_path):
 
@@ -194,15 +260,18 @@ def unpack_and_store_files(zipfile_path, parent_directory):
         with zipfile.ZipFile(zipfile_path) as zipfile_to_process:
             for entry in zipfile_to_process.namelist():
 
+                filename = entry.split("/")[-1]
+
                 # Twitter tweet file
-                if ("data/js/tweets" in entry and ".js" in entry) or ("tweet.js" in entry):
+                if ("data/js/tweets" in entry and ".js" in entry) \
+                   or (filename == "tweet.js"):
                     js_file_to_save = zipfile_to_process.read(entry)
                     output_file = open(f"{output_path}/{entry.split('/')[-1]}", "wb")
                     output_file.write(js_file_to_save)
                     output_file.close()
 
                 # Twitter account file
-                elif "account.js" in entry:
+                elif filename == "account.js":
                     account_js = zipfile_to_process.read(entry)
                     Path.mkdir(Path(f"{output_path}/acct"))
                     output_acct = open(f"{output_path}/acct/account.js", "wb")
@@ -220,6 +289,12 @@ def unpack_and_store_files(zipfile_path, parent_directory):
                     checkin_file_to_save = zipfile_to_process.read(entry)
                     output_file = open(f"{output_path}/{entry.split('/')[-1]}", "wb")
                     output_file.write(checkin_file_to_save)
+                    output_file.close()
+
+                elif type == "sms":
+                    sms_file_to_save = zipfile_to_process.read(entry)
+                    output_file = open(f"{output_path}/{entry.split('/')[-1]}", "wb")
+                    output_file.write(sms_file_to_save)
                     output_file.close()
 
         cleanup(zipfile_path)
@@ -285,7 +360,6 @@ def output_events_to_ical(list_of_events):
         # Ever wonder how to get a datetime object out of a date and a timedelta? Wonder no more!
         start_time = datetime.datetime.combine(social_event.date, datetime.time()) + social_event.time
 
-
         event_date = str(social_event.date).replace('-', '')
         event_time = str(start_time.time()).replace(':', '')
         geocoordinates = f"GEO:{social_event.get_geo()['latitude']};{social_event.get_geo()['longitude']}\n"\
@@ -316,14 +390,27 @@ def output_events_to_ical(list_of_events):
     return ical_string
 
 
+def create_directory(output_dir):
+
+    directory_list = output_dir.split("/")
+    directory_path = str()
+    for i in range(0, len(directory_list)):
+
+        directory_path += directory_list[i]
+
+        if not Path(directory_path).exists():
+            Path.mkdir(Path(directory_path))
+            directory_path += "/"
+
+
 def export_ical(events):
 
     # Output folder must be created, check for this
-    if not Path("output").exists():
-        Path.mkdir(Path("output"))
+    output_dir = os.getenv("PATH_OUTPUT") or "output"
+    create_directory(output_dir)
 
     ical_text = output_events_to_ical(events)
-    output_path = f"output/export_{datetime.datetime.now().strftime('%Y%m%d%H%M%S%f')}.ics"
+    output_path = f"{output_dir}/export_{datetime.datetime.now().strftime('%Y%m%d%H%M%S%f')}.ics"
 
     with open(output_path, "w", encoding="utf8") as ics_file:
         ics_file.write(ical_text)
@@ -354,15 +441,25 @@ def word_wrap(text_to_format):
 # Mama mía, that's a spicy optimization!!! The dict object created from the SQL query is imported directly into
 # the eventObject as a bunch of kwargs. We get away with this because kwargs are just a dict to begin with and all the
 # aliases map directly to those arguments. It's a thousand percent easier than before.
-def convert_dict_to_event_objs(list_of_dicts):
+def convert_dict_to_event_objs(list_of_dicts, user_prefs):
     output_list = list()
 
     for event in list_of_dicts:
-        social_event = eventObject(**event)
+        social_event = eventObject(**event, user_prefs=user_prefs)
         output_list.append(social_event)
 
     return output_list
 
+
+def get_previous_sms(conversation, start, length, user_prefs):
+
+    prev = eventdb.get_previous_conversation(conversation, start, length,
+                                             user_prefs)
+
+    prev = prev[0]["eventdt"].strftime("%Y-%m-%d %H:%M:%S") if len(prev) > 0 \
+        else None
+
+    return prev
 
 
 class eventObject:
@@ -374,12 +471,14 @@ class eventObject:
         * body - main body of the event, should generally contain the most information with some exceptions
         * source_id - a unique id for the event from the source service, used if a view link is available
     '''
-    def __init__(self, date, time, object_type, source_id, **kwargs):
+    def __init__(self, date, time, object_type, source_id,
+                 user_prefs=None, **kwargs):
 
         self.type = object_type
         self.id = source_id
         self.date = date
         self.time = time
+        self.prefs = user_prefs
 
         if self.type == "twitter":
             # set up Twitter fields
@@ -433,6 +532,14 @@ class eventObject:
             self.country = kwargs.get("country")
             self.venue_id = kwargs.get("venue_id")
 
+        elif self.type == "sms":
+            self.body = kwargs.get("body") or str()
+            self.geo = None
+            self.conversation = kwargs.get("conversation")
+            self.contact = kwargs.get("contact_num")
+            self.folder = kwargs.get("folder")
+            self.contact_nm = kwargs.get("contact_name")
+
         else:
             raise ValueError(f"Unsupported event type: {self.type}")
 
@@ -451,6 +558,8 @@ class eventObject:
                     footer_list.append(item)
             return ", ".join(footer_list) if footer_list != [] \
                 else "Location unknown"
+        elif self.type == "sms":
+            return f"from me" if self.folder == "outbox" else f"from {self.contact_nm or self.contact}"
 
     def get_url(self):
         if self.type == "twitter":
@@ -459,6 +568,16 @@ class eventObject:
             url = f"https://www.fitbit.com/sleep/{self.end_time.strftime('%Y-%m-%d')}/{self.id}/"
         elif self.type == "foursquare":
             url = f"https://www.swarmapp.com/i/checkin/{self.checkin_id}/"
+        elif self.type == "sms":
+            url = f"/conversation/{self.conversation or self.contact}"
+            if self.prefs is not None:
+                local_dt = self.date.strftime("%Y-%m-%d") + " " + self.time
+                utc_dt = datetime.datetime.strptime(local_dt,
+                                                    "%Y-%m-%d %I:%M:%S %p")
+                utc_dt = local_to_utc(utc_dt, timezone=self.prefs.timezone)
+                url += f"?start={utc_dt}"
+        else:
+            url = "#"
 
         return url
 
@@ -495,6 +614,11 @@ class eventObject:
     def get_title(self):
         if self.type == "foursquare":
             return f"Checked in at {self.venue_name}"
+        elif self.type == "sms":
+            conversation = None
+            if self.conversation:
+                conversation = self.conversation.replace("~", ", ")
+            return f"Conversation with {conversation or self.contact_nm or self.contact}"
         else:
             return None
 
@@ -509,6 +633,12 @@ class eventObject:
             return self.timedelta
         else:
             return 0
+
+    def get_type(self):
+        if self.type == "sms":
+            return f"{self.type} {'txtin' if self.folder == 'inbox' else 'txtout'}"
+        else:
+            return self.type
 
     def ical_title(self):
         if self.type == "twitter":
@@ -534,3 +664,9 @@ class eventObject:
             return f"{', '.join(address_list)}" if address_list else self.venue_name
         else:
             return None
+
+    def get_viewtext(self):
+        if self.type == "sms":
+            return "View Conversation"
+        else:
+            return "View Online"

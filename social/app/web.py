@@ -1,8 +1,10 @@
+from re import M
 from flask import Flask, render_template, request, redirect, send_file, jsonify, url_for
 import datetime
 import pytz
-import fitbit, common, twitter, foursquare
+import fitbit, common, twitter, foursquare, sms
 from multiprocessing import Process
+import os
 
 app = Flask(__name__)
 
@@ -33,6 +35,9 @@ def top():
 @app.route("/search", methods=["GET", "POST"])
 def search():
     if request.method == "GET":
+
+        maps_key = os.getenv("MAPS_KEY")
+
         user_prefs = common.UserPreferences(1)
 
         if request.args.get("term"):
@@ -41,17 +46,18 @@ def search():
             # This is clumsy and won't scale... this twitter function should be moved to common and made scalable
             tweets = twitter.search_for_term(search_term, user_prefs)
             tweets = common.events_in_local_time(tweets, user_prefs, True)
-            tweets = common.convert_dict_to_event_objs(tweets)
+            tweets = common.convert_dict_to_event_objs(tweets, user_prefs=user_prefs)
 
             # After setting up the calendar, reverse the order if user preferences is set.
             if user_prefs.reverse_order == 1:
                 tweets = twitter.reverse_events(tweets)
 
             return render_template("search.html", events=tweets, default=search_term, count=len(tweets),
-                                   prefs=user_prefs)
+                                   prefs=user_prefs, maps=maps_key)
 
         else:
-            return render_template("search.html", prefs=user_prefs)
+            return render_template("search.html", prefs=user_prefs,
+                                   maps=maps_key)
 
 
 @app.route("/calendar/<date>")
@@ -76,6 +82,8 @@ def calendar(date):
 
 @app.route("/viewer/<year>/<month>")
 def viewer(year, month):
+
+    maps_key = os.getenv("MAPS_KEY")
 
     user_prefs = common.UserPreferences(1)
 
@@ -106,7 +114,7 @@ def viewer(year, month):
 
     return render_template("viewer.html", month=month_of_events, calendar=output_calendar,
                            header=cal_header, nav=navigation, pickers=pickers, date_values=date_values,
-                           prefs=user_prefs)
+                           prefs=user_prefs, maps=maps_key)
 
 
 @app.route("/viewer")
@@ -126,7 +134,7 @@ def event_filter_viewer():
 
     filter_prefs = dict()
 
-    event_types = ["twitter", "fitbit-sleep", "foursquare"]
+    event_types = ["twitter", "fitbit-sleep", "foursquare", "sms"]
 
     for event_type in event_types:
         filter_prefs[f"show_{event_type}"] = 1 if request.form.get(f"show_{event_type}") else 0
@@ -156,6 +164,9 @@ def upload_data():
             file_proc_bkg.start()
         elif request.form["source"] == "foursquare":
             file_proc_bkg = Process(target=foursquare.process_from_file, args=(file_path,), daemon=True)
+            file_proc_bkg.start()
+        elif request.form["source"] == "sms":
+            file_proc_bkg = Process(target=sms.process_from_file, args=(file_path,), daemon=True)
             file_proc_bkg.start()
 
         return render_template("upload.html", status_message=f"The file {file.filename} has been successfully uploaded.")
@@ -233,12 +244,34 @@ def get_twitter_status(status_id):
 
 @app.route("/get-map/<source>/<source_id>", methods=["GET"])
 def get_map(source, source_id):
-    foursquare_api_id = "XTV2HF3BEQYNRFFSYM0IDZ4IT3ZXRHEYLOV5QQCMKDOJ55QX"
-    foursquare_api_secret = "YVYAX05SKW1F2N4CWFYJDII2NPW3PRPJ51RXNNI4OB3ZI5YC"
+    foursquare_api_id = os.getenv("FSQ_KEY")
+    foursquare_api_secret = os.getenv("FSQ_SECRET")
     if source == "foursquare":
         venue = foursquare.get_venue_details(source_id, foursquare_api_id, foursquare_api_secret)
         return jsonify(venue)
 
+
+@app.route("/edit-sms/<sms_id>", methods=["GET"])
+def edit_sms(sms_id):
+    return render_template("edit-sms.html")
+
+
+@app.route("/conversation/<convo_id>", methods=["GET"])
+def view_convo(convo_id):
+    user_id = 1
+    user_prefs = common.UserPreferences(user_id)
+
+    start = request.args.get("start")
+
+    size = int(request.args.get("size") or 50)
+
+    messages, next, title = common.get_conversation_page(convo_id, size, start,
+                                                  preferences=user_prefs)
+
+    prev = common.get_previous_sms(convo_id, start, size, user_prefs)
+
+    return render_template("conversation.html", days_list=messages, next=next,
+                           prev=prev, size=size, conv_name=title)
 
 # Running this will launch the server
 if __name__ == "__main__":

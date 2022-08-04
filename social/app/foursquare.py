@@ -24,6 +24,7 @@ class foursquareImporter:
     def add_to_database(self, user_prefs):
         eventdb.insert_foursquare_checkins(self.checkins, user_prefs)
 
+
 # A tiny "enhanced" dict class that extends dict and adds a useful utility for converting timestamps
 class foursquareImporterEvent(dict):
     def __init__(self, **kwargs):
@@ -85,7 +86,7 @@ class foursquareImporterEvent(dict):
 
 def process_from_file(file_path):
     current_user = common.UserPreferences(1)
-    process_dir = common.unpack_and_store_files(file_path, "output")
+    process_dir = common.unpack_and_store_files(file_path)
     checkin_import = foursquareImporter(process_dir)
     checkin_import.add_to_database(current_user)
     common.cleanup(process_dir)

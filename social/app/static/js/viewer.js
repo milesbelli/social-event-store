@@ -31,7 +31,8 @@ function update_date_header() {
 
     // If there's something to show, update the header element
     if (passedId) {
-        document.getElementById("floating-date-header").innerHTML = passedId.textContent;
+        document.getElementById("floating-date-header").innerHTML = passedId.innerHTML;
+        //document.getElementById("floating-header-url").href = "#" + passedId.id
     }
 
 };

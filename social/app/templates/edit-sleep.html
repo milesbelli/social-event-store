@@ -1,13 +1,15 @@
+{% from "macros.html" import top %}
+{% from "macros.html" import usual_head %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {{ usual_head() }}
     <title>Edit Sleep Event</title>
 </head>
 <body>
-<iframe class="main" src="/top"></iframe>
+<!--<iframe class="main" src="/top"></iframe>-->
+{{ top() }}
 <h1>Edit Sleep Event</h1>
 <a href="/viewer/{{ event.datetime.strftime('%Y') }}/{{ event.datetime.strftime('%m') }}#{{ event.datetime.strftime('%d') }}">
     Go to Viewer

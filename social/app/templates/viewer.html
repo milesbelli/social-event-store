@@ -1,17 +1,19 @@
 {% from "macros.html" import filters %}
+{% from "macros.html" import top %}
+{% from "macros.html" import usual_head %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {{ usual_head() }}
     <title>Archive View</title>
-    <script type='text/javascript' src='http://www.bing.com/api/maps/mapcontrol?callback=GetMap&key=AkHjJGDqUeq04-lIEphg6sWsiAjtfIyb3MgcVLNR9gpLhWFICvl78R-HHV4Y2Dna' async defer></script>
+    <script type='text/javascript' src='http://www.bing.com/api/maps/mapcontrol?callback=GetMap&key={{ maps }}' async defer></script>
     <script type="text/javascript" src="{{ url_for('static', filename='js/viewer.js') }}"></script>
 </head>
 <body>
-<div class="date-header" id="floating-date-header"></div>
-<iframe class="main" src="/top"></iframe>
+<div class="date-header" id="floating-date-header"><a href="#" id="floating-header-url"></a></div>
+<!--<iframe class="main" src="/top"></iframe>-->
+{{ top() }}
 <form id="get-date" action="/viewer" method="get">
     <select id="month" name="month" form="get-date">
         {% for month in pickers["months"] %}
@@ -64,11 +66,11 @@
 {{ filters("viewer", date_values["month"], date_values["year"], prefs) }}
 {% for day in month %}
 {% if day["count"] != 0 %}
-<h2 id="{{ day['date_day'] }}">{{ day["date_human"] }}</h2>
+<h2 id="{{ day['date_day'] }}"><a class="header" href="#{{ day['date_day'] }}">{{ day["date_human"] }}</a></h2>
 <p>{{ day["count"] }} event{% if day["count"] > 1 %}s{% endif %} <a href="#">Top</a></p>
 {% for event in day["events"] %}
 <div class="time">{{ event.time }}</div>
-<div class="event {{ event.type }}">
+<div class="event {{ event.get_type() }}">
     {% if event.get_reply_id() %}
     <button id="reply_btn_{{ event.id }}" onclick="fetch_reply('{{ event.get_reply_id() }}', '{{ event.id }}')">
         In reply to...
@@ -112,7 +114,7 @@
     {% if event.is_editable() %}
      &bull; <a href="{{ event.get_edit_url() }}">Edit</a>
     {% endif %}</div>
-    <div class="view_link"><a target="_blank" rel="noopener noreferrer" href="{{ event.get_url() }}">View Online</a></div>
+    <div class="view_link"><a target="_blank" rel="noopener noreferrer" href="{{ event.get_url() }}">{{ event.get_viewtext() }}</a></div>
 </div>
     {% endfor %}
 {% endif %}

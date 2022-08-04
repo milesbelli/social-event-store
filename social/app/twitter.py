@@ -22,7 +22,7 @@ def retrieve_from_twitter(post_id):
 
 def parse_js_text(text, acct=0):
 
-    tweets_text = text[text.index('[ {'):]
+    tweets_text = text[text.index('['):]
     list_of_tweets = json.loads(tweets_text)
 
     # Twitter has once again changed how tweet.js is structured, so first check if we have to "unwrap" the tweet
@@ -65,7 +65,7 @@ def get_account_id(file_path):
     with open(file_path) as acct:
 
         acct = acct.read()
-        acct_text = acct[acct.index('[ {'):]
+        acct_text = acct[acct.index('['):]
         acct_json = json.loads(acct_text)
 
         return acct_json[0]['account']['accountId']
@@ -154,7 +154,7 @@ def process_directory(dir_path, acct=None):
 
 def process_from_file(file_path):
 
-    process_dir = common.unpack_and_store_files(file_path, "output")
+    process_dir = common.unpack_and_store_files(file_path)
     process_directory(process_dir)
 
 
@@ -171,7 +171,7 @@ def search_for_term(search_term, user_prefs):
 
     filters = user_prefs.get_filters()
 
-    output = eventdb.get_search_term(search_term, filters)
+    output = eventdb.get_search_term(search_term, user_prefs, filters)
 
     return output
 

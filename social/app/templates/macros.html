@@ -30,8 +30,41 @@
                 {% endif %}
                 value="true">
             <label for="show-foursquare">Foursquare</label></div>
+                <div>
+        <input type="checkbox" id="show-sms" name="show_sms" form="set-filters"
+               {% if "sms" in prefs.get_filters() %}
+               checked="checked"
+                {% endif %}
+                value="true">
+            <label for="show-sms">SMS</label></div>
         <input type="submit" value="Save">
     </form>
     </div>
 </div>
+{% endmacro %}
+{% macro top(warn) %}
+<div style="overflow: hidden; height: 48px; padding: 8px">
+<table style="float: left{% if warn %}; display: none{% endif %};">
+    <tr>
+        <td><a href="/viewer">Viewer</a></td>
+        <td>&bull;</td>
+        <td><a href="/search">Search</a></td>
+        <td>&bull;</td>
+        <td><a href="/upload">Upload</a></td>
+        <td>&bull;</td>
+        <td><a href="/export">Export</a></td>
+        <td>&bull;</td>
+        <td><a href="/settings">Settings</a></td>
+    </tr>
+</table>
+            <form style="float: right{% if disable %}; display: none{% endif %}" action="/search" method="get">
+                <label for="keyword">Search:</label>
+                <input type="text" id="keyword" name="term" value="{{ default }}">
+                <input type="submit" value="Submit">
+            </form>
+</div>
+{% endmacro %}
+{% macro usual_head() %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 {% endmacro %}

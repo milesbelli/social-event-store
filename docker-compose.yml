@@ -4,19 +4,42 @@ services:
 
   social:
     build: ./social
-    container_name: social
+    container_name: social_flask
     restart: always
-    #environment:
     expose:
       - 8080
-    # To connect to MySQL db being run locally, network mode should be set to host
-    network_mode: "host"
+    environment:
+      # DB USER and PASS need to match whatever is in mysql/database/create_database.sql
+      - DB_HOST=social_mysql
+      - DB_USER=socialuser
+      - DB_PASS=resetme
+      # Uncomment the below and input your Foursquare API credentials if using
+      # - FSQ_KEY=YOUR_API_ID=
+      # - FSQ_SECRET=YOUR_API_SECRET=
+      # Uncomment the below and input your Bing Maps key if using
+      # - MAPS_KEY=
+      # Uncomment the below when setting custom paths for folders
+      # - PATH_OUTPUT=
+      # - PATH_INPUT=
 
   nginx:
     build: ./nginx
-    container_name: nginx
+    container_name: social_nginx
     restart: always
     ports:
       - "80:80"
-    # This should match whatever social is doing
-    network_mode: "host"
+
+  mysql-server:
+    image: mysql/mysql-server:5.7
+    container_name: social_mysql
+    restart: always
+    volumes:
+        # This is the path to the DB setup scripts
+        - ./mysql/database/:/docker-entrypoint-initdb.d/
+        # this is a mounted volume to keep the DB permanent even when rebuilding
+        - socialdb:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    
+volumes:
+  socialdb:

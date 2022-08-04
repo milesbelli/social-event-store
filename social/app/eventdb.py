@@ -1,78 +1,82 @@
 import mysql.connector
 import datetime
-import common, secure
+import common
+import os
 
 
 def create_connection(dbname):
 
-    db_host = secure.host() or "127.0.0.1"
-    
-    cnx = mysql.connector.connect(user=secure.username(),
-                                  password=secure.password(),
-                                  host=db_host)
+    db_host = os.getenv("DB_HOST") or "127.0.0.1"
+
+    cnx = mysql.connector.connect(user=os.getenv("DB_USER"),
+                                  password=os.getenv("DB_PASS"),
+                                  host=db_host,
+                                  db=dbname)
     cnx.set_charset_collation("utf8mb4", "utf8mb4_general_ci")
-    
-    cursor = cnx.cursor()
-    cursor.execute('CREATE DATABASE IF NOT EXISTS {}'.format(dbname))
-    cnx.database = dbname
-    
+
     return cnx
 
 
 def insert_tweets(list_of_tweets, cnx):
-    
+
     tweets_total = len(list_of_tweets)
     values_tweets = values_events = values_hashtags = values_duplicates = ""
-    
+
     cursor = cnx.cursor()
-    
+
     tweets_in_db = get_existing_tweets(cursor)
 
     duplicate_dict = dict()
 
     for i in range(tweets_total):
-        
+
         tweet_id = str(list_of_tweets[i]["id"])
-        
+
         if tweet_id not in tweets_in_db:
             if len(values_tweets) > 0:
                 values_tweets += ","
                 values_events += ","
 
-            value_to_append = "('{}','{}','{}','{}',{},{},{},'{}',{})"
+            tweet_text = list_of_tweets[i]["text"].replace("'", "''")
+            user_id = list_of_tweets[i]['user']['id']
+            lat = list_of_tweets[i]["latitude"]
+            lon = list_of_tweets[i]["longitude"]
+            reply_id = list_of_tweets[i]["in_reply_to_status_id"]
+            client = list_of_tweets[i]["client_name"]
+            rt_id = list_of_tweets[i]["rt_id"]
 
-            values_tweets += "".join(value_to_append.format(tweet_id,
-                                                            "1",                                       # This is hardcoded and will need to change
-                                                            list_of_tweets[i]["text"].replace("'", "''"),  # Escape character for apostrophes
-                                                            list_of_tweets[i]["user"]["id"],
-                                                            list_of_tweets[i]["latitude"],
-                                                            list_of_tweets[i]["longitude"],
-                                                            list_of_tweets[i]["in_reply_to_status_id"],
-                                                            list_of_tweets[i]["client_name"],
-                                                            list_of_tweets[i]["rt_id"]))
-            
-            value_to_append = "('{}','{}','{}','{}','{}')"
-            
-            values_events += "".join(value_to_append.format("1",                                       #Replace hardcoding here too
-                                                            list_of_tweets[i]["sql_date"],
-                                                            list_of_tweets[i]["sql_time"],
-                                                            "twitter",
-                                                            tweet_id))
-            
-            value_to_append = "('{}','{}','{}')"
-            
+            value_to_append = (f"('{tweet_id}','{'1'}','{tweet_text}'"
+                               f",'{user_id}',{lat},{lon},{reply_id},"
+                               f"'{client}',{rt_id})")
+
+            values_tweets += value_to_append
+
+            sql_date = list_of_tweets[i]["sql_date"]
+            sql_time = list_of_tweets[i]["sql_time"]
+
+            value_to_append = (f"('{'1'}','{sql_date}','{sql_time}',"
+                               f"'{sql_date + ' ' + sql_time}','twitter',"
+                               f"'{tweet_id}')")
+
+            values_events += value_to_append
+
             for hashtag in list_of_tweets[i]["entities"]["hashtags"]:
-                
+
+                start_idx = hashtag["indices"][0]
+                tag_text = hashtag["text"]
+
+                value_to_append = f"('{tweet_id}','{start_idx}','{tag_text}')"
+
                 if len(values_hashtags) > 0:
                     values_hashtags += ","
-            
-                values_hashtags += "".join(value_to_append.format(tweet_id,
-                                                                hashtag["indices"][0],
-                                                                hashtag["text"]))
+
+                values_hashtags += value_to_append
+
         else:
             # Tweet is in db, so add to duplicate list for checking
             duplicate_dict[str(list_of_tweets[i]["id"])] = list_of_tweets[i]
-            values_duplicates = tweet_id if len(values_duplicates) == 0 else values_duplicates + ", " + tweet_id
+            values_duplicates = tweet_id if len(values_duplicates) == 0 else \
+                values_duplicates + ", " + tweet_id
 
     if len(values_tweets) > 0:
     
@@ -85,7 +89,7 @@ def insert_tweets(list_of_tweets, cnx):
     if len(values_events) > 0:
     
         sql_insert_events = ("INSERT INTO events"
-                             "(userid, eventdate, eventtime, eventtype, detailid)"
+                             "(userid, eventdate, eventtime, eventdt, eventtype, detailid)"
                              "VALUES {}".format(values_events))
         
         cursor.execute(sql_insert_events)
@@ -159,7 +163,7 @@ def insert_fitbit_sleep(sleep, user_prefs):
 
     cnx = create_connection('social')
     cursor = cnx.cursor()
-    user_id = 1                                # Static for now
+    user_id = user_prefs.user_id
     values_list = str()
 
     # Establish list of existing sleep events to eliminate duplicates
@@ -276,9 +280,9 @@ def insert_fitbit_sleep(sleep, user_prefs):
             event_time = common.local_to_utc(event[1], timezone=timezone).strftime("%H:%M:%S")
             event_id = event[2]
 
-            event_values += f"('{user_id}', '{event_date}', '{event_time}', 'fitbit-sleep', '{event_id}')"
+            event_values += f"('{user_id}', '{event_date}', '{event_time}', '{event_date} {event_time}', 'fitbit-sleep', '{event_id}')"
 
-        sql_add_new_to_events_utc = ("INSERT INTO events (userid, eventdate, eventtime, eventtype, detailid) "
+        sql_add_new_to_events_utc = ("INSERT INTO events (userid, eventdate, eventtime, eventdt, eventtype, detailid) "
                                      f"VALUES {event_values};")
 
         cursor.execute(sql_add_new_to_events_utc)
@@ -306,7 +310,8 @@ def update_fitbit_sleep_timezone(sleep_id, event_date, event_time, timezone):
     cnx = create_connection("social")
     cursor = cnx.cursor()
 
-    sql_event_update = (f"UPDATE events SET eventdate = '{event_date}', eventtime = '{event_time}'"
+    sql_event_update = (f"UPDATE events SET eventdate = '{event_date}', eventtime = '{event_time}', "
+                        f"eventdt = '{event_date} {event_time}'"
                         f" WHERE detailid = {sleep_id} and eventtype = 'fitbit-sleep'")
 
     cursor.execute(sql_event_update)
@@ -327,7 +332,6 @@ def insert_foursquare_checkins(checkins, user_prefs):
     user_id = user_prefs.user_id
 
     checkin_values = list()
-    event_values = list()
 
     # Query db to see what all is in the db already
 
@@ -342,7 +346,6 @@ def insert_foursquare_checkins(checkins, user_prefs):
     for i in cursor:
         if i:
             already_in_db.append(str(i[0]))
-
 
     # Pop entries from the dict which are already in the db
 
@@ -371,7 +374,6 @@ def insert_foursquare_checkins(checkins, user_prefs):
 
         cursor.execute(sql_insert_checkin_data)
 
-
     sql_get_ids_for_events = (f"SELECT f.checkinid, f.eventid from foursquare_checkins f WHERE f.eventid NOT IN"
                               f" (SELECT e.detailid FROM events e WHERE e.eventtype = 'foursquare')")
 
@@ -388,17 +390,131 @@ def insert_foursquare_checkins(checkins, user_prefs):
     for key in checkins:
         checkin = checkins[key]
         event_id = event_id_dict[checkin["id"]]
-        event_values.append(f"('{user_id}', '{checkin.get_date_str()}', '{checkin.get_time_str()}', 'foursquare',"
+        event_values.append(f"('{user_id}', '{checkin.get_date_str()}', '{checkin.get_time_str()}',"
+                            f" '{checkin.get_date_str()} {checkin.get_time_str()}', 'foursquare',"
                             f" '{event_id}')")
 
     grouped_event_values = group_insert_into_db(event_values, 100)
 
     for events_to_insert in grouped_event_values:
 
-        sql_insert_event_data = ("INSERT INTO events (userid, eventdate, eventtime, eventtype, detailid) "
+        sql_insert_event_data = ("INSERT INTO events (userid, eventdate, eventtime, eventdt, eventtype, detailid) "
                                 f"VALUES {events_to_insert};")
 
         cursor.execute(sql_insert_event_data)
+
+    cnx.commit()
+
+
+def insert_sms_into_db(sms_messages, user_prefs):
+    user_id = user_prefs.user_id
+    cnx = create_connection('social')
+    cursor = cnx.cursor()
+
+    already_in_db = list()
+
+    sql_get_already_in_db = (f"SELECT fingerprint FROM events e LEFT JOIN sms_messages m"
+                             f" ON e.detailid = m.smsid"
+                             f" WHERE e.userid = {user_id} AND e.eventtype = 'sms'")
+
+    cursor.execute(sql_get_already_in_db)
+
+    for i in cursor:
+        if i:
+            already_in_db.append(str(i[0]))
+
+    # Pop entries from the dict which are already in the db
+
+    for entry in already_in_db:
+        if sms_messages.get(entry):
+            sms_messages.pop(entry)
+
+    sql_values = list()
+
+    contacts_dict = {}
+
+    for key in sms_messages:
+        message = sms_messages[key]
+
+        sql_row = (f"('{user_id}', '{message['id']}', {message.get_sql('type')}, {message.get_sql('conversation')},"
+                   f"{message.get_sql('contact_num')}, {message.sql_body()}, {message.get_sql('folder')})")
+
+        sql_values.append(sql_row)
+
+        if message.get("contact_name") \
+                and message.get_sql("contact_num") \
+                and not contacts_dict.get(message.get("contact_num")):
+            contacts_dict[message.get("contact_num")] = message.get_sql("contact_name")
+
+    grouped_values = group_insert_into_db(sql_values, 500)
+
+    for events_to_insert in grouped_values:
+
+        sql_insert_sms_msg = (f"INSERT INTO sms_messages ( userid, fingerprint, type, conversation, contact_num,"
+                                   f" body, folder )"
+                                   f" VALUES {events_to_insert};")
+
+        cursor.execute(sql_insert_sms_msg)
+
+    sql_sms_with_no_datetime = (f"SELECT fingerprint, smsid FROM sms_messages where userid = '{user_id}' AND "
+                                f"smsid NOT IN (SELECT detailid FROM events where userid = '{user_id}' AND "
+                                f"eventtype = 'sms');")
+
+    cursor.execute(sql_sms_with_no_datetime)
+
+    event_id_dict = dict()
+
+    # Result will be a dict with keys of checkinid and values of eventid, to use for events table detailid
+    for i in cursor:
+        event_id_dict[i[0]] = i[1]
+
+    event_values = list()
+
+    for key in sms_messages:
+        message = sms_messages[key]
+        sms_id = event_id_dict[key]
+
+        event_values.append(f"('{user_id}', '{message['date']}', '{message['time']}', "
+                            f"'{message['date']} {message['time']}', 'sms', {sms_id})")
+
+    grouped_event_values = group_insert_into_db(event_values, 100)
+
+    for events_to_insert in grouped_event_values:
+
+        sql_insert_event_data = ("INSERT INTO events (userid, eventdate, eventtime, eventdt, eventtype, detailid) "
+                                f"VALUES {events_to_insert};")
+
+        cursor.execute(sql_insert_event_data)
+
+    # Add in contacts based on the option contact_name key
+
+    sql_contacts_extant = ("SELECT contact_num FROM sms_contacts "
+                           f"WHERE userid = {user_id}")
+
+    cursor.execute(sql_contacts_extant)
+
+    existing_contacts = list()
+
+    for i in cursor:
+        existing_contacts.append(i[0])
+
+    for contact in existing_contacts:
+        if contacts_dict.get(contact):
+            contacts_dict.pop(contact)
+
+    contacts_values = list()
+
+    for key in contacts_dict:
+        contact = contacts_dict[key]
+
+        contacts_values.append(f"('{user_id}', '{key}', {contact})")
+
+    grouped_contacts_values = group_insert_into_db(contacts_values, 100)
+
+    for contacts_to_insert in grouped_contacts_values:
+        sql_insert_contacts = ("INSERT INTO sms_contacts (userid, contact_num, contact_name) "
+                               f"VALUES {contacts_to_insert}")
+        cursor.execute(sql_insert_contacts)
 
     cnx.commit()
 
@@ -417,9 +533,11 @@ def get_existing_tweets(cursor):
     return output
 
 
-def get_datetime_range(start_datetime, end_datetime, list_of_data_types):
+def get_datetime_range(start_datetime, end_datetime, list_of_data_types, user_prefs):
 
     subquery_list = list()
+
+    user_id = user_prefs.user_id
 
     # TODO: This is not going to scale, so come up with a better way to handle this
     # 0 : eventdate
@@ -451,27 +569,31 @@ def get_datetime_range(start_datetime, end_datetime, list_of_data_types):
                          "latitude, longitude, eventtype object_type, NULL end_time, NULL sleep_id, NULL rest_mins,"
                          " NULL start_time, replyid reply_id, NULL venue_name, NULL venue_id, NULL venue_event_id,"
                          " NULL venue_event_name, NULL address, NULL city, NULL state, NULL country, NULL checkin_id,"
-                         " NULL sleep_time, NULL timezone "
-                         "FROM tweetdetails "
-                         "LEFT JOIN events "
+                         " NULL sleep_time, NULL timezone, NULL conversation, NULL contact_num, NULL folder, "
+                         "NULL fingerprint, NULL contact_name "
+                         "FROM events "
+                         "LEFT JOIN tweetdetails "
                          "ON detailid = tweetid "
                          "WHERE eventtype = 'twitter' "
-                         f"AND CONCAT(eventdate,' ',eventtime) >= '{start_datetime}' "
-                         f"AND CONCAT(eventdate,' ',eventtime) <= '{end_datetime}' ")
+                         f"AND eventdt >= '{start_datetime}' "
+                         f"AND eventdt <= '{end_datetime}' "
+                         f"AND events.userid = '{user_id}' ")
 
     fitbit_sql_query = ("SELECT eventdate date, eventtime time, f.logid source_id, NULL body, NULL client, "
                         "NULL latitude, NULL longitude, eventtype object_type, enddatetime end_time, f.sleepid sleep_id, "
                         "sum(stageminutes) rest_mins, startdatetime start_time, NULL reply_id, NULL venue_name, "
                         "NULL venue_id, NULL venue_event_id, NULL venue_event_name, NULL address, NULL city, "
-                        "NULL state, NULL country, NULL checkin_id, f.duration sleep_time, f.timezone timezone "
-                        "FROM fitbit_sleep f "
-                        "LEFT JOIN events "
+                        "NULL state, NULL country, NULL checkin_id, f.duration sleep_time, f.timezone timezone, "
+                        " NULL conversation, NULL contact_num,  NULL folder, NULL fingerprint, NULL contact_name "
+                        "FROM events "
+                        "LEFT JOIN fitbit_sleep f "
                         "ON detailid = f.sleepid "
                         "LEFT JOIN fitbit_sleep_stages s "
                         "ON f.sleepid = s.sleepid "
                         "WHERE eventtype = 'fitbit-sleep' "
-                        f"AND CONCAT(eventdate,' ',eventtime) >= '{start_datetime}' "
-                        f"AND CONCAT(eventdate,' ',eventtime) <= '{end_datetime}' "
+                        f"AND eventdt >= '{start_datetime}' "
+                        f"AND eventdt <= '{end_datetime}' "
+                        f"AND events.userid = '{user_id}' "
                         f"AND sleepstage NOT LIKE '%wake' AND sleepstage NOT LIKE 'restless' "
                         f"GROUP BY s.sleepid, eventdate, eventtime, f.logid, f.duration, f.timezone, f.sleepid ")
 
@@ -480,15 +602,34 @@ def get_datetime_range(start_datetime, end_datetime, list_of_data_types):
                             "NULL rest_mins, NULL start_time, NULL reply_id, o.venuename venue_name, "
                             "o.venueid venue_id, o.veventid venue_event_id, o.veventname venue_event_name, "
                             "v.address address, v.city city, v.state state, v.country country, o.checkinid checkin_id, "
-                            "NULL sleep_time, NULL timezone "
-                            "FROM foursquare_checkins o "
-                            "LEFT JOIN events e "
+                            "NULL sleep_time, NULL timezone, NULL conversation, NULL contact_num, NULL folder, "
+                            "NULL fingerprint, NULL contact_name "
+                            "FROM events e "
+                            "LEFT JOIN foursquare_checkins o "
                             "ON e.detailid = o.eventid "
                             "LEFT JOIN foursquare_venues v "
                             "ON o.venueid = v.venueid "
                             "WHERE e.eventtype = 'foursquare' "
-                            f"AND CONCAT(eventdate,' ',eventtime) >= '{start_datetime}' "
-                            f"AND CONCAT(eventdate,' ',eventtime) <= '{end_datetime}' ")
+                            f"AND eventdt >= '{start_datetime}' "
+                            f"AND eventdt <= '{end_datetime}' "
+                            f"AND e.userid = '{user_id}' ")
+
+    sms_sql_query = ("SELECT e.eventdate date, e.eventtime time, NULL source_id, s.body body, NULL client, "
+                     "NULL latitude, NULL longitude, e.eventtype object_type, NULL end_time, NULL sleep_id, "
+                     "NULL rest_mins, NULL start_time, NULL reply_id, NULL venue_name, "
+                     "NULL venue_id, NULL venue_event_id, NULL venue_event_name, "
+                     "NULL address, NULL city, NULL state, NULL country, NULL checkin_id, "
+                     "NULL sleep_time, NULL timezone, s.conversation conversation, s.contact_num contact_num, "
+                     "s.folder folder, s.fingerprint fingerprint, c.contact_name contact_name "
+                     "FROM events e "
+                     "lEFT JOIN sms_messages s "
+                     "ON e.detailid = s.smsid "
+                     "LEFT JOIN sms_contacts c "
+                     "ON s.contact_num = c.contact_num AND s.userid = c.userid "
+                     "WHERE e.eventtype = 'sms' "
+                     f"AND eventdt >= '{start_datetime}' "
+                     f"AND eventdt <= '{end_datetime}' "
+                     f"AND e.userid = '{user_id}' ")
 
     if 'twitter' in list_of_data_types:
         subquery_list.append(twitter_sql_query)
@@ -498,6 +639,9 @@ def get_datetime_range(start_datetime, end_datetime, list_of_data_types):
 
     if "foursquare" in list_of_data_types:
         subquery_list.append(foursquare_sql_query)
+
+    if "sms" in list_of_data_types:
+        subquery_list.append(sms_sql_query)
 
     sql_query = " UNION ".join(subquery_list) + "ORDER BY date ASC, time ASC;"
 
@@ -582,7 +726,9 @@ def generate_search_where_clause(search_list, searchable_columns):
     return where_clause
 
 
-def get_search_term(search_term, event_types):
+def get_search_term(search_term, user_prefs, event_types):
+
+    user_id = user_prefs.user_id
 
     search_term = search_term.replace("'", "''")
     search_term = search_term.replace("\\", "\\\\")
@@ -624,15 +770,16 @@ def get_search_term(search_term, event_types):
     twitter_searchable = ["tweettext"]
     twitter_where_clause = generate_search_where_clause(search_list,  twitter_searchable)
 
-    twitter_query = ("SELECT eventdate date, eventtime time, detailid source_id, tweettext body, client, "
-                     "latitude, longitude, eventtype object_type, NULL end_time, NULL sleep_id, NULL rest_mins,"
+    twitter_query = ("SELECT e.eventdate date, e.eventtime time, e.detailid source_id, tweettext body, client, "
+                     "latitude, longitude, e.eventtype object_type, NULL end_time, NULL sleep_id, NULL rest_mins,"
                      " NULL start_time, replyid reply_id, NULL venue_name, NULL venue_id, NULL venue_event_id,"
                      " NULL venue_event_name, NULL address, NULL city, NULL state, NULL country, NULL checkin_id,"
-                     " NULL sleep_time, NULL timezone "
+                     " NULL sleep_time, NULL timezone, NULL conversation, NULL contact_num, "
+                     "NULL folder, NULL fingerprint, NULL contact_name "
                      "FROM tweetdetails "
-                     "LEFT JOIN events "
+                     "LEFT JOIN events e "
                      "ON detailid = tweetid "
-                     f"{twitter_where_clause} AND eventtype = 'twitter'"
+                     f"{twitter_where_clause} AND eventtype = 'twitter' AND e.userid = '{user_id}'"
                      f"{client_sql}"
                      f"{geo_sql}")
 
@@ -646,21 +793,42 @@ def get_search_term(search_term, event_types):
                         "NULL rest_mins, NULL start_time, NULL reply_id, o.venuename venue_name, "
                         "o.venueid venue_id, o.veventid venue_event_id, o.veventname venue_event_name, "
                         "v.address address, v.city city, v.state state, v.country country, o.checkinid checkin_id, "
-                        "NULL sleep_time, NULL timezone "
+                        "NULL sleep_time, NULL timezone, NULL conversation, NULL contact_num, "
+                        "NULL folder, NULL fingerprint, NULL contact_name "
                         "FROM foursquare_checkins o "
                         "LEFT JOIN events e "
                         "ON e.detailid = o.eventid "
                         "LEFT JOIN foursquare_venues v "
                         "ON o.venueid = v.venueid "
-                        f"{fsq_where_clause} AND e.eventtype = 'foursquare'")
+                        f"{fsq_where_clause} AND e.eventtype = 'foursquare' AND e.userid = '{user_id}'")
+
+    sms_searchable = ["s.body"]
+    sms_where_clause = generate_search_where_clause(search_list, sms_searchable)
+
+    sms_query = ("SELECT e.eventdate date, e.eventtime time, NULL source_id, s.body body, NULL client, "
+                 "NULL latitude, NULL longitude, e.eventtype object_type, NULL end_time, NULL sleep_id, "
+                 "NULL rest_mins, NULL start_time, NULL reply_id, NULL venue_name, "
+                 "NULL venue_id, NULL venue_event_id, NULL venue_event_name, "
+                 "NULL address, NULL city, NULL state, NULL country, NULL checkin_id, "
+                 "NULL sleep_time, NULL timezone, s.conversation conversation, s.contact_num contact_num, "
+                 "s.folder folder, s.fingerprint fingerprint, c.contact_name contact_name "
+                 "FROM sms_messages s "
+                 "LEFT JOIN events e "
+                 "ON e.detailid = s.smsid "
+                 "LEFT JOIN sms_contacts c "
+                 "ON c.contact_num = s.contact_num AND s.userid = c.userid "
+                 f"{sms_where_clause} AND e.eventtype = 'sms' AND e.userid = '{user_id}'")
 
     subqueries_list = []
 
     if "twitter" in event_types:
         subqueries_list.append(twitter_query)
 
-    if "foursquare" in event_types and search_list != ['']:
+    if "foursquare" in event_types and search_list != [""]:
         subqueries_list.append(foursquare_query)
+
+    if "sms" in event_types and search_list != [""]:
+        subqueries_list.append(sms_query)
 
     sql_query = " UNION ".join(subqueries_list) + "ORDER BY date ASC, time ASC;"
 
@@ -722,13 +890,16 @@ def set_user_source_preferences(user_id, **kwargs):
     cnx = create_connection("social")
     cursor = cnx.cursor()
 
-    sql_query = (f"INSERT INTO user_preference VALUES ('{user_id}', 'show_twitter', '{kwargs.get('show_twitter')}'),"
-                 f" ('{user_id}', 'show_foursquare', '{kwargs.get('show_foursquare')}'), ('{user_id}', "
-                 f"'show_fitbit-sleep', '{kwargs.get('show_fitbit-sleep')}')"
+    sql_query = (f"INSERT INTO user_preference VALUES "
+                 f"('{user_id}', 'show_twitter', '{kwargs.get('show_twitter')}'),"
+                 f" ('{user_id}', 'show_foursquare', '{kwargs.get('show_foursquare')}'), "
+                 f"('{user_id}', 'show_fitbit-sleep', '{kwargs.get('show_fitbit-sleep')}'), "
+                 f"('{user_id}', 'show_sms', '{kwargs.get('show_sms')}')"
                  " ON DUPLICATE KEY UPDATE preference_value=CASE"
                  f" WHEN preference_key = 'show_twitter' THEN '{kwargs.get('show_twitter')}'"
                  f" WHEN preference_key = 'show_foursquare' THEN '{kwargs.get('show_foursquare')}'"
                  f" WHEN preference_key = 'show_fitbit-sleep' THEN '{kwargs.get('show_fitbit-sleep')}'"
+                 f" WHEN preference_key = 'show_sms' THEN '{kwargs.get('show_sms')}'"
                  f" ELSE NULL END;")
 
     cursor.execute(sql_query)
@@ -822,7 +993,13 @@ def get_results_for_query(sql_query):
     cnx = create_connection("social")
     cursor = cnx.cursor()
 
+    cursor_time = datetime.datetime.now()
+
     cursor.execute(sql_query)
+
+    print(f"Cursor exec time: {datetime.datetime.now() - cursor_time}")
+
+    result_timer = datetime.datetime.now()
 
     results = cursor.fetchall()
 
@@ -835,11 +1012,139 @@ def get_results_for_query(sql_query):
             result_dict[cursor.column_names[i]] = row[i]
         result_list.append(result_dict)
 
+    print(f"Results parse time: {datetime.datetime.now() - result_timer}")
+
     close_connection(cnx)
     print(f"Returning {len(result_list)} result(s)")
 
     return result_list
 
+
+def edit_contact(contact_info, user_prefs):
+        cnx = create_connection("social")
+        cursor = cnx.cursor()
+
+        user_id = user_prefs.user_id
+        contact_num = contact_info.get("contact_num")
+        new_name = contact_info.get("contact_name")
+
+        update_sql = f"UPDATE sms_contacts SET contact_name = '{new_name}' WHERE userid = '{user_id}' " \
+                     f"AND contact_num = {contact_num}"
+
+        new_save_sql = f"INSERT INTO sms_contacts VALUES ('{user_id}', '{contact_num}', '{new_name}');"
+
+        already_existing_sql = f"SELECT count(*) contact_ct FROM sms_contacts WHERE userid = '{user_id}' AND " \
+                               f"contact_num = '{contact_num}';"
+
+        check = get_results_for_query(already_existing_sql)
+
+        # If it exists, run update query, else run insert
+        if check[0].get("contact_ct") == 1:
+            cursor.execute(update_sql)
+
+        else:
+            cursor.execute(new_save_sql)
+
+        cnx.commit()
+        close_connection(cnx)
+
+
+def edit_timestamp_for_event(event_id, event_type, time, date, user_prefs, connection=None):
+
+    cnx = connection or create_connection("social")
+    cursor = cnx.cursor()
+
+    user_id = user_prefs.user_id
+
+    update_time_sql = f"UPDATE events SET eventdate = '{date}', eventtime = '{time}', eventdt = '{date} {time}'" \
+                      f" WHERE detailid = '{event_id}' AND eventtype = '{event_type}' AND userid = '{user_id}';"
+
+    cursor.execute(update_time_sql)
+
+    cnx.commit()
+
+    if not connection:
+        close_connection(cnx)
+
+
+def delete_item_from_db(item_id, item_type):
+    type_dict = {"sms": {"sms_messages": "smsid"},
+                 "twitter": {"tweetdetails": "tweetid",
+                             "tweetconflicts": "tweetid",
+                             "tweethashtags": "tweetid",
+                             "tweetmedia": "tweetid",
+                             "tweeturls": "tweetid"},
+                 "foursquare": {"foursquare_checkins": "eventid"},
+                 "fitbit-sleep": {"fitbit_sleep": "sleepid",
+                                  "fitbit_sleep_data": "sleepid",
+                                  "fitbit_sleep_stages": "sleepid"}}
+
+    list_of_sqls = list()
+
+    tables = type_dict[item_type]
+    for table in tables:
+        list_of_sqls.append(
+            f"DELETE FROM {table} WHERE {tables[table]} = '{item_id}';"
+        )
+
+    list_of_sqls.append(
+        f"DELETE FROM events WHERE detailid = '{item_id}' and eventtype = '{item_type}';"
+    )
+
+    cnx = create_connection("social")
+    cursor = cnx.cursor()
+
+    for sql in list_of_sqls:
+        cursor.execute(sql)
+
+    cnx.commit()
+
+
+def get_conversation(conversation, start, length, user_prefs):
+
+    user_id = user_prefs.user_id
+
+    sms_query = ("SELECT e.eventdate date, e.eventtime time, s.body body, "
+                 "e.eventtype object_type, "
+                 "s.conversation conversation, s.contact_num contact_num, "
+                 "s.folder folder, s.fingerprint fingerprint, "
+                 "c.contact_name contact_name, NULL source_id "
+                 "FROM events e "
+                 "LEFT JOIN sms_messages s "
+                 "ON e.detailid = s.smsid "
+                 "LEFT JOIN sms_contacts c "
+                 "ON s.contact_num = c.contact_num AND s.userid = c.userid "
+                 "WHERE e.eventtype = 'sms' "
+                 f"AND eventdt <= '{start}' "
+                 f"AND e.userid = '{user_id}' "
+                 f"AND (s.conversation = '{conversation}' "
+                 f"OR (s.conversation IS NULL and s.contact_num = '{conversation}')) "
+                 "ORDER BY eventdt DESC "
+                 f"LIMIT {length} ")
+
+    output = get_results_for_query(sms_query)
+
+    return output
+
+def get_previous_conversation(conversation, start, length, user_prefs):
+    user_id = user_prefs.user_id
+
+    sms_query = ("SELECT s.eventdt eventdt FROM "
+                "(SELECT e.eventdt eventdt "
+                "FROM events e LEFT JOIN sms_messages s "
+                "ON e.detailid = s.smsid "
+                "WHERE e.eventtype = 'sms' "
+                 f"AND eventdt > '{start}' "
+                 f"AND e.userid = '{user_id}' "
+                 f"AND (s.conversation = '{conversation}' "
+                 f"OR (s.conversation IS NULL and s.contact_num = '{conversation}')) "
+                 "ORDER BY eventdt ASC "
+                 f"LIMIT {length}) s "
+                 "ORDER BY s.eventdt DESC LIMIT 1")
+
+    output = get_results_for_query(sms_query)
+
+    return output
 
 def close_connection(cnx):
 

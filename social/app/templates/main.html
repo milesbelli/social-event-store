@@ -1,13 +1,15 @@
+{% from "macros.html" import top %}
+{% from "macros.html" import usual_head %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta charset="UTF-8">
+    {{ usual_head() }}
     <title>Social Event Archive Viewer</title>
 </head>
 <body>
-<iframe class="main" src="/top{% if warn %}?disable=True{% endif %}"></iframe>
+<!--<iframe class="main" src="/top{% if warn %}?disable=True{% endif %}"></iframe>-->
+{{ top(warn) }}
 <h1>Social Event Store</h1>
 <p>Select from the options above.</p>
 <p class="warning">{{ warn }}</p>

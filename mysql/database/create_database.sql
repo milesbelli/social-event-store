@@ -1,4 +1,4 @@
-CREATE USER IF NOT EXISTS 'socialuser'@'localhost' IDENTIFIED BY 'resetme';
+CREATE USER IF NOT EXISTS 'socialuser'@'%' IDENTIFIED BY 'resetme';
 CREATE USER IF NOT EXISTS 'socialadmin'@'localhost' IDENTIFIED BY 'Abc@123';
 
 CREATE DATABASE IF NOT EXISTS social
@@ -7,6 +7,7 @@ COLLATE utf8mb4_general_ci;
 
 GRANT SELECT, INSERT, UPDATE ON social.* TO 'socialuser'@'%';
 GRANT ALL PRIVILEGES ON social.* TO 'socialadmin'@'localhost' WITH GRANT OPTION;
+
 
 USE social;
 
@@ -155,7 +156,7 @@ UNIQUE KEY (userid, fingerprint)
 
 CREATE TABLE IF NOT EXISTS sms_contacts (
 userid INT(11) NOT NULL,
-contact_num VARCHAR(20) NOT NULL,
+contact_num VARCHAR(50) NOT NULL,
 contact_name VARCHAR(200) NOT NULL,
 PRIMARY KEY (userid, contact_num)
 );

@@ -1,13 +1,15 @@
+{% from "macros.html" import top %}
+{% from "macros.html" import usual_head %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {{ usual_head() }}
     <title>Upload An Archive File</title>
 </head>
 <body>
-<iframe class="main" src="/top"></iframe>
+<!--<iframe class="main" src="/top"></iframe>-->
+{{ top() }}
 <h1>Upload a File</h1>
 <p>Select a zipped archive to add to the database.</p>
     <form id="upload_data" action="/upload" method="POST" enctype="multipart/form-data">
@@ -15,6 +17,7 @@
             <option value="twitter">Twitter</option>
             <option value="fitbit-sleep">Fitbit Sleep</option>
             <option value="foursquare">Foursquare Checkins</option>
+            <option value="sms">SMS (experimental)</option>
         </select>
         <input type="file" name="zipfile"/>
         <input type="submit" value="Upload">

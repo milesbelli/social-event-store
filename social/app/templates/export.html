@@ -1,13 +1,15 @@
+{% from "macros.html" import top %}
+{% from "macros.html" import usual_head %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {{ usual_head() }}
     <title>Export as iCal</title>
 </head>
 <body>
-<iframe class="main" src="/top"></iframe>
+<!--<iframe class="main" src="/top"></iframe>-->
+{{ top() }}
 <h1>Export iCal</h1>
 <p>Pick a start date and end date and the exporter will retrieve all events for this range and
 convert them into an ical file which can be imported into most calendar apps. There is no limit to
