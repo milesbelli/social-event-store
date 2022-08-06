@@ -1,0 +1,42 @@
+version: "3.7"
+
+services:
+
+  social:
+    image: milesbelli/social-event-store-app:1.5.1
+    container_name: social_flask
+    restart: always
+    expose:
+      - 8080
+    environment:
+      - DB_HOST=social_mysql
+      - DB_USER=socialuser
+      - DB_PASS=resetme
+      # Uncomment the below and input your Foursquare API credentials if using
+      # - FSQ_KEY=
+      # - FSQ_SECRET=
+      # Uncomment the below and input your Bing Maps key if using
+      # - MAPS_KEY=
+      # Uncomment the below when setting custom paths for folders
+      # - PATH_OUTPUT=files/output
+      # - PATH_INPUT=files/input
+
+  nginx:
+    image: milesbelli/social-event-store-server:1.5.1
+    container_name: social_nginx
+    restart: always
+    ports:
+      - "80:80"
+
+  mysql-server:
+    image: mysql/mysql-server:5.7
+    container_name: social_mysql
+    restart: always
+    volumes:
+        - ./mysql/database/:/docker-entrypoint-initdb.d/
+        - socialdb:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    
+volumes:
+  socialdb:
