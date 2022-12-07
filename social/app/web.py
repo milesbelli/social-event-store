@@ -42,7 +42,7 @@ def search():
 
         if request.args.get("term"):
             search_term = request.args.get("term")
-            print(f"Searching for tweets containing '{search_term}'")
+            print(f"Searching for events containing '{search_term}'")
             # This is clumsy and won't scale... this twitter function should be moved to common and made scalable
             tweets = twitter.search_for_term(search_term, user_prefs)
             tweets = common.events_in_local_time(tweets, user_prefs, True)
