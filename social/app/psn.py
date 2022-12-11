@@ -1,7 +1,8 @@
 import requests
 import json
-import datetime
+import datetime as dt
 import os
+import common,eventdb
 
 
 def api_to_db():
@@ -24,7 +25,7 @@ def api_to_db():
         "earned_bronze": ["earnedTrophies", "bronze"],
         "earned_silver": ["earnedTrophies", "silver"],
         "earned_gold": ["earnedTrophies", "gold"],
-        "earned_platium": ["earnedTrophies", "platinum"],
+        "earned_platinum": ["earnedTrophies", "platinum"],
         "hidden": ["hiddenFlag"],
         "last_updated": ["lastUpdatedDateTime"],
         # Game Trophies
@@ -39,24 +40,30 @@ def api_to_db():
         "earned": ["earned"],
         "earned_date_time": ["earnedDateTime"],
         "trophy_rare": ["trophyRare"],
-        "trophy_earned_rate": ["trophyEarnedRate"]
+        "trophy_earned_rate": ["trophyEarnedRate"],
+        # Added
+        "userid": ["userid"]
     }
 
     return columns
 
 
 class psnDict(dict):
-    def __init__(self, from_dict, cols):
+    def __init__(self, from_dict, cols, update_cols):
         # Build this dict from an existing dict, one key at a time
         for key in from_dict:
             self[key] = from_dict[key]
 
         self.db_columns = cols
+        self.update_columns = update_cols
 
     # Enhanced "formatted get" function - for db entry
     def fget(self, key):
         date_type = ["last_updated", "earned_date_time"]
-        bool_type = ["trophy_groups", "trophy_hidden", "earned"]
+        bool_type = ["trophy_groups", "trophy_hidden", "hidden", "earned"]
+        int_type = ["bronze", "silver", "gold", "platinum", "progress",
+                    "earned_bronze", "earned_silver", "earned_gold",
+                    "earned_platinum", "userid"]
 
         internal_key = api_to_db().get(key)
 
@@ -68,14 +75,19 @@ class psnDict(dict):
                 value = self[internal_key[0]].get(internal_key[1])
 
         if key in date_type:
-            value = self.get(key) or "NULL"
+            value = value or "NULL"
 
-            # Further conversion needed
+            value = dt.datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ")
+            value = value.strftime("%Y-%m-%d %H:%M:%S")
+            value = f"'{value}'"
 
             return value
 
         if key in bool_type:
-            return 1 if self[key] else 0
+            return str(1) if self.get(key) else str(0)
+
+        if key in int_type:
+            return str(value)
 
         else:
             if value:
@@ -119,7 +131,7 @@ def psn_login(npsso):
     return access_token
 
 
-def get_player_summary(access_token):
+def get_player_summary(access_token, userid):
 
     summary_url = "https://m.np.playstation.com/api/trophy/v1/users/me/trophyTitles"
 
@@ -130,6 +142,7 @@ def get_player_summary(access_token):
     response = requests.get(summary_url, headers=headers)
 
     summary_cols = [
+        "userid",
         "np_service_name",
         "game_id",
         "trophy_set_version",
@@ -146,16 +159,35 @@ def get_player_summary(access_token):
         "earned_bronze",
         "earned_silver",
         "earned_gold",
-        "earned_platium",
+        "earned_platinum",
         "hidden",
         "last_updated",
     ]
 
+    summary_update = [
+        "bronze",
+        "silver",
+        "gold",
+        "platinum",
+        "progress",
+        "earned_bronze",
+        "earned_silver",
+        "earned_gold",
+        "earned_platinum",
+        "hidden",
+        "last_updated"
+    ]
+
     summary = json.loads(response.content)
 
-    summary = psnDict(summary, summary_cols)
+    game_summaries = list()
 
-    return summary
+    for game in summary["trophyTitles"]:
+        psn_dict = psnDict(game, summary_cols, summary_update)
+        psn_dict["userid"] = userid
+        game_summaries.append(psn_dict)
+
+    return game_summaries
 
 
 def get_game_trophies(game_id, access_token, group_id="all"):
@@ -192,7 +224,7 @@ def get_game_trophies(game_id, access_token, group_id="all"):
         response_dict["trophies"][i]["npCommunicationId"] = game_id
 
         response_dict["trophies"][i] = psnDict(response_dict["trophies"][i],
-                                               trophies_cols)
+                                               trophies_cols, [])
 
     return response_dict
 
@@ -232,7 +264,7 @@ def get_earned_trophies(game_id, access_token,
         response_dict["trophies"][i]["npCommunicationId"] = game_id
 
         response_dict["trophies"][i] = psnDict(response_dict["trophies"][i],
-                                               earned_cols)
+                                               earned_cols, [])
 
     return response_dict
 
@@ -248,25 +280,37 @@ def fetch_trophy_data_for_user(npsso, complete_fetch=False) -> dict:
     trophy_data = dict()
     access_key = psn_login(npsso)
 
-    trophy_data["summary"] = get_player_summary(access_key)
+    # this is a placeholder... it's utterly pointless
+    userid = common.UserPreferences(1).user_id
+
+    trophy_data["summary"] = get_player_summary(access_key, userid)
+
+    # INSERT summary data
+    eventdb.insert_into_table_with_columns(trophy_data["summary"],
+                                           "psn_summary")
+
     trophy_data["game_trophies"] = []
     trophy_data["earned_trophies"] = []
 
     unchanged_games = dict()
     if not complete_fetch:
         # build unchanged games dict for compares
+        # SELECT game_id, trophy_set_version, last_updated FROM psn_summary;
+        # Loop through these and compare to the summary, if date/version same, remove
         pass
 
-    for game in [trophy_data["summary"]["trophyTitles"][0]]:  # TODO: change this back!
+    for game in [trophy_data["summary"][0]]:  # TODO: change this back!
         game_id = game["npCommunicationId"]
         if not unchanged_games.get(game_id):
+            # Instead of appending, INSERT these trophies
             trophy_data["game_trophies"].append(get_game_trophies(game_id,
                                                                   access_key)
                                                 )
 
             # write_out(f"{game_id}_trophies",
             #           trophy_data["game_trophies"][-1])
-
+            
+            # Instead of appending, INSERT these trophies
             trophy_data["earned_trophies"].append(
                     get_earned_trophies(game_id, access_key)
                                                   )
@@ -284,10 +328,10 @@ sso_key = os.getenv("PSN_KEY")
 
 trophies = fetch_trophy_data_for_user(sso_key, complete_fetch=True)
 
-for game in trophies["earned_trophies"]:
-    if game["trophies"][0].fget("game_id") != "'NPWR22009_00'":
-        print(game)
+# for game in trophies["earned_trophies"]:
+#     if game["trophies"][0].fget("game_id") != "'NPWR22009_00'":
+#         print(game)
 
-for game in trophies["game_trophies"]:
-    if game["trophies"][0].fget("game_id") == "'NPWR22009_00'":
-        print(game)
+# for game in trophies["game_trophies"]:
+#     if game["trophies"][0].fget("game_id") == "'NPWR22009_00'":
+#         print(game)

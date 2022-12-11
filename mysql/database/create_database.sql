@@ -5,7 +5,7 @@ CREATE DATABASE IF NOT EXISTS social
 CHARACTER SET utf8mb4
 COLLATE utf8mb4_general_ci;
 
-GRANT SELECT, INSERT, UPDATE ON social.* TO 'socialuser'@'%';
+GRANT SELECT, INSERT, UPDATE, DELETE ON social.* TO 'socialuser'@'%';
 GRANT ALL PRIVILEGES ON social.* TO 'socialadmin'@'localhost' WITH GRANT OPTION;
 
 
@@ -167,7 +167,7 @@ CREATE TABLE IF NOT EXISTS psn_summary (
     game_id VARCHAR(20) NOT NULL,
     trophy_set_version VARCHAR(10) NOT NULL,
     game_title VARCHAR(200) NOT NULL,
-    title_detail VARCHAR(200),
+    title_detail VARCHAR(1000),
     icon_url VARCHAR(500),
     platform VARCHAR(50),
     trophy_groups INT(1),
@@ -179,7 +179,7 @@ CREATE TABLE IF NOT EXISTS psn_summary (
     earned_bronze INT(3),
     earned_silver INT(3),
     earned_gold INT(3),
-    earned_platium INT(3),
+    earned_platinum INT(3),
     hidden INT(1),
     last_updated DATETIME,
     last_checked DATETIME,

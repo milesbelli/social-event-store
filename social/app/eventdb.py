@@ -1146,6 +1146,51 @@ def get_previous_conversation(conversation, start, length, user_prefs):
 
     return output
 
+
+def insert_into_table_with_columns(data, table):
+
+    cnx = create_connection("social")
+    cursor = cnx.cursor()
+
+    # Right now this assumes all rows will have same columns
+    db_columns = ", ".join(data[0].db_columns)
+
+    all_rows = list()
+
+    for row in data:
+        values = list()
+
+        for i in range(0, len(row.db_columns)):
+            # expects fget to format all values correctly
+            values.append(row.fget(row.db_columns[i]))
+
+        row_values = "(" + ", ".join(values) + ")"
+
+        all_rows.append(row_values)
+
+    grouped_rows = group_insert_into_db(all_rows, 500)
+
+    update_cols = list()
+
+    for col in data[0].update_columns:
+        update_cols_text = f"{col}=values({col})"
+        update_cols.append(update_cols_text)
+
+    update_columns = ", ".join(update_cols)
+
+    for summary_rows in grouped_rows:
+        sql = (f"INSERT INTO {table} ({db_columns}) "
+               f"VALUES {summary_rows} "
+               f"ON DUPLICATE KEY UPDATE {update_columns};")
+
+        # print(sql)
+
+        cursor.execute(sql)
+
+    cnx.commit()
+
+    close_connection(cnx)
+
 def close_connection(cnx):
 
     return cnx.close()
