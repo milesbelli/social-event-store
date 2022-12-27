@@ -358,7 +358,8 @@ def fetch_trophy_data_for_user(npsso, complete_fetch=False) -> dict:
 
 sso_key = os.getenv("PSN_KEY")
 
-trophies = fetch_trophy_data_for_user(sso_key, complete_fetch=True)
+if sso_key:
+    trophies = fetch_trophy_data_for_user(sso_key, complete_fetch=True)
 
 # for game in trophies["earned_trophies"]:
 #     if game["trophies"][0].fget("game_id") != "'NPWR22009_00'":

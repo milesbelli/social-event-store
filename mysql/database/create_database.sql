@@ -209,5 +209,6 @@ CREATE TABLE IF NOT EXISTS psn_earned_trophies (
         earned INT(1),
         earned_date_time DATETIME,
         trophy_rare INT(3),
-        trophy_earned_rate VARCHAR (8)
+        trophy_earned_rate VARCHAR (8),
+        PRIMARY KEY (userid, trophy_id, game_id, trophy_set_version)
 );
