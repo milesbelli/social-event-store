@@ -570,7 +570,7 @@ def get_datetime_range(start_datetime, end_datetime, list_of_data_types, user_pr
                          " NULL start_time, replyid reply_id, NULL venue_name, NULL venue_id, NULL venue_event_id,"
                          " NULL venue_event_name, NULL address, NULL city, NULL state, NULL country, NULL checkin_id,"
                          " NULL sleep_time, NULL timezone, NULL conversation, NULL contact_num, NULL folder, "
-                         "NULL fingerprint, NULL contact_name "
+                         "NULL fingerprint, NULL contact_name, NULL game_title, NULL trophy_name "
                          "FROM events "
                          "LEFT JOIN tweetdetails "
                          "ON detailid = tweetid "
@@ -584,7 +584,8 @@ def get_datetime_range(start_datetime, end_datetime, list_of_data_types, user_pr
                         "sum(stageminutes) rest_mins, startdatetime start_time, NULL reply_id, NULL venue_name, "
                         "NULL venue_id, NULL venue_event_id, NULL venue_event_name, NULL address, NULL city, "
                         "NULL state, NULL country, NULL checkin_id, f.duration sleep_time, f.timezone timezone, "
-                        " NULL conversation, NULL contact_num,  NULL folder, NULL fingerprint, NULL contact_name "
+                        "NULL conversation, NULL contact_num,  NULL folder, NULL fingerprint, NULL contact_name, "
+                        "NULL game_title, NULL trophy_name "
                         "FROM events "
                         "LEFT JOIN fitbit_sleep f "
                         "ON detailid = f.sleepid "
@@ -603,7 +604,7 @@ def get_datetime_range(start_datetime, end_datetime, list_of_data_types, user_pr
                             "o.venueid venue_id, o.veventid venue_event_id, o.veventname venue_event_name, "
                             "v.address address, v.city city, v.state state, v.country country, o.checkinid checkin_id, "
                             "NULL sleep_time, NULL timezone, NULL conversation, NULL contact_num, NULL folder, "
-                            "NULL fingerprint, NULL contact_name "
+                            "NULL fingerprint, NULL contact_name, NULL game_title, NULL trophy_name "
                             "FROM events e "
                             "LEFT JOIN foursquare_checkins o "
                             "ON e.detailid = o.eventid "
@@ -620,7 +621,8 @@ def get_datetime_range(start_datetime, end_datetime, list_of_data_types, user_pr
                      "NULL venue_id, NULL venue_event_id, NULL venue_event_name, "
                      "NULL address, NULL city, NULL state, NULL country, NULL checkin_id, "
                      "NULL sleep_time, NULL timezone, s.conversation conversation, s.contact_num contact_num, "
-                     "s.folder folder, s.fingerprint fingerprint, c.contact_name contact_name "
+                     "s.folder folder, s.fingerprint fingerprint, c.contact_name contact_name, NULL game_title, "
+                     "NULL trophy_name "
                      "FROM events e "
                      "lEFT JOIN sms_messages s "
                      "ON e.detailid = s.smsid "
@@ -630,6 +632,54 @@ def get_datetime_range(start_datetime, end_datetime, list_of_data_types, user_pr
                      f"AND eventdt >= '{start_datetime}' "
                      f"AND eventdt <= '{end_datetime}' "
                      f"AND e.userid = '{user_id}' ")
+
+    psn_sql_query = (
+        f"""
+        SELECT
+        date(e.earned_date_time) date,
+        time(e.earned_date_time) time,
+        NULL source_id,
+        g.trophy_detail body,
+        s.platform client,
+        NULL latitude,
+        NULL longitude,
+        "psn" object_type,
+        NULL end_time,
+        NULL sleep_id,
+        NULL rest_mins,
+        NULL start_time,
+        NULL reply_id,
+        NULL venue_name,
+        NULL venue_id,
+        NULL venue_event_id,
+        NULL venue_event_name,
+        NULL address,
+        NULL city,
+        NULL state,
+        NULL country,
+        NULL checkin_id,
+        NULL sleep_time,
+        NULL timezone,
+        NULL conversation,
+        NULL contact_num,
+        NULL folder,
+        NULL fingerprint,
+        NULL contact_name,
+        s.game_title game_title,
+        g.trophy_name trophy_name
+        FROM psn_earned_trophies AS e
+        LEFT JOIN psn_game_trophies AS g
+        ON e.game_id = g.game_id AND e.trophy_id = g.trophy_id
+        AND e.trophy_set_version = g.trophy_set_version
+        LEFT JOIN psn_summary AS s
+        ON s.game_id = e.game_id AND s.userid = e.userid
+        AND s.trophy_set_version = e.trophy_set_version
+        WHERE
+        e.earned_date_time >= '{start_datetime}'
+        AND e.earned_date_time <= '{end_datetime}'
+        AND e.userid = {user_id}
+        """
+    )
 
     if 'twitter' in list_of_data_types:
         subquery_list.append(twitter_sql_query)
@@ -643,13 +693,20 @@ def get_datetime_range(start_datetime, end_datetime, list_of_data_types, user_pr
     if "sms" in list_of_data_types:
         subquery_list.append(sms_sql_query)
 
-    sql_query = " UNION ".join(subquery_list) + "ORDER BY date ASC, time ASC;"
+    if "psn" in list_of_data_types:
+        subquery_list.append(psn_sql_query)
 
-    query_start_time = datetime.datetime.now()
+    output = list()
 
-    output = get_results_for_query(sql_query)
+    if len(list_of_data_types) > 0:
 
-    print(f'Returned query in {datetime.datetime.now() - query_start_time}')
+        sql_query = " UNION ".join(subquery_list) + "ORDER BY date ASC, time ASC;"
+
+        query_start_time = datetime.datetime.now()
+
+        output = get_results_for_query(sql_query)
+
+        print(f'Returned query in {datetime.datetime.now() - query_start_time}')
 
     return output
 
@@ -894,12 +951,14 @@ def set_user_source_preferences(user_id, **kwargs):
                  f"('{user_id}', 'show_twitter', '{kwargs.get('show_twitter')}'),"
                  f" ('{user_id}', 'show_foursquare', '{kwargs.get('show_foursquare')}'), "
                  f"('{user_id}', 'show_fitbit-sleep', '{kwargs.get('show_fitbit-sleep')}'), "
-                 f"('{user_id}', 'show_sms', '{kwargs.get('show_sms')}')"
+                 f"('{user_id}', 'show_sms', '{kwargs.get('show_sms')}'), "
+                 f"('{user_id}', 'show_psn', '{kwargs.get('show_psn')}')"
                  " ON DUPLICATE KEY UPDATE preference_value=CASE"
                  f" WHEN preference_key = 'show_twitter' THEN '{kwargs.get('show_twitter')}'"
                  f" WHEN preference_key = 'show_foursquare' THEN '{kwargs.get('show_foursquare')}'"
                  f" WHEN preference_key = 'show_fitbit-sleep' THEN '{kwargs.get('show_fitbit-sleep')}'"
                  f" WHEN preference_key = 'show_sms' THEN '{kwargs.get('show_sms')}'"
+                 f" WHEN preference_key = 'show_psn' THEN '{kwargs.get('show_psn')}'"
                  f" ELSE NULL END;")
 
     cursor.execute(sql_query)
@@ -1183,9 +1242,11 @@ def insert_into_table_with_columns(data, table):
                f"VALUES {summary_rows} "
                f"ON DUPLICATE KEY UPDATE {update_columns};")
 
-        # print(sql)
-
-        cursor.execute(sql)
+        # TODO: Once these all work, remove this conditional
+        if table in ["psn_summary", "psn_game_trophies", "psn_earned_trophies"]:
+            cursor.execute(sql)
+        else:
+            print(sql)
 
     cnx.commit()
 

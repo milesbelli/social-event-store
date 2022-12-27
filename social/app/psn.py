@@ -1,8 +1,10 @@
-import requests
-import json
 import datetime as dt
+import json
 import os
-import common,eventdb
+
+import common
+import eventdb
+import requests
 
 
 def api_to_db():
@@ -63,7 +65,7 @@ class psnDict(dict):
         bool_type = ["trophy_groups", "trophy_hidden", "hidden", "earned"]
         int_type = ["bronze", "silver", "gold", "platinum", "progress",
                     "earned_bronze", "earned_silver", "earned_gold",
-                    "earned_platinum", "userid"]
+                    "earned_platinum", "userid", "trophy_id", "trophy_rare"]
 
         internal_key = api_to_db().get(key)
 
@@ -75,11 +77,13 @@ class psnDict(dict):
                 value = self[internal_key[0]].get(internal_key[1])
 
         if key in date_type:
-            value = value or "NULL"
 
-            value = dt.datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ")
-            value = value.strftime("%Y-%m-%d %H:%M:%S")
-            value = f"'{value}'"
+            if value:
+                value = dt.datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ")
+                value = value.strftime("%Y-%m-%d %H:%M:%S")
+                value = f"'{value}'"
+            else:
+                value = "NULL"
 
             return value
 
@@ -98,7 +102,15 @@ class psnDict(dict):
 
 
 def psn_login(npsso):
-    code_url = "https://ca.account.sony.com/api/authz/v3/oauth/authorize?access_type=offline&client_id=ac8d161a-d966-4728-b0ea-ffec22f69edc&redirect_uri=com.playstation.PlayStationApp%3A%2F%2Fredirect&response_type=code&scope=psn%3Amobile.v1%20psn%3Aclientapp"
+    params = "&".join([
+              "access_type=offline",
+              "client_id=09515159-7237-4370-9b40-3806e67c0891",
+              "response_type=code",
+              "scope=psn:mobile.v2.core psn:clientapp",
+              "redirect_uri=com.scee.psxandroid.scecompcall://redirect"
+    ])
+
+    code_url = f"https://ca.account.sony.com/api/authz/v3/oauth/authorize?{params}"
     cookies = {"npsso": npsso}
 
     response = requests.get(code_url, cookies=cookies, allow_redirects=False)
@@ -114,13 +126,13 @@ def psn_login(npsso):
 
     body = {
         "code": code,
-        "redirect_uri": "com.playstation.PlayStationApp://redirect",
+        "redirect_uri": "com.scee.psxandroid.scecompcall://redirect",
         "grant_type": "authorization_code",
         "token_format": "jwt"
     }
 
     headers = {
-        "Authorization": "Basic YWM4ZDE2MWEtZDk2Ni00NzI4LWIwZWEtZmZlYzIyZjY5ZWRjOkRFaXhFcVhYQ2RYZHdqMHY="
+        "Authorization": "Basic MDk1MTUxNTktNzIzNy00MzcwLTliNDAtMzgwNmU2N2MwODkxOnVjUGprYTV0bnRCMktxc1A="
     }
 
     response = requests.post(oauth_url, data=body, headers=headers,
@@ -215,7 +227,16 @@ def get_game_trophies(game_id, access_token, group_id="all"):
         "trophy_name",
         "trophy_detail",
         "trophy_icon_url",
-        "trophy_group_id",
+        "trophy_group_id"
+    ]
+
+    trophies_update = [
+        "trophy_hidden",
+        "trophy_type",
+        "trophy_name",
+        "trophy_detail",
+        "trophy_icon_url",
+        "trophy_group_id"
     ]
 
     # Modify response to flatten data
@@ -224,12 +245,12 @@ def get_game_trophies(game_id, access_token, group_id="all"):
         response_dict["trophies"][i]["npCommunicationId"] = game_id
 
         response_dict["trophies"][i] = psnDict(response_dict["trophies"][i],
-                                               trophies_cols, [])
+                                               trophies_cols, trophies_update)
 
-    return response_dict
+    return response_dict["trophies"]
 
 
-def get_earned_trophies(game_id, access_token,
+def get_earned_trophies(game_id, access_token, userid,
                         group_id="all", user_id="me") -> dict:
 
     earned_url = f"https://m.np.playstation.com/api/trophy/v1/users/{user_id}/npCommunicationIds/{game_id}/trophyGroups/{group_id}/trophies?npServiceName=trophy"
@@ -246,9 +267,19 @@ def get_earned_trophies(game_id, access_token,
     response_dict = json.loads(response.content)
 
     earned_cols = [
+        "userid",
         "trophy_id",
         "game_id",
         "trophy_set_version",
+        "trophy_hidden",
+        "trophy_type",
+        "earned",
+        "earned_date_time",
+        "trophy_rare",
+        "trophy_earned_rate"
+    ]
+
+    update_cols = [
         "trophy_hidden",
         "trophy_type",
         "earned",
@@ -264,9 +295,10 @@ def get_earned_trophies(game_id, access_token,
         response_dict["trophies"][i]["npCommunicationId"] = game_id
 
         response_dict["trophies"][i] = psnDict(response_dict["trophies"][i],
-                                               earned_cols, [])
+                                               earned_cols, update_cols)
+        response_dict["trophies"][i]["userid"] = userid
 
-    return response_dict
+    return response_dict["trophies"]
 
 
 def write_out(file_name, data):
@@ -299,22 +331,22 @@ def fetch_trophy_data_for_user(npsso, complete_fetch=False) -> dict:
         # Loop through these and compare to the summary, if date/version same, remove
         pass
 
-    for game in [trophy_data["summary"][0]]:  # TODO: change this back!
+    for game in trophy_data["summary"]:
         game_id = game["npCommunicationId"]
         if not unchanged_games.get(game_id):
-            # Instead of appending, INSERT these trophies
-            trophy_data["game_trophies"].append(get_game_trophies(game_id,
-                                                                  access_key)
-                                                )
+            game_trophies = get_game_trophies(game_id, access_key)
+
+            eventdb.insert_into_table_with_columns(game_trophies,
+                                                   "psn_game_trophies")
 
             # write_out(f"{game_id}_trophies",
             #           trophy_data["game_trophies"][-1])
-            
-            # Instead of appending, INSERT these trophies
-            trophy_data["earned_trophies"].append(
-                    get_earned_trophies(game_id, access_key)
-                                                  )
 
+            # Instead of appending, INSERT these trophies
+            earned_trophies = get_earned_trophies(game_id, access_key, userid)
+
+            eventdb.insert_into_table_with_columns(earned_trophies,
+                                                   "psn_earned_trophies")
             # write_out(f"{game_id}_earned",
             #           trophy_data["earned_trophies"][-1])
 

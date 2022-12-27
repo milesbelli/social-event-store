@@ -19,6 +19,7 @@ class UserPreferences:
         self.show_fitbit_sleep = int(db_prefs.get("show_fitbit-sleep") or 1)
         self.show_foursquare = int(db_prefs.get("show_foursquare") or 1)
         self.show_sms = int(db_prefs.get("show_sms") or 1)
+        self.show_psn = int(db_prefs.get("show_psn") or 1)
 
     def update(self, **kwargs):
         # Update the items provided
@@ -33,6 +34,7 @@ class UserPreferences:
         self.show_fitbit_sleep = kwargs.get("show_fitbit-sleep") or self.show_fitbit_sleep
         self.show_foursquare = kwargs.get("show_foursquare") or self.show_foursquare
         self.show_sms = kwargs.get("show_sms") or self.show_sms
+        self.show_psn = kwargs.get("show_psn") or self.show_psn
         eventdb.set_user_source_preferences(self.user_id, **kwargs)
 
     def get_filters(self):
@@ -46,6 +48,8 @@ class UserPreferences:
             list_of_filters.append("foursquare")
         if self.show_sms == 1:
             list_of_filters.append("sms")
+        if self.show_psn ==1:
+            list_of_filters.append("psn")
 
         return list_of_filters
 
@@ -152,7 +156,7 @@ def get_events_for_date_range(start_date, end_date, user_prefs=None, **kwargs):
 
     # Query the db for events of given type(s) and date range
 
-    sources = kwargs.get("sources") or user_prefs.get_filters() or ["twitter", "fitbit-sleep", "foursquare", "sms"]
+    sources = kwargs.get("sources") or user_prefs.get_filters()
 
     if user_prefs:
         start_date, end_date = localize_date_range(start_date, end_date, timezone=user_prefs.timezone)
@@ -488,7 +492,6 @@ class eventObject:
             self.reply_id = kwargs.get("reply_id")
             self.client = kwargs.get("client")
 
-
         elif self.type == "fitbit-sleep":
             # set up Fitbit fields
             # args needed:
@@ -540,6 +543,14 @@ class eventObject:
             self.folder = kwargs.get("folder")
             self.contact_nm = kwargs.get("contact_name")
 
+        elif self.type == "psn":
+            self.body = kwargs.get("body") or str()
+            self.trophy_name = kwargs.get("trophy_name")
+            self.platform = kwargs.get("client")
+            self.game_title = kwargs.get("game_title")
+
+            self.geo = None
+
         else:
             raise ValueError(f"Unsupported event type: {self.type}")
 
@@ -560,6 +571,8 @@ class eventObject:
                 else "Location unknown"
         elif self.type == "sms":
             return f"from me" if self.folder == "outbox" else f"from {self.contact_nm or self.contact}"
+        elif self.type == "psn":
+            return f"for {self.platform}"
 
     def get_url(self):
         if self.type == "twitter":
@@ -619,12 +632,16 @@ class eventObject:
             if self.conversation:
                 conversation = self.conversation.replace("~", ", ")
             return f"Conversation with {conversation or self.contact_nm or self.contact}"
+        elif self.type == "psn":
+            return f"🏆 {self.trophy_name}"
         else:
             return None
 
     def get_subtitle(self):
         if self.type == "foursquare" and self.venue_event_name:
             return f"for {self.venue_event_name}"
+        elif self.type == "psn":
+            return self.game_title
         else:
             return None
 
@@ -648,6 +665,8 @@ class eventObject:
             return f"Restful time: {readable_rest}"
         elif self.type == "foursquare":
             return f"{self.get_title()} {self.get_subtitle() or str()}"
+        elif self.type == "psn":
+            return self.trophy_name
 
     def ical_body(self):
         output = self.body.replace('\n', '\\n').replace('\r', '\\n')
