@@ -666,7 +666,7 @@ class eventObject:
         elif self.type == "foursquare":
             return f"{self.get_title()} {self.get_subtitle() or str()}"
         elif self.type == "psn":
-            return self.trophy_name
+            return f"🏆 {self.trophy_name} ({self.game_title})"
 
     def ical_body(self):
         output = self.body.replace('\n', '\\n').replace('\r', '\\n')
