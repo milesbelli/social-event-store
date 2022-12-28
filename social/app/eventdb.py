@@ -1250,6 +1250,47 @@ def insert_into_table_with_columns(data, table):
 
     close_connection(cnx)
 
+def get_trophies_that_updated(userid):
+
+    query = f"""
+    SELECT
+    game_id,
+    np_service_name,
+    trophy_set_version
+    FROM psn_summary
+    WHERE
+    userid = {userid}
+    AND
+    (last_updated > last_checked
+    OR
+    last_checked IS NULL)
+    """
+
+    output = get_results_for_query(query)
+
+    return output
+
+def update_trophies_last_checked(userid, service, set, game_id, time):
+
+    cnx = create_connection("social")
+    cursor = cnx.cursor()
+
+    sql = f"""
+    UPDATE psn_summary
+    SET last_checked = "{time}"
+    WHERE np_service_name = "{service}"
+    AND userid = {userid}
+    AND trophy_set_version = "{set}"
+    AND game_id = "{game_id}"
+    """
+
+    cursor.execute(sql)
+
+    cnx.commit()
+
+    close_connection(cnx)
+
+
 def close_connection(cnx):
 
     return cnx.close()

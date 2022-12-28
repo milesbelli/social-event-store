@@ -324,31 +324,33 @@ def fetch_trophy_data_for_user(npsso, complete_fetch=False) -> dict:
     trophy_data["game_trophies"] = []
     trophy_data["earned_trophies"] = []
 
-    unchanged_games = dict()
-    if not complete_fetch:
-        # build unchanged games dict for compares
-        # SELECT game_id, trophy_set_version, last_updated FROM psn_summary;
-        # Loop through these and compare to the summary, if date/version same, remove
-        pass
+    changed_games_rows = eventdb.get_trophies_that_updated(userid)
 
-    for game in trophy_data["summary"]:
-        game_id = game["npCommunicationId"]
-        if not unchanged_games.get(game_id):
-            game_trophies = get_game_trophies(game_id, access_key)
+    for game in changed_games_rows:
+        game_id = game["game_id"]
+        game_trophies = get_game_trophies(game_id, access_key)
 
-            eventdb.insert_into_table_with_columns(game_trophies,
-                                                   "psn_game_trophies")
+        eventdb.insert_into_table_with_columns(game_trophies,
+                                               "psn_game_trophies")
 
-            # write_out(f"{game_id}_trophies",
-            #           trophy_data["game_trophies"][-1])
+        # write_out(f"{game_id}_trophies",
+        #           trophy_data["game_trophies"][-1])
 
-            # Instead of appending, INSERT these trophies
-            earned_trophies = get_earned_trophies(game_id, access_key, userid)
+        # Instead of appending, INSERT these trophies
+        earned_trophies = get_earned_trophies(game_id, access_key, userid)
 
-            eventdb.insert_into_table_with_columns(earned_trophies,
-                                                   "psn_earned_trophies")
-            # write_out(f"{game_id}_earned",
-            #           trophy_data["earned_trophies"][-1])
+        eventdb.insert_into_table_with_columns(earned_trophies,
+                                               "psn_earned_trophies")
+        # write_out(f"{game_id}_earned",
+        #           trophy_data["earned_trophies"][-1])
+
+        # TODO: UPDATE column last_checked in the summary
+        update_now = dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        eventdb.update_trophies_last_checked(
+            userid, game["np_service_name"], game["trophy_set_version"],
+            game["game_id"], update_now
+        )
 
     return trophy_data
 
