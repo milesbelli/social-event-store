@@ -1227,6 +1227,7 @@ def insert_into_table_with_columns(data, table):
 
         all_rows.append(row_values)
 
+    # Hardcoding groups of 500. Maybe someday make this customizable
     grouped_rows = group_insert_into_db(all_rows, 500)
 
     update_cols = list()
@@ -1243,10 +1244,7 @@ def insert_into_table_with_columns(data, table):
                f"ON DUPLICATE KEY UPDATE {update_columns};")
 
         # TODO: Once these all work, remove this conditional
-        if table in ["psn_summary", "psn_game_trophies", "psn_earned_trophies"]:
-            cursor.execute(sql)
-        else:
-            print(sql)
+        cursor.execute(sql)
 
     cnx.commit()
 
