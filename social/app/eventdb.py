@@ -832,7 +832,7 @@ def get_search_term(search_term, user_prefs, event_types):
                      " NULL start_time, replyid reply_id, NULL venue_name, NULL venue_id, NULL venue_event_id,"
                      " NULL venue_event_name, NULL address, NULL city, NULL state, NULL country, NULL checkin_id,"
                      " NULL sleep_time, NULL timezone, NULL conversation, NULL contact_num, "
-                     "NULL folder, NULL fingerprint, NULL contact_name "
+                     "NULL folder, NULL fingerprint, NULL contact_name, NULL game_title, NULL trophy_name "
                      "FROM tweetdetails "
                      "LEFT JOIN events e "
                      "ON detailid = tweetid "
@@ -851,7 +851,7 @@ def get_search_term(search_term, user_prefs, event_types):
                         "o.venueid venue_id, o.veventid venue_event_id, o.veventname venue_event_name, "
                         "v.address address, v.city city, v.state state, v.country country, o.checkinid checkin_id, "
                         "NULL sleep_time, NULL timezone, NULL conversation, NULL contact_num, "
-                        "NULL folder, NULL fingerprint, NULL contact_name "
+                        "NULL folder, NULL fingerprint, NULL contact_name, NULL game_title, NULL trophy_name "
                         "FROM foursquare_checkins o "
                         "LEFT JOIN events e "
                         "ON e.detailid = o.eventid "
@@ -868,13 +868,64 @@ def get_search_term(search_term, user_prefs, event_types):
                  "NULL venue_id, NULL venue_event_id, NULL venue_event_name, "
                  "NULL address, NULL city, NULL state, NULL country, NULL checkin_id, "
                  "NULL sleep_time, NULL timezone, s.conversation conversation, s.contact_num contact_num, "
-                 "s.folder folder, s.fingerprint fingerprint, c.contact_name contact_name "
+                 "s.folder folder, s.fingerprint fingerprint, c.contact_name contact_name, NULL game_title, "
+                 "NULL trophy_name "
                  "FROM sms_messages s "
                  "LEFT JOIN events e "
                  "ON e.detailid = s.smsid "
                  "LEFT JOIN sms_contacts c "
                  "ON c.contact_num = s.contact_num AND s.userid = c.userid "
                  f"{sms_where_clause} AND e.eventtype = 'sms' AND e.userid = '{user_id}'")
+
+    psn_searchable = ["g.trophy_detail", "s.platform", "s.game_title", "g.trophy_name"]
+    psn_where_clause = generate_search_where_clause(search_list, psn_searchable)
+
+    psn_query = (
+        f"""
+        SELECT
+        date(e.earned_date_time) date,
+        time(e.earned_date_time) time,
+        NULL source_id,
+        g.trophy_detail body,
+        s.platform client,
+        NULL latitude,
+        NULL longitude,
+        "psn" object_type,
+        NULL end_time,
+        NULL sleep_id,
+        NULL rest_mins,
+        NULL start_time,
+        NULL reply_id,
+        NULL venue_name,
+        NULL venue_id,
+        NULL venue_event_id,
+        NULL venue_event_name,
+        NULL address,
+        NULL city,
+        NULL state,
+        NULL country,
+        NULL checkin_id,
+        NULL sleep_time,
+        NULL timezone,
+        NULL conversation,
+        NULL contact_num,
+        NULL folder,
+        NULL fingerprint,
+        NULL contact_name,
+        s.game_title game_title,
+        g.trophy_name trophy_name
+        FROM psn_earned_trophies AS e
+        LEFT JOIN psn_game_trophies AS g
+        ON e.game_id = g.game_id AND e.trophy_id = g.trophy_id
+        AND e.trophy_set_version = g.trophy_set_version
+        LEFT JOIN psn_summary AS s
+        ON s.game_id = e.game_id AND s.userid = e.userid
+        AND s.trophy_set_version = e.trophy_set_version
+        {psn_where_clause}
+        AND earned_date_time IS NOT NULL
+        AND e.userid = {user_id}
+        """
+    )
 
     subqueries_list = []
 
@@ -887,9 +938,15 @@ def get_search_term(search_term, user_prefs, event_types):
     if "sms" in event_types and search_list != [""]:
         subqueries_list.append(sms_query)
 
+    if "psn" in event_types and search_list != [""]:
+        subqueries_list.append(psn_query)
+
     sql_query = " UNION ".join(subqueries_list) + "ORDER BY date ASC, time ASC;"
 
-    output = get_results_for_query(sql_query)
+    if len(subqueries_list) > 0:
+        output = get_results_for_query(sql_query)
+    else:
+        output = []
 
     return output
 

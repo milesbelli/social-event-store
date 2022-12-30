@@ -163,3 +163,7 @@ input, select {
 .psn {
     background-color: #33394A;
 }
+
+.savebtn {
+    margin-top: 6px;
+}
