@@ -2,7 +2,7 @@ from re import M
 from flask import Flask, render_template, request, redirect, send_file, jsonify, url_for
 import datetime
 import pytz
-import fitbit, common, twitter, foursquare, sms
+import fitbit, common, twitter, foursquare, sms, psn
 from multiprocessing import Process
 import os
 
@@ -272,6 +272,20 @@ def view_convo(convo_id):
 
     return render_template("conversation.html", days_list=messages, next=next,
                            prev=prev, size=size, conv_name=title)
+
+
+@app.route("/fetch", methods=["GET", "POST"])
+def fetch_from_api():
+    if request.method == "GET":
+        return render_template("api-fetch.html")
+
+    elif request.method == "POST":
+        psn_key = request.form.get("psnkey")
+        user_prefs = common.UserPreferences(1)
+        success = psn.api_fetch_background(user_prefs, psn_key)
+
+        return render_template("api-fetch.html", status=success)
+
 
 # Running this will launch the server
 if __name__ == "__main__":

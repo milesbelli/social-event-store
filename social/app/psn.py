@@ -6,6 +6,8 @@ import common
 import eventdb
 import requests
 
+from multiprocessing import Process
+
 
 def api_to_db():
 
@@ -307,13 +309,11 @@ def write_out(file_name, data):
         target.write(data)
 
 
-def fetch_trophy_data_for_user(npsso, complete_fetch=False) -> dict:
+def fetch_trophy_data_for_user(user_prefs, npsso, complete_fetch=False) -> dict:
 
     trophy_data = dict()
     access_key = psn_login(npsso)
-
-    # this is a placeholder... it's utterly pointless
-    userid = common.UserPreferences(1).user_id
+    userid = user_prefs.user_id
 
     trophy_data["summary"] = get_player_summary(access_key, userid)
 
@@ -355,13 +355,30 @@ def fetch_trophy_data_for_user(npsso, complete_fetch=False) -> dict:
     return trophy_data
 
 
+def api_fetch_background(user_prefs, sso_key, complete_fetch=False):
+
+    # fetch_trophy_data_for_user(user_prefs, sso_key, complete_fetch)
+
+    file_proc_bkg = Process(target=fetch_trophy_data_for_user,
+                            args=(user_prefs, sso_key, complete_fetch),
+                            daemon=True)
+    file_proc_bkg.start()
+
+    status_message = "API update started."
+
+    return status_message
+
+
 # Log into PSN in browser and get from https://ca.account.sony.com/api/v1/ssocookie
 # For dev purposes, I'm putting this in the environment variables
 
-sso_key = os.getenv("PSN_KEY")
+if __name__ == "__main__":
 
-if sso_key:
-    trophies = fetch_trophy_data_for_user(sso_key, complete_fetch=True)
+    sso_key = os.getenv("PSN_KEY")
+    user_prefs = common.UserPreferences(1)
+
+    if sso_key:
+        trophies = fetch_trophy_data_for_user(user_prefs, sso_key, complete_fetch=True)
 
 # for game in trophies["earned_trophies"]:
 #     if game["trophies"][0].fget("game_id") != "'NPWR22009_00'":
