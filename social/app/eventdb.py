@@ -533,44 +533,78 @@ def get_existing_tweets(cursor):
     return output
 
 
+def create_select_cols(all_cols, specific_cols):
+
+    select_cols = list()
+
+    for col in all_cols:
+        col_pair = str()
+        if specific_cols.get(col):
+            col_pair = f"{specific_cols[col]} AS {col}"
+        else:
+            col_pair = f"NULL AS {col}"
+
+        select_cols.append(col_pair)
+
+    select_string = ", ".join(select_cols)
+
+    return select_string
+
+
 def get_datetime_range(start_datetime, end_datetime, list_of_data_types, user_prefs):
 
     subquery_list = list()
 
     user_id = user_prefs.user_id
 
-    # TODO: This is not going to scale, so come up with a better way to handle this
-    # 0 : eventdate
-    # 1 : eventtime
-    # 2 : detailid / logid
-    # 3 : tweettext / shout
-    # 4 : client
-    # 5 : latitude
-    # 6 : longitude
-    # 7 : eventtype
-    # 8 : enddatetime
-    # 9 : sleepid
-    # 10: sum(stageminutes)
-    # 11: startdatetime
-    # 12: replyid
-    # 13: venuename
-    # 14: venueid
-    # 15: veventid
-    # 16: veventname
-    # 17: address
-    # 18: city
-    # 19: state
-    # 20: country
-    # 21: checkinid
-    # 22: sleep_time
-    # 23: timezone
+    all_columns = [
+        "date",
+        "time",
+        "source_id",
+        "body",
+        "client",
+        "latitude",
+        "longitude",
+        "object_type",
+        "end_time",
+        "sleep_id",
+        "rest_mins",
+        "start_time",
+        "reply_id",
+        "venue_name",
+        "venue_id",
+        "venue_event_id",
+        "venue_event_name",
+        "address",
+        "city",
+        "state",
+        "country",
+        "checkin_id",
+        "sleep_time",
+        "timezone",
+        "conversation",
+        "contact_num",
+        "folder",
+        "fingerprint",
+        "contact_name",
+        "game_title",
+        "trophy_name"
+    ]
 
-    twitter_sql_query = ("SELECT eventdate date, eventtime time, detailid source_id, tweettext body, client, "
-                         "latitude, longitude, eventtype object_type, NULL end_time, NULL sleep_id, NULL rest_mins,"
-                         " NULL start_time, replyid reply_id, NULL venue_name, NULL venue_id, NULL venue_event_id,"
-                         " NULL venue_event_name, NULL address, NULL city, NULL state, NULL country, NULL checkin_id,"
-                         " NULL sleep_time, NULL timezone, NULL conversation, NULL contact_num, NULL folder, "
-                         "NULL fingerprint, NULL contact_name, NULL game_title, NULL trophy_name "
+    twitter_columns = {
+        "date": "eventdate",
+        "time":  "eventtime",
+        "source_id": "detailid",
+        "body": "tweettext",
+        "client": "client",
+        "latitude": "latitude",
+        "longitude": "longitude",
+        "object_type": "eventtype"
+    }
+
+    twitter_select = create_select_cols(all_columns, twitter_columns)
+
+    twitter_sql_query = (f"SELECT {twitter_select} "
                          "FROM events "
                          "LEFT JOIN tweetdetails "
                          "ON detailid = tweetid "
@@ -579,13 +613,22 @@ def get_datetime_range(start_datetime, end_datetime, list_of_data_types, user_pr
                          f"AND eventdt <= '{end_datetime}' "
                          f"AND events.userid = '{user_id}' ")
 
-    fitbit_sql_query = ("SELECT eventdate date, eventtime time, f.logid source_id, NULL body, NULL client, "
-                        "NULL latitude, NULL longitude, eventtype object_type, enddatetime end_time, f.sleepid sleep_id, "
-                        "sum(stageminutes) rest_mins, startdatetime start_time, NULL reply_id, NULL venue_name, "
-                        "NULL venue_id, NULL venue_event_id, NULL venue_event_name, NULL address, NULL city, "
-                        "NULL state, NULL country, NULL checkin_id, f.duration sleep_time, f.timezone timezone, "
-                        "NULL conversation, NULL contact_num,  NULL folder, NULL fingerprint, NULL contact_name, "
-                        "NULL game_title, NULL trophy_name "
+    fitbit_columns = {
+        "date": "eventdate",
+        "time":  "eventtime",
+        "source_id": "f.logid",
+        "object_type": "eventtype",
+        "end_time": "enddatetime",
+        "sleep_id": "f.sleepid",
+        "rest_mins": "sum(stageminutes)",
+        "start_time": "startdatetime",
+        "sleep_time": "f.duration",
+        "timezone": "f.timezone"
+    }
+
+    fitbit_select = create_select_cols(all_columns, fitbit_columns)
+
+    fitbit_sql_query = (f"SELECT {fitbit_select} "
                         "FROM events "
                         "LEFT JOIN fitbit_sleep f "
                         "ON detailid = f.sleepid "
