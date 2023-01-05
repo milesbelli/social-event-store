@@ -641,13 +641,27 @@ def get_datetime_range(start_datetime, end_datetime, list_of_data_types, user_pr
                         f"AND sleepstage NOT LIKE '%wake' AND sleepstage NOT LIKE 'restless' "
                         f"GROUP BY s.sleepid, eventdate, eventtime, f.logid, f.duration, f.timezone, f.sleepid ")
 
-    foursquare_sql_query = ("SELECT e.eventdate date, e.eventtime time, NULL source_id, o.shout body, NULL client, "
-                            "v.latitude, v.longitude, e.eventtype object_type, NULL end_time, NULL sleep_id, "
-                            "NULL rest_mins, NULL start_time, NULL reply_id, o.venuename venue_name, "
-                            "o.venueid venue_id, o.veventid venue_event_id, o.veventname venue_event_name, "
-                            "v.address address, v.city city, v.state state, v.country country, o.checkinid checkin_id, "
-                            "NULL sleep_time, NULL timezone, NULL conversation, NULL contact_num, NULL folder, "
-                            "NULL fingerprint, NULL contact_name, NULL game_title, NULL trophy_name "
+    foursquare_columns = {
+        "date": "e.eventdate",
+        "time": "e.eventtime",
+        "body": "o.shout",
+        "latitude": "v.latitude",
+        "longitude": "v.longitude",
+        "object_type": "e.eventtype",
+        "venue_name": "o.venuename",
+        "venue_id": "o.venueid",
+        "venue_event_id": "o.veventid",
+        "venue_event_name": "o.veventname",
+        "address": "v.address",
+        "city": "v.city",
+        "state": "v.state",
+        "country": "v.country",
+        "checkin_id": "o.checkinid"
+    }
+
+    foursquare_select = create_select_cols(all_columns, foursquare_columns)
+
+    foursquare_sql_query = (f"SELECT {foursquare_select} "
                             "FROM events e "
                             "LEFT JOIN foursquare_checkins o "
                             "ON e.detailid = o.eventid "
