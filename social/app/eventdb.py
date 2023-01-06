@@ -672,14 +672,21 @@ def get_datetime_range(start_datetime, end_datetime, list_of_data_types, user_pr
                             f"AND eventdt <= '{end_datetime}' "
                             f"AND e.userid = '{user_id}' ")
 
-    sms_sql_query = ("SELECT e.eventdate date, e.eventtime time, NULL source_id, s.body body, NULL client, "
-                     "NULL latitude, NULL longitude, e.eventtype object_type, NULL end_time, NULL sleep_id, "
-                     "NULL rest_mins, NULL start_time, NULL reply_id, NULL venue_name, "
-                     "NULL venue_id, NULL venue_event_id, NULL venue_event_name, "
-                     "NULL address, NULL city, NULL state, NULL country, NULL checkin_id, "
-                     "NULL sleep_time, NULL timezone, s.conversation conversation, s.contact_num contact_num, "
-                     "s.folder folder, s.fingerprint fingerprint, c.contact_name contact_name, NULL game_title, "
-                     "NULL trophy_name "
+    sms_columns = {
+        "date": "e.eventdate",
+        "time": "e.eventtime",
+        "body": "s.body",
+        "object_type": "e.eventtype",
+        "conversation": "s.conversation",
+        "contact_num": "s.contact_num",
+        "folder": "s.folder",
+        "fingerprint": "s.fingerprint",
+        "contact_name": "c.contact_name"
+    }
+
+    sms_select = create_select_cols(all_columns, sms_columns)
+
+    sms_sql_query = (f"SELECT {sms_select} "
                      "FROM events e "
                      "lEFT JOIN sms_messages s "
                      "ON e.detailid = s.smsid "
