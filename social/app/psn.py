@@ -378,23 +378,3 @@ def api_fetch_background(user_prefs, sso_key, complete_fetch=False):
     status_message = "API update started."
 
     return status_message
-
-
-# Log into PSN in browser and get from https://ca.account.sony.com/api/v1/ssocookie
-# For dev purposes, I'm putting this in the environment variables
-
-if __name__ == "__main__":
-
-    sso_key = os.getenv("PSN_KEY")
-    user_prefs = common.UserPreferences(1)
-
-    if sso_key:
-        trophies = fetch_trophy_data_for_user(user_prefs, sso_key, complete_fetch=True)
-
-# for game in trophies["earned_trophies"]:
-#     if game["trophies"][0].fget("game_id") != "'NPWR22009_00'":
-#         print(game)
-
-# for game in trophies["game_trophies"]:
-#     if game["trophies"][0].fget("game_id") == "'NPWR22009_00'":
-#         print(game)

@@ -3,7 +3,7 @@ version: "3.7"
 services:
 
   social:
-    image: milesbelli/social-event-store-app:1.5.1
+    image: milesbelli/social-event-store-app:1.6.0
     container_name: social_flask
     restart: always
     expose:
@@ -22,7 +22,7 @@ services:
       # - PATH_INPUT=files/input
 
   nginx:
-    image: milesbelli/social-event-store-server:1.5.1
+    image: milesbelli/social-event-store-server:1.6.0
     container_name: social_nginx
     restart: always
     ports:

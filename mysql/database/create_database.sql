@@ -212,3 +212,13 @@ CREATE TABLE IF NOT EXISTS psn_earned_trophies (
         trophy_earned_rate VARCHAR (8),
         PRIMARY KEY (userid, trophy_id, game_id, trophy_set_version)
 );
+
+CREATE TABLE IF NOT EXISTS api_status_update (
+        userid INT(11) NOT NULL,
+        api_type VARCHAR(16) NOT NULL,
+        update_start DATETIME NOT NULL,
+        update_refresh DATETIME,
+        update_status INT(2) NOT NULL,
+        status_message VARCHAR(1000) NOT NULL,
+        PRIMARY KEY (userid, api_type, update_start)
+);
