@@ -5,7 +5,7 @@ CREATE DATABASE IF NOT EXISTS social
 CHARACTER SET utf8mb4
 COLLATE utf8mb4_general_ci;
 
-GRANT SELECT, INSERT, UPDATE ON social.* TO 'socialuser'@'%';
+GRANT SELECT, INSERT, UPDATE, DELETE ON social.* TO 'socialuser'@'%';
 GRANT ALL PRIVILEGES ON social.* TO 'socialadmin'@'localhost' WITH GRANT OPTION;
 
 
@@ -159,4 +159,66 @@ userid INT(11) NOT NULL,
 contact_num VARCHAR(50) NOT NULL,
 contact_name VARCHAR(200) NOT NULL,
 PRIMARY KEY (userid, contact_num)
+);
+
+CREATE TABLE IF NOT EXISTS psn_summary (
+    userid INT(11) NOT NULL,
+    np_service_name VARCHAR(20),
+    game_id VARCHAR(20) NOT NULL,
+    trophy_set_version VARCHAR(10) NOT NULL,
+    game_title VARCHAR(200) NOT NULL,
+    title_detail VARCHAR(1000),
+    icon_url VARCHAR(500),
+    platform VARCHAR(50),
+    trophy_groups INT(1),
+    bronze INT(3),
+    silver INT(3),
+    gold INT(3),
+    platinum INT(3),
+    progress INT(3),
+    earned_bronze INT(3),
+    earned_silver INT(3),
+    earned_gold INT(3),
+    earned_platinum INT(3),
+    hidden INT(1),
+    last_updated DATETIME,
+    last_checked DATETIME,
+    PRIMARY KEY (userid, np_service_name, game_id, trophy_set_version)
+);
+
+CREATE TABLE IF NOT EXISTS psn_game_trophies (
+        trophy_id INT(3) NOT NULL,
+        game_id VARCHAR(20) NOT NULL,
+        trophy_set_version VARCHAR(10) NOT NULL,
+        trophy_hidden INT(1),
+        trophy_type VARCHAR(16),
+        trophy_name VARCHAR(100) NOT NULL,
+        trophy_detail VARCHAR(500),
+        trophy_icon_url VARCHAR(500),
+        trophy_group_id VARCHAR(50),
+        PRIMARY KEY (trophy_id, game_id, trophy_set_version)
+);
+
+CREATE TABLE IF NOT EXISTS psn_earned_trophies (
+        userid INT(11) NOT NULL,
+        trophy_id INT(3) NOT NULL,
+        game_id VARCHAR(20) NOT NULL,
+        trophy_set_version VARCHAR(10) NOT NULL,
+        trophy_hidden INT(1),
+        trophy_type VARCHAR(16),
+        earned INT(1),
+        earned_date_time DATETIME,
+        trophy_rare INT(3),
+        trophy_earned_rate VARCHAR (8),
+        PRIMARY KEY (userid, trophy_id, game_id, trophy_set_version)
+);
+
+CREATE TABLE IF NOT EXISTS api_status_update (
+        userid INT(11) NOT NULL,
+        api_type VARCHAR(16) NOT NULL,
+        update_start DATETIME NOT NULL,
+        update_refresh DATETIME,
+        update_status INT(2) NOT NULL,
+        status_message VARCHAR(1000) NOT NULL,
+        PRIMARY KEY (userid, api_type, update_start)
 );

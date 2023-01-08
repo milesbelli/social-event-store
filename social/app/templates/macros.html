@@ -37,7 +37,14 @@
                 {% endif %}
                 value="true">
             <label for="show-sms">SMS</label></div>
-        <input type="submit" value="Save">
+            <div>
+        <input type="checkbox" id="show-psn" name="show_psn" form="set-filters"
+               {% if "psn" in prefs.get_filters() %}
+              checked="checked"
+               {% endif %}
+               value="true">
+        <label for="show-psn">Playstation Trophies</label></div>
+        <input type="submit" value="Save" class="savebtn">
     </form>
     </div>
 </div>

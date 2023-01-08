@@ -323,7 +323,10 @@ def get_status_from_twitter(status_id):
     reply_to = eventdb.get_in_reply_to(status_id)
 
     if not reply_to:
-        request_string = (f"https://cdn.syndication.twimg.com/tweet?id={status_id}&lang=en")
+        # This API "endpoint" comes from logging the network calls made on
+        # publish.twitter.com. They sometimes update it and stuff breaks. Try
+        # to keep an eye on it, but it might go away with no warning.
+        request_string = (f"https://cdn.syndication.twimg.com/tweet-result?id={status_id}&lang=en")
         response = requests.get(request_string)
         if response.status_code == 200:
             output_status = json.loads(response.content)

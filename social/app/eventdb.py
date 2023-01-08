@@ -533,44 +533,79 @@ def get_existing_tweets(cursor):
     return output
 
 
+def create_select_cols(all_cols, specific_cols):
+
+    select_cols = list()
+
+    for col in all_cols:
+        col_pair = str()
+        if specific_cols.get(col):
+            col_pair = f"{specific_cols[col]} AS {col}"
+        else:
+            col_pair = f"NULL AS {col}"
+
+        select_cols.append(col_pair)
+
+    select_string = ", ".join(select_cols)
+
+    return select_string
+
+
 def get_datetime_range(start_datetime, end_datetime, list_of_data_types, user_prefs):
 
     subquery_list = list()
 
     user_id = user_prefs.user_id
 
-    # TODO: This is not going to scale, so come up with a better way to handle this
-    # 0 : eventdate
-    # 1 : eventtime
-    # 2 : detailid / logid
-    # 3 : tweettext / shout
-    # 4 : client
-    # 5 : latitude
-    # 6 : longitude
-    # 7 : eventtype
-    # 8 : enddatetime
-    # 9 : sleepid
-    # 10: sum(stageminutes)
-    # 11: startdatetime
-    # 12: replyid
-    # 13: venuename
-    # 14: venueid
-    # 15: veventid
-    # 16: veventname
-    # 17: address
-    # 18: city
-    # 19: state
-    # 20: country
-    # 21: checkinid
-    # 22: sleep_time
-    # 23: timezone
+    all_columns = [
+        "date",
+        "time",
+        "source_id",
+        "body",
+        "client",
+        "latitude",
+        "longitude",
+        "object_type",
+        "end_time",
+        "sleep_id",
+        "rest_mins",
+        "start_time",
+        "reply_id",
+        "venue_name",
+        "venue_id",
+        "venue_event_id",
+        "venue_event_name",
+        "address",
+        "city",
+        "state",
+        "country",
+        "checkin_id",
+        "sleep_time",
+        "timezone",
+        "conversation",
+        "contact_num",
+        "folder",
+        "fingerprint",
+        "contact_name",
+        "game_title",
+        "trophy_name"
+    ]
 
-    twitter_sql_query = ("SELECT eventdate date, eventtime time, detailid source_id, tweettext body, client, "
-                         "latitude, longitude, eventtype object_type, NULL end_time, NULL sleep_id, NULL rest_mins,"
-                         " NULL start_time, replyid reply_id, NULL venue_name, NULL venue_id, NULL venue_event_id,"
-                         " NULL venue_event_name, NULL address, NULL city, NULL state, NULL country, NULL checkin_id,"
-                         " NULL sleep_time, NULL timezone, NULL conversation, NULL contact_num, NULL folder, "
-                         "NULL fingerprint, NULL contact_name "
+    twitter_columns = {
+        "date": "eventdate",
+        "time":  "eventtime",
+        "source_id": "detailid",
+        "body": "tweettext",
+        "client": "client",
+        "latitude": "latitude",
+        "longitude": "longitude",
+        "object_type": "eventtype",
+        "reply_id": "replyid"
+    }
+
+    twitter_select = create_select_cols(all_columns, twitter_columns)
+
+    twitter_sql_query = (f"SELECT {twitter_select} "
                          "FROM events "
                          "LEFT JOIN tweetdetails "
                          "ON detailid = tweetid "
@@ -579,12 +614,22 @@ def get_datetime_range(start_datetime, end_datetime, list_of_data_types, user_pr
                          f"AND eventdt <= '{end_datetime}' "
                          f"AND events.userid = '{user_id}' ")
 
-    fitbit_sql_query = ("SELECT eventdate date, eventtime time, f.logid source_id, NULL body, NULL client, "
-                        "NULL latitude, NULL longitude, eventtype object_type, enddatetime end_time, f.sleepid sleep_id, "
-                        "sum(stageminutes) rest_mins, startdatetime start_time, NULL reply_id, NULL venue_name, "
-                        "NULL venue_id, NULL venue_event_id, NULL venue_event_name, NULL address, NULL city, "
-                        "NULL state, NULL country, NULL checkin_id, f.duration sleep_time, f.timezone timezone, "
-                        " NULL conversation, NULL contact_num,  NULL folder, NULL fingerprint, NULL contact_name "
+    fitbit_columns = {
+        "date": "eventdate",
+        "time":  "eventtime",
+        "source_id": "f.logid",
+        "object_type": "eventtype",
+        "end_time": "enddatetime",
+        "sleep_id": "f.sleepid",
+        "rest_mins": "sum(stageminutes)",
+        "start_time": "startdatetime",
+        "sleep_time": "f.duration",
+        "timezone": "f.timezone"
+    }
+
+    fitbit_select = create_select_cols(all_columns, fitbit_columns)
+
+    fitbit_sql_query = (f"SELECT {fitbit_select} "
                         "FROM events "
                         "LEFT JOIN fitbit_sleep f "
                         "ON detailid = f.sleepid "
@@ -597,13 +642,27 @@ def get_datetime_range(start_datetime, end_datetime, list_of_data_types, user_pr
                         f"AND sleepstage NOT LIKE '%wake' AND sleepstage NOT LIKE 'restless' "
                         f"GROUP BY s.sleepid, eventdate, eventtime, f.logid, f.duration, f.timezone, f.sleepid ")
 
-    foursquare_sql_query = ("SELECT e.eventdate date, e.eventtime time, NULL source_id, o.shout body, NULL client, "
-                            "v.latitude, v.longitude, e.eventtype object_type, NULL end_time, NULL sleep_id, "
-                            "NULL rest_mins, NULL start_time, NULL reply_id, o.venuename venue_name, "
-                            "o.venueid venue_id, o.veventid venue_event_id, o.veventname venue_event_name, "
-                            "v.address address, v.city city, v.state state, v.country country, o.checkinid checkin_id, "
-                            "NULL sleep_time, NULL timezone, NULL conversation, NULL contact_num, NULL folder, "
-                            "NULL fingerprint, NULL contact_name "
+    foursquare_columns = {
+        "date": "e.eventdate",
+        "time": "e.eventtime",
+        "body": "o.shout",
+        "latitude": "v.latitude",
+        "longitude": "v.longitude",
+        "object_type": "e.eventtype",
+        "venue_name": "o.venuename",
+        "venue_id": "o.venueid",
+        "venue_event_id": "o.veventid",
+        "venue_event_name": "o.veventname",
+        "address": "v.address",
+        "city": "v.city",
+        "state": "v.state",
+        "country": "v.country",
+        "checkin_id": "o.checkinid"
+    }
+
+    foursquare_select = create_select_cols(all_columns, foursquare_columns)
+
+    foursquare_sql_query = (f"SELECT {foursquare_select} "
                             "FROM events e "
                             "LEFT JOIN foursquare_checkins o "
                             "ON e.detailid = o.eventid "
@@ -614,13 +673,21 @@ def get_datetime_range(start_datetime, end_datetime, list_of_data_types, user_pr
                             f"AND eventdt <= '{end_datetime}' "
                             f"AND e.userid = '{user_id}' ")
 
-    sms_sql_query = ("SELECT e.eventdate date, e.eventtime time, NULL source_id, s.body body, NULL client, "
-                     "NULL latitude, NULL longitude, e.eventtype object_type, NULL end_time, NULL sleep_id, "
-                     "NULL rest_mins, NULL start_time, NULL reply_id, NULL venue_name, "
-                     "NULL venue_id, NULL venue_event_id, NULL venue_event_name, "
-                     "NULL address, NULL city, NULL state, NULL country, NULL checkin_id, "
-                     "NULL sleep_time, NULL timezone, s.conversation conversation, s.contact_num contact_num, "
-                     "s.folder folder, s.fingerprint fingerprint, c.contact_name contact_name "
+    sms_columns = {
+        "date": "e.eventdate",
+        "time": "e.eventtime",
+        "body": "s.body",
+        "object_type": "e.eventtype",
+        "conversation": "s.conversation",
+        "contact_num": "s.contact_num",
+        "folder": "s.folder",
+        "fingerprint": "s.fingerprint",
+        "contact_name": "c.contact_name"
+    }
+
+    sms_select = create_select_cols(all_columns, sms_columns)
+
+    sms_sql_query = (f"SELECT {sms_select} "
                      "FROM events e "
                      "lEFT JOIN sms_messages s "
                      "ON e.detailid = s.smsid "
@@ -630,6 +697,36 @@ def get_datetime_range(start_datetime, end_datetime, list_of_data_types, user_pr
                      f"AND eventdt >= '{start_datetime}' "
                      f"AND eventdt <= '{end_datetime}' "
                      f"AND e.userid = '{user_id}' ")
+
+    psn_columns = {
+        "date": "DATE(e.earned_date_time)",
+        "time": "TIME(e.earned_date_time)",
+        "body": "g.trophy_detail",
+        "client": "s.platform",
+        "object_type": "\"psn\"",
+        "game_title": "s.game_title",
+        "trophy_name": "g.trophy_name"
+    }
+
+    psn_select = create_select_cols(all_columns, psn_columns)
+
+    psn_sql_query = (
+        f"""
+        SELECT
+        {psn_select}
+        FROM psn_earned_trophies AS e
+        LEFT JOIN psn_game_trophies AS g
+        ON e.game_id = g.game_id AND e.trophy_id = g.trophy_id
+        AND e.trophy_set_version = g.trophy_set_version
+        LEFT JOIN psn_summary AS s
+        ON s.game_id = e.game_id AND s.userid = e.userid
+        AND s.trophy_set_version = e.trophy_set_version
+        WHERE
+        e.earned_date_time >= '{start_datetime}'
+        AND e.earned_date_time <= '{end_datetime}'
+        AND e.userid = {user_id}
+        """
+    )
 
     if 'twitter' in list_of_data_types:
         subquery_list.append(twitter_sql_query)
@@ -643,13 +740,20 @@ def get_datetime_range(start_datetime, end_datetime, list_of_data_types, user_pr
     if "sms" in list_of_data_types:
         subquery_list.append(sms_sql_query)
 
-    sql_query = " UNION ".join(subquery_list) + "ORDER BY date ASC, time ASC;"
+    if "psn" in list_of_data_types:
+        subquery_list.append(psn_sql_query)
 
-    query_start_time = datetime.datetime.now()
+    output = list()
 
-    output = get_results_for_query(sql_query)
+    if len(list_of_data_types) > 0:
 
-    print(f'Returned query in {datetime.datetime.now() - query_start_time}')
+        sql_query = " UNION ".join(subquery_list) + "ORDER BY date ASC, time ASC;"
+
+        query_start_time = datetime.datetime.now()
+
+        output = get_results_for_query(sql_query)
+
+        print(f'Returned query in {datetime.datetime.now() - query_start_time}')
 
     return output
 
@@ -775,7 +879,7 @@ def get_search_term(search_term, user_prefs, event_types):
                      " NULL start_time, replyid reply_id, NULL venue_name, NULL venue_id, NULL venue_event_id,"
                      " NULL venue_event_name, NULL address, NULL city, NULL state, NULL country, NULL checkin_id,"
                      " NULL sleep_time, NULL timezone, NULL conversation, NULL contact_num, "
-                     "NULL folder, NULL fingerprint, NULL contact_name "
+                     "NULL folder, NULL fingerprint, NULL contact_name, NULL game_title, NULL trophy_name "
                      "FROM tweetdetails "
                      "LEFT JOIN events e "
                      "ON detailid = tweetid "
@@ -794,7 +898,7 @@ def get_search_term(search_term, user_prefs, event_types):
                         "o.venueid venue_id, o.veventid venue_event_id, o.veventname venue_event_name, "
                         "v.address address, v.city city, v.state state, v.country country, o.checkinid checkin_id, "
                         "NULL sleep_time, NULL timezone, NULL conversation, NULL contact_num, "
-                        "NULL folder, NULL fingerprint, NULL contact_name "
+                        "NULL folder, NULL fingerprint, NULL contact_name, NULL game_title, NULL trophy_name "
                         "FROM foursquare_checkins o "
                         "LEFT JOIN events e "
                         "ON e.detailid = o.eventid "
@@ -811,13 +915,64 @@ def get_search_term(search_term, user_prefs, event_types):
                  "NULL venue_id, NULL venue_event_id, NULL venue_event_name, "
                  "NULL address, NULL city, NULL state, NULL country, NULL checkin_id, "
                  "NULL sleep_time, NULL timezone, s.conversation conversation, s.contact_num contact_num, "
-                 "s.folder folder, s.fingerprint fingerprint, c.contact_name contact_name "
+                 "s.folder folder, s.fingerprint fingerprint, c.contact_name contact_name, NULL game_title, "
+                 "NULL trophy_name "
                  "FROM sms_messages s "
                  "LEFT JOIN events e "
                  "ON e.detailid = s.smsid "
                  "LEFT JOIN sms_contacts c "
                  "ON c.contact_num = s.contact_num AND s.userid = c.userid "
                  f"{sms_where_clause} AND e.eventtype = 'sms' AND e.userid = '{user_id}'")
+
+    psn_searchable = ["g.trophy_detail", "s.platform", "s.game_title", "g.trophy_name"]
+    psn_where_clause = generate_search_where_clause(search_list, psn_searchable)
+
+    psn_query = (
+        f"""
+        SELECT
+        date(e.earned_date_time) date,
+        time(e.earned_date_time) time,
+        NULL source_id,
+        g.trophy_detail body,
+        s.platform client,
+        NULL latitude,
+        NULL longitude,
+        "psn" object_type,
+        NULL end_time,
+        NULL sleep_id,
+        NULL rest_mins,
+        NULL start_time,
+        NULL reply_id,
+        NULL venue_name,
+        NULL venue_id,
+        NULL venue_event_id,
+        NULL venue_event_name,
+        NULL address,
+        NULL city,
+        NULL state,
+        NULL country,
+        NULL checkin_id,
+        NULL sleep_time,
+        NULL timezone,
+        NULL conversation,
+        NULL contact_num,
+        NULL folder,
+        NULL fingerprint,
+        NULL contact_name,
+        s.game_title game_title,
+        g.trophy_name trophy_name
+        FROM psn_earned_trophies AS e
+        LEFT JOIN psn_game_trophies AS g
+        ON e.game_id = g.game_id AND e.trophy_id = g.trophy_id
+        AND e.trophy_set_version = g.trophy_set_version
+        LEFT JOIN psn_summary AS s
+        ON s.game_id = e.game_id AND s.userid = e.userid
+        AND s.trophy_set_version = e.trophy_set_version
+        {psn_where_clause}
+        AND earned_date_time IS NOT NULL
+        AND e.userid = {user_id}
+        """
+    )
 
     subqueries_list = []
 
@@ -830,9 +985,15 @@ def get_search_term(search_term, user_prefs, event_types):
     if "sms" in event_types and search_list != [""]:
         subqueries_list.append(sms_query)
 
+    if "psn" in event_types and search_list != [""]:
+        subqueries_list.append(psn_query)
+
     sql_query = " UNION ".join(subqueries_list) + "ORDER BY date ASC, time ASC;"
 
-    output = get_results_for_query(sql_query)
+    if len(subqueries_list) > 0:
+        output = get_results_for_query(sql_query)
+    else:
+        output = []
 
     return output
 
@@ -894,12 +1055,14 @@ def set_user_source_preferences(user_id, **kwargs):
                  f"('{user_id}', 'show_twitter', '{kwargs.get('show_twitter')}'),"
                  f" ('{user_id}', 'show_foursquare', '{kwargs.get('show_foursquare')}'), "
                  f"('{user_id}', 'show_fitbit-sleep', '{kwargs.get('show_fitbit-sleep')}'), "
-                 f"('{user_id}', 'show_sms', '{kwargs.get('show_sms')}')"
+                 f"('{user_id}', 'show_sms', '{kwargs.get('show_sms')}'), "
+                 f"('{user_id}', 'show_psn', '{kwargs.get('show_psn')}')"
                  " ON DUPLICATE KEY UPDATE preference_value=CASE"
                  f" WHEN preference_key = 'show_twitter' THEN '{kwargs.get('show_twitter')}'"
                  f" WHEN preference_key = 'show_foursquare' THEN '{kwargs.get('show_foursquare')}'"
                  f" WHEN preference_key = 'show_fitbit-sleep' THEN '{kwargs.get('show_fitbit-sleep')}'"
                  f" WHEN preference_key = 'show_sms' THEN '{kwargs.get('show_sms')}'"
+                 f" WHEN preference_key = 'show_psn' THEN '{kwargs.get('show_psn')}'"
                  f" ELSE NULL END;")
 
     cursor.execute(sql_query)
@@ -1145,6 +1308,92 @@ def get_previous_conversation(conversation, start, length, user_prefs):
     output = get_results_for_query(sms_query)
 
     return output
+
+
+def insert_into_table_with_columns(data, table):
+
+    cnx = create_connection("social")
+    cursor = cnx.cursor()
+
+    # Right now this assumes all rows will have same columns
+    db_columns = ", ".join(data[0].db_columns)
+
+    all_rows = list()
+
+    for row in data:
+        values = list()
+
+        for i in range(0, len(row.db_columns)):
+            # expects fget to format all values correctly
+            values.append(row.fget(row.db_columns[i]))
+
+        row_values = "(" + ", ".join(values) + ")"
+
+        all_rows.append(row_values)
+
+    # Hardcoding groups of 500. Maybe someday make this customizable
+    grouped_rows = group_insert_into_db(all_rows, 500)
+
+    update_cols = list()
+
+    for col in data[0].update_columns:
+        update_cols_text = f"{col}=values({col})"
+        update_cols.append(update_cols_text)
+
+    update_columns = ", ".join(update_cols)
+
+    for summary_rows in grouped_rows:
+        sql = (f"INSERT INTO {table} ({db_columns}) "
+               f"VALUES {summary_rows} "
+               f"ON DUPLICATE KEY UPDATE {update_columns};")
+
+        # TODO: Once these all work, remove this conditional
+        cursor.execute(sql)
+
+    cnx.commit()
+
+    close_connection(cnx)
+
+def get_trophies_that_updated(userid):
+
+    query = f"""
+    SELECT
+    game_id,
+    np_service_name,
+    trophy_set_version
+    FROM psn_summary
+    WHERE
+    userid = {userid}
+    AND
+    (last_updated > last_checked
+    OR
+    last_checked IS NULL)
+    """
+
+    output = get_results_for_query(query)
+
+    return output
+
+def update_trophies_last_checked(userid, service, set, game_id, time):
+
+    cnx = create_connection("social")
+    cursor = cnx.cursor()
+
+    sql = f"""
+    UPDATE psn_summary
+    SET last_checked = "{time}"
+    WHERE np_service_name = "{service}"
+    AND userid = {userid}
+    AND trophy_set_version = "{set}"
+    AND game_id = "{game_id}"
+    """
+
+    cursor.execute(sql)
+
+    cnx.commit()
+
+    close_connection(cnx)
+
 
 def close_connection(cnx):
 
