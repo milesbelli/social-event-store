@@ -697,40 +697,22 @@ def get_datetime_range(start_datetime, end_datetime, list_of_data_types, user_pr
                      f"AND eventdt <= '{end_datetime}' "
                      f"AND e.userid = '{user_id}' ")
 
+    psn_columns = {
+        "date": "DATE(e.earned_date_time)",
+        "time": "TIME(e.earned_date_time)",
+        "body": "g.trophy_detail",
+        "client": "s.platform",
+        "object_type": "\"psn\"",
+        "game_title": "s.game_title",
+        "trophy_name": "g.trophy_name"
+    }
+
+    psn_select = create_select_cols(all_columns, psn_columns)
+
     psn_sql_query = (
         f"""
         SELECT
-        date(e.earned_date_time) date,
-        time(e.earned_date_time) time,
-        NULL source_id,
-        g.trophy_detail body,
-        s.platform client,
-        NULL latitude,
-        NULL longitude,
-        "psn" object_type,
-        NULL end_time,
-        NULL sleep_id,
-        NULL rest_mins,
-        NULL start_time,
-        NULL reply_id,
-        NULL venue_name,
-        NULL venue_id,
-        NULL venue_event_id,
-        NULL venue_event_name,
-        NULL address,
-        NULL city,
-        NULL state,
-        NULL country,
-        NULL checkin_id,
-        NULL sleep_time,
-        NULL timezone,
-        NULL conversation,
-        NULL contact_num,
-        NULL folder,
-        NULL fingerprint,
-        NULL contact_name,
-        s.game_title game_title,
-        g.trophy_name trophy_name
+        {psn_select}
         FROM psn_earned_trophies AS e
         LEFT JOIN psn_game_trophies AS g
         ON e.game_id = g.game_id AND e.trophy_id = g.trophy_id
