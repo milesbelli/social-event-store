@@ -599,7 +599,8 @@ def get_datetime_range(start_datetime, end_datetime, list_of_data_types, user_pr
         "client": "client",
         "latitude": "latitude",
         "longitude": "longitude",
-        "object_type": "eventtype"
+        "object_type": "eventtype",
+        "reply_id": "replyid"
     }
 
     twitter_select = create_select_cols(all_columns, twitter_columns)
