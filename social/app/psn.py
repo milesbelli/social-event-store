@@ -147,59 +147,77 @@ def psn_login(npsso):
 
 def get_player_summary(access_token, userid):
 
+    # URL is hardcoded to get the trophies summary of logged in user
     summary_url = "https://m.np.playstation.com/api/trophy/v1/users/me/trophyTitles"
 
     headers = {
         "Authorization": f"Bearer {access_token}"
     }
 
-    response = requests.get(summary_url, headers=headers)
-
-    summary_cols = [
-        "userid",
-        "np_service_name",
-        "game_id",
-        "trophy_set_version",
-        "game_title",
-        "title_detail",
-        "icon_url",
-        "platform",
-        "trophy_groups",
-        "bronze",
-        "silver",
-        "gold",
-        "platinum",
-        "progress",
-        "earned_bronze",
-        "earned_silver",
-        "earned_gold",
-        "earned_platinum",
-        "hidden",
-        "last_updated",
-    ]
-
-    summary_update = [
-        "bronze",
-        "silver",
-        "gold",
-        "platinum",
-        "progress",
-        "earned_bronze",
-        "earned_silver",
-        "earned_gold",
-        "earned_platinum",
-        "hidden",
-        "last_updated"
-    ]
-
-    summary = json.loads(response.content)
+    page_size = 800
+    offset = 0
+    # total is arbitrary, get real value on first call
+    total = page_size + 1
 
     game_summaries = list()
 
-    for game in summary["trophyTitles"]:
-        psn_dict = psnDict(game, summary_cols, summary_update)
-        psn_dict["userid"] = userid
-        game_summaries.append(psn_dict)
+    while offset < total:
+        # Parameters are used to set offset and limit, this is because
+        # there is a hard limit of 800 items for the request so there
+        # could be multiple pages.
+        parameters = {
+            "limit": page_size,
+            "offset": offset
+        }
+
+        response = requests.get(summary_url, headers=headers, params=parameters)
+
+        summary_cols = [
+            "userid",
+            "np_service_name",
+            "game_id",
+            "trophy_set_version",
+            "game_title",
+            "title_detail",
+            "icon_url",
+            "platform",
+            "trophy_groups",
+            "bronze",
+            "silver",
+            "gold",
+            "platinum",
+            "progress",
+            "earned_bronze",
+            "earned_silver",
+            "earned_gold",
+            "earned_platinum",
+            "hidden",
+            "last_updated",
+        ]
+
+        summary_update = [
+            "bronze",
+            "silver",
+            "gold",
+            "platinum",
+            "progress",
+            "earned_bronze",
+            "earned_silver",
+            "earned_gold",
+            "earned_platinum",
+            "hidden",
+            "last_updated"
+        ]
+
+        summary = json.loads(response.content)
+
+        for game in summary["trophyTitles"]:
+            psn_dict = psnDict(game, summary_cols, summary_update)
+            psn_dict["userid"] = userid
+            game_summaries.append(psn_dict)
+
+        offset = summary.get("nextOffset") or total
+        total = summary["totalItemCount"]
 
     return game_summaries
 
@@ -309,20 +327,17 @@ def write_out(file_name, data):
         target.write(data)
 
 
+# TODO: Write logic for complete_fetch, right now it does nothing
 def fetch_trophy_data_for_user(user_prefs, npsso, complete_fetch=False) -> dict:
 
-    trophy_data = dict()
     access_key = psn_login(npsso)
     userid = user_prefs.user_id
 
-    trophy_data["summary"] = get_player_summary(access_key, userid)
+    trophy_summary = get_player_summary(access_key, userid)
 
     # INSERT summary data
-    eventdb.insert_into_table_with_columns(trophy_data["summary"],
+    eventdb.insert_into_table_with_columns(trophy_summary,
                                            "psn_summary")
-
-    trophy_data["game_trophies"] = []
-    trophy_data["earned_trophies"] = []
 
     changed_games_rows = eventdb.get_trophies_that_updated(userid)
 
@@ -330,21 +345,17 @@ def fetch_trophy_data_for_user(user_prefs, npsso, complete_fetch=False) -> dict:
         game_id = game["game_id"]
         game_trophies = get_game_trophies(game_id, access_key)
 
+        # Insert trophy data for one game (not specific to player)
         eventdb.insert_into_table_with_columns(game_trophies,
                                                "psn_game_trophies")
 
-        # write_out(f"{game_id}_trophies",
-        #           trophy_data["game_trophies"][-1])
-
-        # Instead of appending, INSERT these trophies
         earned_trophies = get_earned_trophies(game_id, access_key, userid)
 
+        # Insert trophy data for one game for player
         eventdb.insert_into_table_with_columns(earned_trophies,
                                                "psn_earned_trophies")
-        # write_out(f"{game_id}_earned",
-        #           trophy_data["earned_trophies"][-1])
 
-        # TODO: UPDATE column last_checked in the summary
+        # Current datetime, marking the summary for (approx) time updated
         update_now = dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         eventdb.update_trophies_last_checked(
@@ -352,7 +363,7 @@ def fetch_trophy_data_for_user(user_prefs, npsso, complete_fetch=False) -> dict:
             game["game_id"], update_now
         )
 
-    return trophy_data
+    return trophy_summary
 
 
 def api_fetch_background(user_prefs, sso_key, complete_fetch=False):
