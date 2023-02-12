@@ -6,6 +6,7 @@ import zipfile
 import time
 from pathlib import Path
 import os
+import hashlib
 
 
 class UserPreferences:
@@ -689,3 +690,10 @@ class eventObject:
             return "View Conversation"
         else:
             return "View Online"
+
+    def get_hash(self):
+        seed = "-".join([str(self.body), str(self.get_title()),
+                        str(self.get_subtitle()), str(self.get_footer()),
+                        str(self.date), str(self.time)])
+        seed = seed.encode("utf-8")
+        return hashlib.sha1(seed).hexdigest()

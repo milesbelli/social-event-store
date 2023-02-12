@@ -237,7 +237,9 @@ def edit_sleep(sleep_id):
 
 @app.route("/get-status/<status_id>", methods=["GET"])
 def get_twitter_status(status_id):
-    status = twitter.get_status_from_twitter(status_id)
+    user_id = 1
+    user_prefs = common.UserPreferences(user_id)
+    status = twitter.get_status_from_twitter(status_id, user_prefs)
     if status:
         return jsonify(status)
 

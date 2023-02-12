@@ -70,7 +70,7 @@
 <p>{{ day["count"] }} event{% if day["count"] > 1 %}s{% endif %} <a href="#">Top</a></p>
 {% for event in day["events"] %}
 <div class="time">{{ event.time }}</div>
-<div class="event {{ event.get_type() }}">
+<div class="event {{ event.get_type() }}" id="{{ event.get_hash() }}">
     {% if event.get_reply_id() %}
     <button id="reply_btn_{{ event.id }}" onclick="fetch_reply('{{ event.get_reply_id() }}', '{{ event.id }}')">
         In reply to...

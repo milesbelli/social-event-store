@@ -29,7 +29,7 @@
 {% for event in events %}
 <div class="time">
     {{ event.date.strftime("%A, %B %d %Y") }} -
-    <a href="/viewer/{{ event.date.year }}/{{ event.date.month }}#{{ event.date.day }}">
+    <a href="/viewer/{{ event.date.year }}/{{ event.date.month }}#{{ event.get_hash() }}">
         {{ event.time }}
     </a>
 </div>
