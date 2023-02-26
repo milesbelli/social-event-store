@@ -21,6 +21,8 @@ class UserPreferences:
         self.show_foursquare = int(db_prefs.get("show_foursquare") or 1)
         self.show_sms = int(db_prefs.get("show_sms") or 1)
         self.show_psn = int(db_prefs.get("show_psn") or 1)
+        self.twitter_access_token = db_prefs.get("twtr_token") or None
+        self.twitter_token_secret = db_prefs.get("twtr_secret") or None
 
     def update(self, **kwargs):
         # Update the items provided

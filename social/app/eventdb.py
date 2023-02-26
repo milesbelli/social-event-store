@@ -1094,7 +1094,7 @@ def insert_in_reply_to(tweet_id, create_date, user_name, in_reply_to_status, in_
     close_connection(cnx)
 
 
-def get_in_reply_to(tweet_id):
+def get_in_reply_to(tweet_id, user_prefs):
 
     sql_query = f"SELECT tweetid, createdate, username, statustext FROM tweet_in_reply where tweetid = {tweet_id};"
 

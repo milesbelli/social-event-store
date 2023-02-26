@@ -21,6 +21,9 @@ services:
       # Uncomment the below when setting custom paths for folders
       # - PATH_OUTPUT=
       # - PATH_INPUT=
+      # Uncomment the below to use keys with Twitter API
+      # - TWTR_KEY=
+      # - TWTR_SECRET=
 
   nginx:
     build: ./nginx
