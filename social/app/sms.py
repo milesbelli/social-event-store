@@ -37,6 +37,8 @@ class SmsMessage(dict):
         value = self.get(key)
         if value == "":
             value = None
+        if isinstance(value, str):
+            value = value.replace("'", "''").replace("\\", "\\\\")
         return f"'{value}'" if value else "NULL"
 
 
