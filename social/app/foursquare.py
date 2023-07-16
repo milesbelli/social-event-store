@@ -31,7 +31,18 @@ class foursquareImporterEvent(dict):
         super().__init__(**kwargs)
 
     def get_datetime(self):
-        return dt.datetime.fromtimestamp(self["createdAt"], tz.timezone("UTC"))
+        if type(self["createdAt"]) == int:
+            return dt.datetime.fromtimestamp(self["createdAt"],
+                                             tz.timezone("UTC"))
+        elif type(self["createdAt"]) == str:
+            return dt.datetime.strptime(self["createdAt"],
+                                        "%Y-%m-%d %H:%M:%S.%f")
+
+    def get_created(self):
+        if type(self["createdAt"]) == int:
+            return f'\'{self["createdAt"]}\''
+        else:
+            return "NULL"
 
     def get_date(self):
         return self.get_datetime().date()
@@ -46,12 +57,12 @@ class foursquareImporterEvent(dict):
         return self.get_date().strftime("%Y-%m-%d")
 
     def get_venue_name_for_sql(self):
-        return self["venue"]["name"].replace("'","''")
+        return self["venue"]["name"].replace("'", "''")
 
     def get_shout_for_sql(self):
         shout_text = self.get('shout')
         if shout_text:
-            shout_text = shout_text.replace("'","''")
+            shout_text = shout_text.replace("'", "''")
             return f"'{shout_text}'"
         else:
             return "NULL"
@@ -106,7 +117,6 @@ def get_venue_details(venue_id, client_id, client_secret):
         if response.status_code == 200:
             venue = json.loads(response.content)["response"]
 
-
             venue_particulars = {"latitude": venue["venue"]["location"]["lat"],
                                  "longitude": venue["venue"]["location"]["lng"],
                                  "address": venue["venue"]["location"].get("address"),
@@ -117,7 +127,6 @@ def get_venue_details(venue_id, client_id, client_secret):
                                  "name": venue["venue"].get("name"),
                                  "cc": venue["venue"]["location"].get("cc"),
                                  "postal_code": venue["venue"]["location"].get("postal_code")}
-
 
             # try:
             eventdb.insert_foursquare_venue(venue_id, **venue_particulars)

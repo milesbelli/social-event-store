@@ -358,7 +358,7 @@ def insert_foursquare_checkins(checkins, user_prefs):
         checkin = checkins[key]
         checkin_values.append(f"('{checkin['id']}', '{checkin['type']}', '{checkin['timeZoneOffset']}',"
                               f" '{checkin['venue']['id']}', '{checkin.get_venue_name_for_sql()}',"
-                              f" '{checkin['createdAt']}', {checkin.get_shout_for_sql()},"
+                              f" {checkin.get_created()}, {checkin.get_shout_for_sql()},"
                               f" {checkin.get_event_id_for_sql()}, {checkin.get_event_name_for_sql()},"
                               f" {checkin.get_primary_category_id_and_name()['id']},"
                               f" {checkin.get_primary_category_id_and_name()['name']})")
