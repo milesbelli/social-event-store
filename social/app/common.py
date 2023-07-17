@@ -553,6 +553,7 @@ class eventObject:
             self.trophy_name = kwargs.get("trophy_name")
             self.platform = kwargs.get("client")
             self.game_title = kwargs.get("game_title")
+            self.trophy_type = kwargs.get("trophy_type")
 
             self.geo = None
 
@@ -577,7 +578,7 @@ class eventObject:
         elif self.type == "sms":
             return f"from me" if self.folder == "outbox" else f"from {self.contact_nm or self.contact}"
         elif self.type == "psn":
-            return f"for {self.platform}"
+            return f"{self.trophy_type} trophy for {self.platform}"
 
     def get_url(self):
         if self.type == "twitter":

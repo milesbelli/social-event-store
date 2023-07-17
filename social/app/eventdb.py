@@ -588,7 +588,8 @@ def get_datetime_range(start_datetime, end_datetime, list_of_data_types, user_pr
         "fingerprint",
         "contact_name",
         "game_title",
-        "trophy_name"
+        "trophy_name",
+        "trophy_type"
     ]
 
     twitter_columns = {
@@ -705,7 +706,8 @@ def get_datetime_range(start_datetime, end_datetime, list_of_data_types, user_pr
         "client": "s.platform",
         "object_type": "\"psn\"",
         "game_title": "s.game_title",
-        "trophy_name": "g.trophy_name"
+        "trophy_name": "g.trophy_name",
+        "trophy_type": "g.trophy_type"
     }
 
     psn_select = create_select_cols(all_columns, psn_columns)
@@ -879,7 +881,8 @@ def get_search_term(search_term, user_prefs, event_types):
                      " NULL start_time, replyid reply_id, NULL venue_name, NULL venue_id, NULL venue_event_id,"
                      " NULL venue_event_name, NULL address, NULL city, NULL state, NULL country, NULL checkin_id,"
                      " NULL sleep_time, NULL timezone, NULL conversation, NULL contact_num, "
-                     "NULL folder, NULL fingerprint, NULL contact_name, NULL game_title, NULL trophy_name "
+                     "NULL folder, NULL fingerprint, NULL contact_name, NULL game_title, NULL trophy_name, "
+                     "NULL trophy_type "
                      "FROM tweetdetails "
                      "LEFT JOIN events e "
                      "ON detailid = tweetid "
@@ -898,7 +901,8 @@ def get_search_term(search_term, user_prefs, event_types):
                         "o.venueid venue_id, o.veventid venue_event_id, o.veventname venue_event_name, "
                         "v.address address, v.city city, v.state state, v.country country, o.checkinid checkin_id, "
                         "NULL sleep_time, NULL timezone, NULL conversation, NULL contact_num, "
-                        "NULL folder, NULL fingerprint, NULL contact_name, NULL game_title, NULL trophy_name "
+                        "NULL folder, NULL fingerprint, NULL contact_name, NULL game_title, NULL trophy_name, "
+                     "NULL trophy_type "
                         "FROM foursquare_checkins o "
                         "LEFT JOIN events e "
                         "ON e.detailid = o.eventid "
@@ -916,7 +920,7 @@ def get_search_term(search_term, user_prefs, event_types):
                  "NULL address, NULL city, NULL state, NULL country, NULL checkin_id, "
                  "NULL sleep_time, NULL timezone, s.conversation conversation, s.contact_num contact_num, "
                  "s.folder folder, s.fingerprint fingerprint, c.contact_name contact_name, NULL game_title, "
-                 "NULL trophy_name "
+                 "NULL trophy_name, NULL trophy_type "
                  "FROM sms_messages s "
                  "LEFT JOIN events e "
                  "ON e.detailid = s.smsid "
@@ -960,7 +964,8 @@ def get_search_term(search_term, user_prefs, event_types):
         NULL fingerprint,
         NULL contact_name,
         s.game_title game_title,
-        g.trophy_name trophy_name
+        g.trophy_name trophy_name,
+        g.trophy_type trophy_type
         FROM psn_earned_trophies AS e
         LEFT JOIN psn_game_trophies AS g
         ON e.game_id = g.game_id AND e.trophy_id = g.trophy_id
