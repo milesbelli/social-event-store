@@ -702,6 +702,7 @@ def get_datetime_range(start_datetime, end_datetime, list_of_data_types, user_pr
     psn_columns = {
         "date": "DATE(e.earned_date_time)",
         "time": "TIME(e.earned_date_time)",
+        "source_id": "CONCAT(e.userid, e.trophy_id, e.game_id)",
         "body": "g.trophy_detail",
         "client": "s.platform",
         "object_type": "\"psn\"",
@@ -936,7 +937,7 @@ def get_search_term(search_term, user_prefs, event_types):
         SELECT
         date(e.earned_date_time) date,
         time(e.earned_date_time) time,
-        NULL source_id,
+        CONCAT(e.userid, e.trophy_id, e.game_id) source_id,
         g.trophy_detail body,
         s.platform client,
         NULL latitude,
