@@ -4,7 +4,8 @@ import datetime
 import common, eventdb
 from pathlib import Path
 import requests
-
+from requests_oauthlib import OAuth1
+import os
 
 def retrieve_from_twitter(post_id):
 
@@ -318,35 +319,107 @@ def database_running():
     except:
         return False
 
-def get_status_from_twitter(status_id):
 
-    reply_to = eventdb.get_in_reply_to(status_id)
+def get_status_from_twitter(status_id, user_prefs):
+
+    reply_to = eventdb.get_in_reply_to(status_id, user_prefs)
 
     if not reply_to:
-        # This API "endpoint" comes from logging the network calls made on
-        # publish.twitter.com. They sometimes update it and stuff breaks. Try
-        # to keep an eye on it, but it might go away with no warning.
-        request_string = (f"https://cdn.syndication.twimg.com/tweet-result?id={status_id}&lang=en")
-        response = requests.get(request_string)
-        if response.status_code == 200:
-            output_status = json.loads(response.content)
+        # Special condition for authorized API requests. This is an emergency
+        # addition due to Musk changes; there are no plans to make authorizing with
+        # Twitter available in the UI. The only way to authorize Twitter requests
+        # is to get developer credentials from Twitter. Once those cost $100, this
+        # will probably stop being developed and ultimately deprecated.
+        if user_prefs.twitter_access_token and user_prefs.twitter_token_secret:
+            twitter_key = os.getenv("TWTR_KEY")
+            twitter_secret = os.getenv("TWTR_SECRET")
+            # nonce = make_nonce()
+            url = f"https://api.twitter.com/2/tweets/{str(status_id)}"
+            params = {
+                "tweet.fields": "attachments,author_id,context_annotations,conversation_id," +
+                                "created_at,edit_controls,entities,geo,id,in_reply_to_user_id," +
+                                "lang,public_metrics,possibly_sensitive,referenced_tweets,reply_settings," +
+                                "source,text,withheld",
+                "expansions": "author_id"
+            }
+            auth = OAuth1(
+                twitter_key,
+                twitter_secret,
+                user_prefs.twitter_access_token,
+                user_prefs.twitter_token_secret
+            )
 
-            eventdb.insert_in_reply_to(output_status["id_str"],
-                                       output_status["created_at"],
-                                       output_status["user"]["screen_name"],
-                                       output_status.get("in_reply_to_status_id_str"),
-                                       output_status.get("in_reply_to_user_id_str"),
-                                       output_status["text"],
-                                       output_status["user"]["id_str"],
-                                       output_status["lang"])
+            response = requests.get(url, auth=auth, params=params)
 
-            output_status["text"] = (output_status["text"] +
-                                     f" <a class='view_link' target='_blank' href='https://twitter.com/i/status/{status_id}'>View Online</a>")
-            return output_status
+            if response.status_code == 200:
+                output_status = json.loads(response.content)
+
+                if output_status.get("data"):
+                    user_id = output_status["data"]["author_id"]
+                    username = ""
+
+                    for user in output_status["includes"]["users"]:
+                        if user["id"] == user_id:
+                            username = user["username"]
+
+                    in_reply_to_id = ""
+                    references = output_status["data"].get("referenced_tweets")
+                    if references:
+                        for r in references:
+                            if r["type"] == "replied_to":
+                                in_reply_to_id = r["id"]
+
+                    eventdb.insert_in_reply_to(output_status["data"]["id"],
+                                               output_status["data"]["created_at"],
+                                               username,
+                                               in_reply_to_id,
+                                               output_status["data"].get("in_reply_to_user_id"),
+                                               output_status["data"]["text"],
+                                               user_id,
+                                               output_status["data"]["lang"])
+
+                    output_status["text"] = (output_status["data"]["text"] +
+                                             f" <a class='view_link' target='_blank' href='https://twitter.com/i/status/{status_id}'>View Online</a>")
+                    output_status["user"] = {"screen_name": username}
+                    return output_status
+                elif output_status.get("errors"):
+                    err_msg = ""
+                    for error in output_status["errors"]:
+                        err_msg += f'{error["title"]}: {error["detail"]}'
+                    output_status = {"user": {"screen_name": ""},
+                                     "text": (err_msg +
+                                              f" <a class='view_link' target='_blank' href='https://twitter.com/i/status/{status_id}'>View Online</a>")}
+                    return output_status
+            else:
+                output_status = {"user": {"screen_name": ""},
+                                 "text": f"<a style='font-size:14px' target='_blank' href='https://twitter.com/i/status/{status_id}'>View Online</a>"}
+                return output_status
+
         else:
-            output_status = {"user": {"screen_name":""},
-                             "text": f"<a style='font-size:14px' target='_blank' href='https://twitter.com/i/status/{status_id}'>View Online</a>"}
-            return output_status
+            # This API "endpoint" comes from logging the network calls made on
+            # publish.twitter.com. They sometimes update it and stuff breaks. Try
+            # to keep an eye on it, but it might go away with no warning.
+            request_string = (f"https://cdn.syndication.twimg.com/tweet-result?id={status_id}&lang=en")
+            response = requests.get(request_string)
+            if response.status_code == 200:
+                output_status = json.loads(response.content)
+
+                eventdb.insert_in_reply_to(output_status["id_str"],
+                                           output_status["created_at"],
+                                           output_status["user"]["screen_name"],
+                                           output_status.get("in_reply_to_status_id_str"),
+                                           output_status.get("in_reply_to_user_id_str"),
+                                           output_status["text"],
+                                           output_status["user"]["id_str"],
+                                           output_status["lang"])
+
+                output_status["text"] = (output_status["text"] +
+                                        f" <a class='view_link' target='_blank' href='https://twitter.com/i/status/{status_id}'>View Online</a>")
+                return output_status
+            else:
+                output_status = {"user": {"screen_name":""},
+                                "text": f"<a style='font-size:14px' target='_blank' href='https://twitter.com/i/status/{status_id}'>View Online</a>"}
+                return output_status
     else:
         reply_to["text"] = (reply_to["text"] +
                             f" <a class='view_link' target='_blank' href='https://twitter.com/i/status/{status_id}'>View Online</a>")

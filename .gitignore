@@ -1,3 +1,4 @@
 local.docker-compose.yml
+local.environment.sh
 social/env/
 social/app/__pycache__

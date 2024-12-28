@@ -358,7 +358,7 @@ def insert_foursquare_checkins(checkins, user_prefs):
         checkin = checkins[key]
         checkin_values.append(f"('{checkin['id']}', '{checkin['type']}', '{checkin['timeZoneOffset']}',"
                               f" '{checkin['venue']['id']}', '{checkin.get_venue_name_for_sql()}',"
-                              f" '{checkin['createdAt']}', {checkin.get_shout_for_sql()},"
+                              f" {checkin.get_created()}, {checkin.get_shout_for_sql()},"
                               f" {checkin.get_event_id_for_sql()}, {checkin.get_event_name_for_sql()},"
                               f" {checkin.get_primary_category_id_and_name()['id']},"
                               f" {checkin.get_primary_category_id_and_name()['name']})")
@@ -588,7 +588,8 @@ def get_datetime_range(start_datetime, end_datetime, list_of_data_types, user_pr
         "fingerprint",
         "contact_name",
         "game_title",
-        "trophy_name"
+        "trophy_name",
+        "trophy_type"
     ]
 
     twitter_columns = {
@@ -701,11 +702,13 @@ def get_datetime_range(start_datetime, end_datetime, list_of_data_types, user_pr
     psn_columns = {
         "date": "DATE(e.earned_date_time)",
         "time": "TIME(e.earned_date_time)",
+        "source_id": "CONCAT(e.userid, e.trophy_id, e.game_id)",
         "body": "g.trophy_detail",
         "client": "s.platform",
         "object_type": "\"psn\"",
         "game_title": "s.game_title",
-        "trophy_name": "g.trophy_name"
+        "trophy_name": "g.trophy_name",
+        "trophy_type": "g.trophy_type"
     }
 
     psn_select = create_select_cols(all_columns, psn_columns)
@@ -879,7 +882,8 @@ def get_search_term(search_term, user_prefs, event_types):
                      " NULL start_time, replyid reply_id, NULL venue_name, NULL venue_id, NULL venue_event_id,"
                      " NULL venue_event_name, NULL address, NULL city, NULL state, NULL country, NULL checkin_id,"
                      " NULL sleep_time, NULL timezone, NULL conversation, NULL contact_num, "
-                     "NULL folder, NULL fingerprint, NULL contact_name, NULL game_title, NULL trophy_name "
+                     "NULL folder, NULL fingerprint, NULL contact_name, NULL game_title, NULL trophy_name, "
+                     "NULL trophy_type "
                      "FROM tweetdetails "
                      "LEFT JOIN events e "
                      "ON detailid = tweetid "
@@ -898,7 +902,8 @@ def get_search_term(search_term, user_prefs, event_types):
                         "o.venueid venue_id, o.veventid venue_event_id, o.veventname venue_event_name, "
                         "v.address address, v.city city, v.state state, v.country country, o.checkinid checkin_id, "
                         "NULL sleep_time, NULL timezone, NULL conversation, NULL contact_num, "
-                        "NULL folder, NULL fingerprint, NULL contact_name, NULL game_title, NULL trophy_name "
+                        "NULL folder, NULL fingerprint, NULL contact_name, NULL game_title, NULL trophy_name, "
+                     "NULL trophy_type "
                         "FROM foursquare_checkins o "
                         "LEFT JOIN events e "
                         "ON e.detailid = o.eventid "
@@ -916,7 +921,7 @@ def get_search_term(search_term, user_prefs, event_types):
                  "NULL address, NULL city, NULL state, NULL country, NULL checkin_id, "
                  "NULL sleep_time, NULL timezone, s.conversation conversation, s.contact_num contact_num, "
                  "s.folder folder, s.fingerprint fingerprint, c.contact_name contact_name, NULL game_title, "
-                 "NULL trophy_name "
+                 "NULL trophy_name, NULL trophy_type "
                  "FROM sms_messages s "
                  "LEFT JOIN events e "
                  "ON e.detailid = s.smsid "
@@ -932,7 +937,7 @@ def get_search_term(search_term, user_prefs, event_types):
         SELECT
         date(e.earned_date_time) date,
         time(e.earned_date_time) time,
-        NULL source_id,
+        CONCAT(e.userid, e.trophy_id, e.game_id) source_id,
         g.trophy_detail body,
         s.platform client,
         NULL latitude,
@@ -960,7 +965,8 @@ def get_search_term(search_term, user_prefs, event_types):
         NULL fingerprint,
         NULL contact_name,
         s.game_title game_title,
-        g.trophy_name trophy_name
+        g.trophy_name trophy_name,
+        g.trophy_type trophy_type
         FROM psn_earned_trophies AS e
         LEFT JOIN psn_game_trophies AS g
         ON e.game_id = g.game_id AND e.trophy_id = g.trophy_id
@@ -1094,7 +1100,7 @@ def insert_in_reply_to(tweet_id, create_date, user_name, in_reply_to_status, in_
     close_connection(cnx)
 
 
-def get_in_reply_to(tweet_id):
+def get_in_reply_to(tweet_id, user_prefs):
 
     sql_query = f"SELECT tweetid, createdate, username, statustext FROM tweet_in_reply where tweetid = {tweet_id};"
 

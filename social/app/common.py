@@ -6,6 +6,7 @@ import zipfile
 import time
 from pathlib import Path
 import os
+import hashlib
 
 
 class UserPreferences:
@@ -20,6 +21,8 @@ class UserPreferences:
         self.show_foursquare = int(db_prefs.get("show_foursquare") or 1)
         self.show_sms = int(db_prefs.get("show_sms") or 1)
         self.show_psn = int(db_prefs.get("show_psn") or 1)
+        self.twitter_access_token = db_prefs.get("twtr_token") or None
+        self.twitter_token_secret = db_prefs.get("twtr_secret") or None
 
     def update(self, **kwargs):
         # Update the items provided
@@ -289,12 +292,14 @@ def unpack_and_store_files(zipfile_path, parent_directory=None, type=None):
                     output_file.write(sleep_file_to_save)
                     output_file.close()
 
+                # Foursquare files
                 elif "checkins" in entry and ".js" in entry:
                     checkin_file_to_save = zipfile_to_process.read(entry)
                     output_file = open(f"{output_path}/{entry.split('/')[-1]}", "wb")
                     output_file.write(checkin_file_to_save)
                     output_file.close()
 
+                # SMS file
                 elif type == "sms":
                     sms_file_to_save = zipfile_to_process.read(entry)
                     output_file = open(f"{output_path}/{entry.split('/')[-1]}", "wb")
@@ -548,6 +553,7 @@ class eventObject:
             self.trophy_name = kwargs.get("trophy_name")
             self.platform = kwargs.get("client")
             self.game_title = kwargs.get("game_title")
+            self.trophy_type = kwargs.get("trophy_type")
 
             self.geo = None
 
@@ -572,7 +578,7 @@ class eventObject:
         elif self.type == "sms":
             return f"from me" if self.folder == "outbox" else f"from {self.contact_nm or self.contact}"
         elif self.type == "psn":
-            return f"for {self.platform}"
+            return f"{self.trophy_type} trophy for {self.platform}"
 
     def get_url(self):
         if self.type == "twitter":
@@ -689,3 +695,10 @@ class eventObject:
             return "View Conversation"
         else:
             return "View Online"
+
+    def get_hash(self):
+        seed = "-".join([str(self.body), str(self.get_title()),
+                        str(self.get_subtitle()), str(self.get_footer()),
+                        str(self.date), str(self.time)])
+        seed = seed.encode("utf-8")
+        return hashlib.sha1(seed).hexdigest()

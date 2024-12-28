@@ -100,6 +100,9 @@ class psnDict(dict):
                 value = value.replace("'", "''")
                 value = f"'{value}'"
 
+            else:
+                value = "NULL"
+
             return value
 
 
@@ -222,12 +225,12 @@ def get_player_summary(access_token, userid):
     return game_summaries
 
 
-def get_game_trophies(game_id, access_token, group_id="all"):
+def get_game_trophies(game_id, np_service_name, access_token, group_id="all"):
 
     game_url = f"https://m.np.playstation.com/api/trophy/v1/npCommunicationIds/{game_id}/trophyGroups/{group_id}/trophies"
 
     parameters = {
-        "npServiceName": "trophy"
+        "npServiceName": np_service_name
         }
 
     headers = {
@@ -270,13 +273,13 @@ def get_game_trophies(game_id, access_token, group_id="all"):
     return response_dict["trophies"]
 
 
-def get_earned_trophies(game_id, access_token, userid,
+def get_earned_trophies(game_id, np_service_name, access_token, userid,
                         group_id="all", user_id="me") -> dict:
 
-    earned_url = f"https://m.np.playstation.com/api/trophy/v1/users/{user_id}/npCommunicationIds/{game_id}/trophyGroups/{group_id}/trophies?npServiceName=trophy"
+    earned_url = f"https://m.np.playstation.com/api/trophy/v1/users/{user_id}/npCommunicationIds/{game_id}/trophyGroups/{group_id}/trophies"
 
     parameters = {
-        "npServiceName": "trophy"
+        "npServiceName": np_service_name
         }
     headers = {
         "Authorization": f"Bearer {access_token}"
@@ -343,13 +346,15 @@ def fetch_trophy_data_for_user(user_prefs, npsso, complete_fetch=False) -> dict:
 
     for game in changed_games_rows:
         game_id = game["game_id"]
-        game_trophies = get_game_trophies(game_id, access_key)
+        game_service_name = game["np_service_name"]
+        game_trophies = get_game_trophies(game_id, game_service_name, access_key)
 
         # Insert trophy data for one game (not specific to player)
         eventdb.insert_into_table_with_columns(game_trophies,
                                                "psn_game_trophies")
 
-        earned_trophies = get_earned_trophies(game_id, access_key, userid)
+        earned_trophies = get_earned_trophies(game_id, game_service_name,
+                                              access_key, userid)
 
         # Insert trophy data for one game for player
         eventdb.insert_into_table_with_columns(earned_trophies,

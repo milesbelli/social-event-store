@@ -4,3 +4,4 @@ mysql-connector-python
 requests
 # Note: this might cause problems on Windows but is needed for Docker, comment out if running native Python
 uWSGI
+requests_oauthlib
