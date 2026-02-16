@@ -12,7 +12,10 @@ def attributes_to_json(process_text):
     kvp = {}
 
     for i in range(0, len(process_list) - 2):
-        if process_list[i][-1] == "=":
+        # An element might be empty, in which case we can't check for a character
+        if len(process_list[i]) == 0:
+            pass
+        elif process_list[i][-1] == "=":
             process_key_start = process_list[i].find(" ") + 1
             process_key = process_list[i][process_key_start:-1]
             i += 1
@@ -159,6 +162,7 @@ def process_single_mms(raw_text):
     # Process recipients
     index = end_header
     sender = None
+    rcs_conversation = {}
     while index != -1:
         index = start = raw_text.find("<addr ", index + 1)
         end = raw_text.find(">", start + 1) + 1
@@ -166,8 +170,30 @@ def process_single_mms(raw_text):
         if index != -1:
             addr = attributes_to_json(raw_text[start:end])
 
+            addr_format = number_formatting(addr["address"], regex)
+
             if addr["type"] == "137":
-                sender = number_formatting(addr["address"], regex)
+
+                sender = addr_format
+
+                # Include sender's address only if it's not your own
+                if finalized_entry["folder"] == "inbox":
+                    rcs_conversation[addr_format] = True
+
+            # Special exception for type 151 when you're sender: include address; otherwise exclude
+            elif addr["type"] == "151":
+                if finalized_entry["folder"] == "outbox":
+                    rcs_conversation[addr_format] = True
+
+            elif rcs_conversation.get(addr_format) == None:
+                rcs_conversation[addr_format] = True
+
+    rcs_addrs = sorted(list(rcs_conversation))
+
+    rcs_convo = "~".join(rcs_addrs)
+
+    if "rcs.google.com" in finalized_entry["conversation"]:
+        finalized_entry["conversation"] = rcs_convo
 
     # print(sender)
 
