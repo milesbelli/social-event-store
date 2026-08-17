@@ -7,7 +7,11 @@
     <meta charset="UTF-8">
     {{ usual_head() }}
     <title>Archive View</title>
-    <script type='text/javascript' src='http://www.bing.com/api/maps/mapcontrol?callback=GetMap&key={{ maps }}' async defer></script>
+
+    <!-- Add references to the Azure Maps Map control JavaScript and CSS files. -->
+    <link rel="stylesheet" href="https://atlas.microsoft.com/sdk/javascript/mapcontrol/3/atlas.min.css" type="text/css" />
+    <script src="https://atlas.microsoft.com/sdk/javascript/mapcontrol/3/atlas.min.js"></script>
+
     <script type="text/javascript" src="{{ url_for('static', filename='js/viewer.js') }}"></script>
 </head>
 <body>
@@ -95,14 +99,14 @@
     {% if event.get_geo() or event.fetch_venue() %}
     {% if event.get_geo() %}
     <div class="coordinates">
-        <button onclick="get_map('{{ event.type }}_{{ event.id }}_map', {{ event.get_geo()['latitude'] }}, {{ event.get_geo()['longitude'] }})">
+        <button onclick="get_azure_map('{{ event.type }}_{{ event.id }}_map', {{ event.get_geo()['latitude'] }}, {{ event.get_geo()['longitude'] }}, '{{ azure_maps }}')">
             Map
         </button>
     </div>
     {% elif event.fetch_venue() %}
     <div class="coordinates">
         <button id="{{ event.type }}_{{ event.id }}_button"
-                onclick="get_map_by_id('{{ event.type }}_{{ event.id }}', '{{ event.type }}', '{{ event.venue_id }}')">
+                onclick="get_map_by_id('{{ event.type }}_{{ event.id }}', '{{ event.type }}', '{{ event.venue_id }}', '{{ azure_maps }}')">
             Map
         </button>
     </div>

@@ -24,6 +24,8 @@ services:
       # Uncomment the below to use keys with Twitter API
       # - TWTR_KEY=
       # - TWTR_SECRET=
+      # Uncomment the below and input your Azure Maps key if using
+      # - AZURE_MAPS_KEY=
 
   nginx:
     build: ./nginx

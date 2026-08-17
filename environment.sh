@@ -5,3 +5,4 @@ export PATH_OUTPUT=files/output
 # export PSN_KEY=
 # export TWTR_KEY=
 # export TWTR_SECRET=
+# export AZURE_MAPS_KEY=

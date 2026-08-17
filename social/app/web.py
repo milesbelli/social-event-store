@@ -37,6 +37,7 @@ def search():
     if request.method == "GET":
 
         maps_key = os.getenv("MAPS_KEY")
+        azure_maps_key = os.getenv("AZURE_MAPS_KEY")
 
         user_prefs = common.UserPreferences(1)
 
@@ -53,7 +54,7 @@ def search():
                 tweets = twitter.reverse_events(tweets)
 
             return render_template("search.html", events=tweets, default=search_term, count=len(tweets),
-                                   prefs=user_prefs, maps=maps_key)
+                                   prefs=user_prefs, maps=maps_key, azure_maps=azure_maps_key)
 
         else:
             return render_template("search.html", prefs=user_prefs,
@@ -84,6 +85,7 @@ def calendar(date):
 def viewer(year, month):
 
     maps_key = os.getenv("MAPS_KEY")
+    azure_maps_key = os.getenv("AZURE_MAPS_KEY")
 
     user_prefs = common.UserPreferences(1)
 
@@ -114,7 +116,7 @@ def viewer(year, month):
 
     return render_template("viewer.html", month=month_of_events, calendar=output_calendar,
                            header=cal_header, nav=navigation, pickers=pickers, date_values=date_values,
-                           prefs=user_prefs, maps=maps_key)
+                           prefs=user_prefs, maps=maps_key, azure_maps=azure_maps_key)
 
 
 @app.route("/viewer")

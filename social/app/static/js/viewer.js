@@ -44,7 +44,8 @@ function show_hide_map(map_id) {
     else {
         document.getElementById(map_id).style.display="none";
     }
-}
+};
+
 function get_map(map_id, latitude, longitude) {
     console.log("#"+map_id)
     console.log(latitude+", "+longitude);
@@ -75,7 +76,50 @@ function get_map(map_id, latitude, longitude) {
 
 };
 
-function get_map_by_id(obj_id, source, source_id) {
+function get_azure_map(map_id, latitude, longitude, azure_maps_key) {
+    console.log("#"+map_id)
+    console.log(latitude+", "+longitude);
+
+    if(document.getElementById(map_id).style.display=="none") {
+        document.getElementById(map_id).style.display="block";
+
+        if (window.innerWidth < 630) {
+            document.getElementById(map_id).style.width = (window.innerWidth - 30) + "px";
+            document.getElementById(map_id).style.height = ((window.innerWidth - 30) * 0.67) + "px";
+        }
+
+        var map = new atlas.Map(map_id, {
+        center: [longitude, latitude],
+        zoom: 13,
+        authOptions: {
+            authType: 'subscriptionKey',
+            subscriptionKey: azure_maps_key
+        }
+        });
+
+        map.events.add('ready', function () {
+            map.controls.add([
+                new atlas.control.StyleControl(),
+                new atlas.control.ZoomControl()
+            ], {
+                position: 'top-right'
+            });
+        });
+
+        //Create a HTML marker and add it to the map.
+        map.markers.add(new atlas.HtmlMarker({
+            text: '',
+            position: [longitude, latitude]
+        }));
+    }
+
+    else {
+        document.getElementById(map_id).style.display="none";
+    }
+
+};
+
+function get_map_by_id(obj_id, source, source_id, azure_maps_key) {
     var xhttp = new XMLHttpRequest();
     xhttp.onreadystatechange = function() {
         if (this.readyState == 4 && this.status == 200) {
@@ -83,9 +127,9 @@ function get_map_by_id(obj_id, source, source_id) {
             foot_id = obj_id + "_footer";
             document.getElementById(foot_id).innerHTML = obj["city"] + ", " + obj["state"] + ", " + obj["country"];
             map_id = obj_id + "_map";
-            get_map(map_id, obj["latitude"], obj["longitude"]);
+            get_azure_map(map_id, obj["latitude"], obj["longitude"], azure_maps_key);
             button_id = obj_id + "_button";
-            document.getElementById(button_id).onclick = function() {get_map(map_id, obj["latitude"], obj["longitude"]); };
+            document.getElementById(button_id).onclick = function() {get_azure_map(map_id, obj["latitude"], obj["longitude"], azure_maps_key); };
 
         };
     };
